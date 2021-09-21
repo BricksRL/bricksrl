@@ -2,7 +2,11 @@
 
 ## Enable web Bluetooth on chrome
 
-Go to "chrome://flags/"  and enable "Experimental Web Platform features"
+ 1. Go to "chrome://flags/" 
+ 2. enable "Experimental Web Platform features"
+ 3. restart chrome
+
+## Install packages
 ```
 conda create --name lego python=3.8
 conda activate lego
