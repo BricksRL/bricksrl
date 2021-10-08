@@ -11,7 +11,7 @@ async def main():
     await hub.connect(device)
 
     async def hub_run():
-        await hub.run("client2.py", wait=False)
+        await hub.run("hub.py", wait=False)
         while not hub.program_running:
             await asyncio.sleep(0.05)
         
@@ -27,9 +27,14 @@ async def main():
         await asyncio.sleep(0.05)
     
     await asyncio.sleep(1)
+    
+    cmd = 'hello'
     for _ in range(4):
-        await hub.write(b"hello$")
+        cmd = cmd + '$' #terminal
+        cmd = cmd.encode()
+        await hub.write(cmd)
         await asyncio.sleep(1)
+        cmd = input('Command: ')
 
     await hub.write(b"exit$")
 

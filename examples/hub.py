@@ -1,8 +1,8 @@
 from uselect import poll
 from usys import stdin
 
-from pybricks.hubs import CityHub
-from pybricks.pupdevices import DCMotor
+#from pybricks.hubs import TechnicHub
+from pybricks.pupdevices import Motor
 from pybricks.parameters import Port
 from pybricks.tools import wait
 
@@ -12,8 +12,8 @@ loop_poll = poll()
 loop_poll.register(stdin)
 
 
-hub = CityHub()
-motor = DCMotor(Port.A)
+#hub = TechnicHub()
+motor = Motor(Port.A)
 running = True
 
 def hello():
