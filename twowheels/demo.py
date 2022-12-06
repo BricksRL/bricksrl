@@ -29,15 +29,18 @@ async def main():
     # Find the device and initialize client.
     device = await BleakScanner.find_device_by_filter(hub_filter)
     client = BleakClient(device, disconnected_callback=handle_disconnect)
+    queue = asyncio.LifoQueue()
 
     # Shorthand for sending some data to the hub.
     async def send(client, data):
         await client.write_gatt_char(rx_char, data)
 
-    queue = asyncio.LifoQueue()
     async def handle_rx(_, data: bytearray):
-        print("Received:", len(data))
-        data = struct.unpack('ddddd',data)
+        try:
+            data = struct.unpack('!iiiii',data)
+        except:
+            data = (0,0,0,0,0)
+
         await queue.put(data)
 
     try:
@@ -56,7 +59,7 @@ async def main():
             print(i)
             await send(client, b"a")
             data = await queue.get()
-            print("Received: ", str(data), queue.qsize())
+            print("Received: ", str(data))
             #await asyncio.sleep(1)
     
 

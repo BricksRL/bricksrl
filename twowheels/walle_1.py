@@ -59,7 +59,7 @@ while True:
     (pitch, roll) = hub.imu.tilt()
     dist = sensor.distance()
     
-    buffer = ustruct.pack("ddddd",left,right,pitch,roll,dist)
+    buffer = ustruct.pack("!iiiii",left,right,pitch,roll,dist)
     stdout.buffer.write(buffer)
 #    stdout.buffer.write(b"OBS: [{}, {}, {}, {}, {}] ".format(left,right,pitch,roll,dist))
 
