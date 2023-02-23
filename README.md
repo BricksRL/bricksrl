@@ -5,6 +5,7 @@
  1. Go to "chrome://flags/" 
  2. enable "Experimental Web Platform features"
  3. restart chrome
+ 4. Use beta.pybrics.com to edit and upload the hub program
 
 ## Install packages
 ```
