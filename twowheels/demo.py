@@ -45,13 +45,14 @@ async def main():
 
     try:
         # Connect and get services.
+        print("Switch on the hub",flush=True)
         await client.connect()
         await client.start_notify(UART_TX_CHAR_UUID, handle_rx)
         nus = client.services.get_service(UART_SERVICE_UUID)
         rx_char = nus.get_characteristic(UART_RX_CHAR_UUID)
 
         # Tell user to start program on the hub.
-        print("Start the program on the hub now with the button.")
+        print("Start the program on the hub now with the button.",flush=True)
         await asyncio.sleep(5)
 
         # Send a few messages to the hub.
