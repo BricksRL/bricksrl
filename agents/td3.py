@@ -19,9 +19,9 @@ def initialize(net, std=0.02):
         elif "bias" in p:
             nn.init.zeros_(n)
 
-class TD3_Agent(BaseAgent):
+class TD3Agent(BaseAgent):
     def __init__(self, state_space, action_space, learning_rate=3e-4, device="cpu"):
-        super(TD3_Agent, self).__init__(state_space, action_space, device)
+        super(TD3Agent, self).__init__(state_space, action_space, device)
 
     
         self.actor = get_deterministic_actor(action_space, in_keys=["observation"], num_cells=[256, 256], activation_class=nn.ReLU)

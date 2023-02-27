@@ -10,7 +10,7 @@ import numpy as np
 from torchrl.data import BoundedTensorSpec
 import tensordict as td
 
-from agents import TD3_Agent
+from agents import TD3Agent, SACAgent
 import wandb
 
 UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -130,7 +130,7 @@ async def main():
     states_space = BoundedTensorSpec(minimum=torch.zeros(state_dim), maximum=torch.ones(state_dim)*2000, shape=(state_dim,))
     
     # Create agent
-    agent = TD3_Agent(action_space=action_space, state_space=states_space, learning_rate=1e-5, device="cpu")
+    agent = TD3Agent(action_space=action_space, state_space=states_space, learning_rate=1e-5, device="cpu")
     print("--- Agent initialized ---", flush=True)
     
     # Initialize wandb
