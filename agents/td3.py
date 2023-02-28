@@ -88,7 +88,8 @@ class TD3Agent(BaseAgent):
                 ),
             )
         return replay_buffer
-    
+
+    @torch.no_grad()
     def get_action(self, state):
         """Get action from actor network"""
 
