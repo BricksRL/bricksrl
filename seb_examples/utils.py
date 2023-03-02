@@ -9,6 +9,9 @@ def data2numpy(data: list):
 def handle_disconnect(_):
     print("Hub was disconnected.")
     
+def tensordict2dict(td: td.TensorDict)-> dict:
+    """ Convert a TensorDict to a dictionary. """
+    return {k: v.item() for k, v in td.items()}
 
 def create_transition_td(observation: np.array,
                          action: np.array,
@@ -45,10 +48,6 @@ def logout(agent):
         torch.save(buffer_dict, save_name + ".pth")
         # save_dict.update(buffer_dict)
      # if len(save_dict) > 0:
-        
-        
-        
-    
         
 def login(agent):
     x = input("Do you want to load the model? (y/n)")

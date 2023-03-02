@@ -36,6 +36,7 @@ class SACAgent(BaseAgent):
         # define loss function
         self.loss_module = SACLoss(actor_network=self.actor,
                                    qvalue_network=self.critic,
+                                   delay_qvalue=True,
                                    value_network=None, # None to use SAC version 2
                                    num_qvalue_nets=2,
                                    gamma=0.99,
@@ -50,7 +51,8 @@ class SACAgent(BaseAgent):
         # Define Optimizer
         critic_params = list(self.loss_module.qvalue_network_params.flatten_keys().values())
         actor_params = list(self.loss_module.actor_network_params.flatten_keys().values())
-        self.optimizer = optim.Adam(actor_params +  critic_params, lr=learning_rate, weight_decay=0.0)
+        self.optimizer_actor = optim.Adam(actor_params, lr=learning_rate, weight_decay=0.0)
+        self.optimizer_critic = optim.Adam(critic_params, lr=learning_rate, weight_decay=0.0)
         
         # general stats
         self.collected_transitions = 0
@@ -104,11 +106,15 @@ class SACAgent(BaseAgent):
             batch = self.replay_buffer.sample(batch_size)
             # Compute SAC Loss
             loss = self.loss_module(batch)
-            sac_loss = loss["loss_qvalue"] + loss["loss_actor"]
+            
+            # Update Actpr Network
+            self.optimizer_actor.zero_grad()
+            loss["loss_actor"].backward()
+            self.optimizer_actor.step()
             # Update Critic Network
-            self.optimizer.zero_grad()
-            sac_loss.backward()
-            self.optimizer.step()
+            self.optimizer_critic.zero_grad()
+            loss["loss_qvalue"].backward()
+            self.optimizer_critic.step()
             # Update Target Networks
             self.target_net_updater.step()
             # Update Prioritized Replay Buffer

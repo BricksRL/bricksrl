@@ -13,7 +13,7 @@ import tensordict as td
 from agents import TD3Agent, SACAgent
 import wandb
 import time
-from seb_examples.utils import logout, login, create_transition_td, handle_disconnect, data2numpy
+from seb_examples.utils import logout, login, create_transition_td, handle_disconnect, data2numpy, tensordict2dict
 
 UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -145,18 +145,19 @@ async def main():
             print("_"*50)
             print("\nFinished epoch: ", e, "Rewards: ", rewards)
             print("Training agent ...")
+            
             # train agent
             loss = agent.train(batch_size=12, num_updates=5)
             print("Actor loss: ", loss["loss_actor"].item(), "Critic loss: ", loss["loss_qvalue"].item())
             print("\n")
             
-            wandb.log({"epoch": e,
+            # Metrics Logging
+            log_dict = {"epoch": e,
                        "reward": rewards,
-                       "loss_actor": loss["loss_actor"].item(),
-                       "loss_critic": loss["loss_qvalue"].item(),
                        "buffer_size": agent.replay_buffer.__len__(),
-                       "final_distance": observation[:, -1]})
-            
+                       "final_distance": observation[:, -1]}
+            log_dict.update(tensordict2dict(loss))
+            wandb.log(log_dict)
             
             reset_robot = input("Reset robot to initial position? (y/n): ")
             if reset_robot == "y":
