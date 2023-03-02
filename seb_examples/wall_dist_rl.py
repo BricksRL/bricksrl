@@ -13,6 +13,7 @@ import tensordict as td
 from agents import TD3Agent, SACAgent
 import wandb
 import time
+from seb_examples.utils import logout, login, create_transition_td, handle_disconnect, data2numpy
 
 UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -25,47 +26,6 @@ HUB_NAME = "Pybricks Hub"
 def hub_filter(device, ad):
     return device.name and device.name.lower() == HUB_NAME.lower()
 
-def handle_disconnect(_):
-    print("Hub was disconnected.")
-
-def mse(x, y):
-    """ Calculate the mean squared error between two numpy arrays. """
-    return np.mean((x - y) ** 2)
-
-def create_transition_td(observation: np.array,
-                         action: np.array,
-                         reward: np.array,
-                         next_observation: np.array,
-                         done: np.array,
-                         batch_size: int=1):
-    """ Create a TensorDict from a transition tuple. """
-    obs_t = torch.from_numpy(observation).float()
-    action_t = torch.from_numpy(action).float()[None, :]
-    reward_t = torch.from_numpy(reward).float()[None, :]
-    next_obs_t = torch.from_numpy(next_observation).float()
-    done_t = torch.from_numpy(done).bool()[None, :]
-
-    return td.TensorDict({
-        "observation": obs_t,
-        "action": action_t,
-        "reward": reward_t,
-        "next": {"observation": next_obs_t},
-        "done": done_t} , batch_size=batch_size
-    )
-
-def data2numpy(data: list):
-    """ Convert a list of bytes to a numpy array. """
-    return np.array(data)[None, :]
-
-def get_distance(observation, goal_min_dist=100):
-    """ Calculate the mse error between the robot and the wall. """
-    return mse(observation[:, -1], goal_min_dist)
-
-def get_abs_distance(observation, goal_min_dist=100):
-    """ Calculate the absolute error between the robot and the wall. """
-    distance = np.abs(observation[:, -1] - goal_min_dist)
-    return distance
-    
 def reward_function(state, action, next_state):
     """ Reward function for the wall distance task.
         Goal: to get away from the wall as fast as possible.
@@ -73,7 +33,7 @@ def reward_function(state, action, next_state):
     """
     done = False
     
-    if next_state[:, -1] <= 40.: # too close to the wall break episode
+    if next_state[:, -1] <= 0.04: # too close to the wall break episode
         reward = -10
         done = True
     elif next_state[:, -1] < state[:, -1]:
@@ -85,14 +45,6 @@ def reward_function(state, action, next_state):
 
     return np.array([reward]), np.array([done])
 
-def discretize(value):
-    index = round(value.item() * 10)
-    return index
-
-def get_discrete_action(index):
-    vocab =  {10: "a", 9: "b", 8: "c", 7: "d", 6: "e", 5: "f", 4: "g", 3: "h", 2: "i", 1: "j", 0: "k", # forward movements 100 to 0
-              -1: "l", -2: "m", -3: "n", -4: "o", -5: "p", -6: "q", -7: "r", -8: "s", -9: "t", -10: "u"} # backward movements -10 to -100
-    return vocab[index]
 
 async def main():
     # Find the device and initialize client.
@@ -108,7 +60,7 @@ async def main():
         try:
             data = struct.unpack("!fffff", data)
         except:
-            data = (0.0, 0.0, 0.0, 0.0, 100.0)
+            data = (0.0, 0.0, 0.0, 0.0, 0.1)
 
         await queue.put(data)
     
@@ -119,17 +71,18 @@ async def main():
     state_dim = 5 # 4 sensors (left,right,pitch,roll) + 1 distance to the wall
     action_space = BoundedTensorSpec(minimum=-torch.ones(action_dim), maximum=torch.ones(action_dim), shape=(action_dim,))
     states_space = BoundedTensorSpec(minimum=torch.zeros(state_dim), maximum=torch.ones(state_dim)*2000, shape=(state_dim,))
-    torch.autograd.set_detect_anomaly(True)
+    
     # Create agent
-    agent = TD3Agent(action_space=action_space, state_space=states_space, learning_rate=1e-5, device="cpu")
-    # agent = SACAgent(action_space=action_space, state_space=states_space, learning_rate=1e-5, device="cpu")
+    #agent = TD3Agent(action_space=action_space, state_space=states_space, learning_rate=3e-4, device="cpu")
+    agent = SACAgent(action_space=action_space, state_space=states_space, learning_rate=3e-4, device="cpu")
     print("--- Agent initialized ---", flush=True)
+    login(agent)
     
     # Initialize wandb
     wandb.init(project="lego-wall-td3", config=None) # TODO add config
-    wandb.watch(agent.actor_explore, log_freq=1)
+    wandb.watch(agent.actor, log_freq=1)
     epochs = 100
-    steps_per_epoch = 20
+    steps_per_epoch = 10
     
     try:
         # Connect and get services.
@@ -143,26 +96,35 @@ async def main():
         print("Start the program on the hub now with the button.", flush=True)
         await asyncio.sleep(5)
         
+        input("Press Enter to start training...")
         for e in range(epochs):
             print("Start epoch: ", e)
             # get initial observation
             byte_action = struct.pack("!f", 0.001)
             await send(client, byte_action)    
             observation = data2numpy(await queue.get())
-
-            # past_distance = get_abs_distance(observation)
+            # normalize observation
+            observation = observation / 1000.
+            
             done = np.array([False])
             rewards = 0
             for i in range(steps_per_epoch):
                 start = time.time()
                 print("Step: ", i)
-                action = agent.get_action(observation)
+                if e in [0]:
+                    action = np.random.uniform(-1, 1, size=action_dim)
+                    print("random action!")
+                else:
+                    action = agent.get_action(observation)
+                    print("action from agent!")
+                print("Action: ", action)
                 # send action to hub
                 byte_action = struct.pack("!f", action)
                 await send(client, byte_action)
                 
                 next_observation = await queue.get()
                 next_observation = data2numpy(next_observation)
+                next_observation = next_observation / 1000. # normalize observation
                 print("Received data: ", next_observation)
                 reward, done = reward_function(observation, action, next_observation)
                 rewards += reward
@@ -184,7 +146,7 @@ async def main():
             print("\nFinished epoch: ", e, "Rewards: ", rewards)
             print("Training agent ...")
             # train agent
-            loss = agent.train(batch_size=5, num_updates=5)
+            loss = agent.train(batch_size=12, num_updates=5)
             print("Actor loss: ", loss["loss_actor"].item(), "Critic loss: ", loss["loss_qvalue"].item())
             print("\n")
             
@@ -201,9 +163,8 @@ async def main():
                 pass
             else:
                 print("Stopping training ...")
-                # TODO save model or training data
+                logout(agent)
                 break
-                
         # Send a message to indicate stop.
         await send(client, b"b")
         await asyncio.sleep(1)
@@ -218,5 +179,3 @@ async def main():
 
 # Run the main async program.
 asyncio.run(main())
-
-

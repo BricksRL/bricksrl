@@ -7,7 +7,7 @@ from torchrl.objectives import SoftUpdate
 from torchrl.objectives.sac import SACLoss
 
 from agents.base import BaseAgent
-from agents.networks import get_deterministic_actor, get_critic
+from agents.networks import get_stochastic_actor, get_critic
 import tensordict as td
 
 def initialize(net, std=0.02):
@@ -23,7 +23,7 @@ class SACAgent(BaseAgent):
         super(SACAgent, self).__init__(state_space, action_space, device)
 
     
-        self.actor = get_deterministic_actor(action_space, in_keys=["observation"], num_cells=[256, 256], activation_class=nn.ReLU)
+        self.actor = get_stochastic_actor(action_space, in_keys=["observation"], num_cells=[256, 256], activation_class=nn.ReLU)
         self.critic = get_critic(in_keys=["observation"], out_features=1, num_cells=[256, 256], activation_class=nn.ReLU)
 
         # initialize networks
@@ -31,7 +31,7 @@ class SACAgent(BaseAgent):
         
         # set initial network weights
         # use a small std to start with small action values at the beginning
-        initialize(self.actor, std=0.02)
+        # initialize(self.actor, std=0.02)
         
         # define loss function
         self.loss_module = SACLoss(actor_network=self.actor,
@@ -39,7 +39,7 @@ class SACAgent(BaseAgent):
                                    value_network=None, # None to use SAC version 2
                                    num_qvalue_nets=2,
                                    gamma=0.99,
-                                   loss_function="smooth_l1",)
+                                   loss_function="smooth_l1")
         # Define Target Network Updater
         self.target_net_updater = SoftUpdate(self.loss_module, 0.995)
         self.target_net_updater.init_()
@@ -50,8 +50,7 @@ class SACAgent(BaseAgent):
         # Define Optimizer
         critic_params = list(self.loss_module.qvalue_network_params.flatten_keys().values())
         actor_params = list(self.loss_module.actor_network_params.flatten_keys().values())
-        self.optimizer_actor = optim.Adam(actor_params, lr=learning_rate, weight_decay=0.0)
-        self.optimizer_critic = optim.Adam(critic_params, lr=learning_rate, weight_decay=0.0)
+        self.optimizer = optim.Adam(actor_params +  critic_params, lr=learning_rate, weight_decay=0.0)
         
         # general stats
         self.collected_transitions = 0
@@ -83,6 +82,7 @@ class SACAgent(BaseAgent):
             )
         return replay_buffer
     
+    @torch.no_grad()
     def get_action(self, state):
         """Get action from actor network"""
 
@@ -104,14 +104,11 @@ class SACAgent(BaseAgent):
             batch = self.replay_buffer.sample(batch_size)
             # Compute SAC Loss
             loss = self.loss_module(batch)
+            sac_loss = loss["loss_qvalue"] + loss["loss_actor"]
             # Update Critic Network
-            self.optimizer_critic.zero_grad()
-            loss["loss_qvalue"].backward(retain_graph=True)
-            self.optimizer_critic.step()
-            # Update Actor Network
-            self.optimizer_actor.zero_grad()
-            loss["loss_actor"].backward()
-            self.optimizer_actor.step()
+            self.optimizer.zero_grad()
+            sac_loss.backward()
+            self.optimizer.step()
             # Update Target Networks
             self.target_net_updater.step()
             # Update Prioritized Replay Buffer
