@@ -114,6 +114,7 @@ class SACAgent(BaseAgent):
             # Update Critic Network
             self.optimizer_critic.zero_grad()
             loss["loss_qvalue"].backward()
+            torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 0.5)
             self.optimizer_critic.step()
             # Update Target Networks
             self.target_net_updater.step()
