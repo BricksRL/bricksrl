@@ -24,7 +24,7 @@ class RunAwayEnv(BaseEnv):
         self.action_space = BoundedTensorSpec(minimum=-torch.ones(action_dim),
                                               maximum=torch.ones(action_dim),
                                               shape=(action_dim,))
-        self.states_space = BoundedTensorSpec(minimum=torch.zeros(state_dim),
+        self.observation_space = BoundedTensorSpec(minimum=torch.zeros(state_dim),
                                               maximum=torch.ones(state_dim)*self.max_distance,
                                               shape=(state_dim,))
         
@@ -51,6 +51,7 @@ class RunAwayEnv(BaseEnv):
 
         self.send_to_hub(np.array([0.001]))
         self.observation = self.normalize_state(self.read_from_hub())
+        time.sleep(0.4)
         return self.observation
     
     def reward(self,
@@ -82,7 +83,7 @@ class RunAwayEnv(BaseEnv):
 
         # Send action to hub to receive next state
         self.send_to_hub(action)
-        time.sleep(0.5) # we need to wait some time for sensors to read and to 
+        time.sleep(0.6) # we need to wait some time for sensors to read and to 
                         # receive the next state
         next_observation = self.normalize_state(self.read_from_hub())
         

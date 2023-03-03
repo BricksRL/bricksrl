@@ -99,6 +99,7 @@ class PybricksHub:
             return self.rx_queue.get_nowait()
         except asyncio.QueueEmpty:
             # TODO: handle exceptions currently just return zeros
+            print("Queue is empty, returning zeros")
             return self.exception_out_data #struct.pack("!fffff", 0.0, 0.0, 0.0, 0.0, 0.0)
 
     def close(self)-> None:

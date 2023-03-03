@@ -7,6 +7,8 @@ class BaseWrapper(object):
     def __init__(self, env):
         super.__init__(env)
         self.env = env
+        self.action_space = env.action_space
+        self.observation_space = env.observation_space
 
     def step(self, action):
         """Runs the environment :meth:`env.step` using the modified ``action`` from :meth:`self.action`."""
@@ -41,6 +43,9 @@ class TorchEnvWrapper(BaseWrapper):
 class StartControlWrapper(BaseWrapper):
     def __init__(self, env):
         self.env = env
+        super.__init__(env)
+        self.action_space = env.action_space
+        self.observation_space = env.observation_space
 
     def reset(self)-> torch.Tensor:
         time.sleep(1)
