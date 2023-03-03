@@ -4,6 +4,7 @@
 run_name:
 mode: "offline"
 
+device: "cpu"
 episodes: 5
 
 defaults:
