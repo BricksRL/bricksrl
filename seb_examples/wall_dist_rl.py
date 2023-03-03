@@ -61,6 +61,7 @@ async def main():
             data = struct.unpack("!fffff", data)
         except:
             data = (0.0, 0.0, 0.0, 0.0, 0.1)
+            print("Error unpacking data!")
 
         await queue.put(data)
     
@@ -104,6 +105,7 @@ async def main():
             await send(client, byte_action)    
             observation = data2numpy(await queue.get())
             # normalize observation
+            observation = np.clip(observation, 0, 1000)
             observation = observation / 1000.
             
             done = np.array([False])
@@ -124,6 +126,7 @@ async def main():
                 
                 next_observation = await queue.get()
                 next_observation = data2numpy(next_observation)
+                next_observation = np.clip(next_observation, 0, 1000)
                 next_observation = next_observation / 1000. # normalize observation
                 print("Received data: ", next_observation)
                 reward, done = reward_function(observation, action, next_observation)
