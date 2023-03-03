@@ -1,0 +1,11 @@
+# Base Config to run all examples
+
+# logging
+run_name:
+mode: "offline"
+
+episodes: 5
+
+defaults:
+  - _self_
+  - agent: td3
