@@ -1,0 +1,3 @@
+lr: 3e-4
+batch_size: 128
+num_updates: 10
