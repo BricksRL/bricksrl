@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from torch import nn, optim
 from torchrl.data import TensorDictPrioritizedReplayBuffer, TensorDictReplayBuffer
-from torchrl.data.replay_buffers.storages import LazyMemmapStorage
+from torchrl.data.replay_buffers.storages import LazyTensorStorage
 from torchrl.objectives import SoftUpdate
 from torchrl.objectives.sac import SACLoss
 
@@ -46,7 +46,7 @@ class SACAgent(BaseAgent):
         self.target_net_updater.init_()
         
         # Define Replay Buffer
-        self.replay_buffer = self.create_replay_buffer(prb=False, buffer_size=100_000, buffer_scratch_dir="/tmp/", device=device)
+        self.replay_buffer = self.create_replay_buffer(prb=False, buffer_size=100_000, device=device)
 
         # Define Optimizer
         critic_params = list(self.loss_module.qvalue_network_params.flatten_keys().values())
@@ -58,27 +58,37 @@ class SACAgent(BaseAgent):
         self.collected_transitions = 0
         self.episodes = 0
 
-    def create_replay_buffer(self, prb=False, buffer_size=100000, buffer_scratch_dir="/tmp/", device="cpu",make_replay_buffer=3):
+    def get_agent_statedict(self):
+        """Save agent"""
+        act_statedict = self.actor.state_dict()
+        critic_statedict = self.critic.state_dict()
+        return {"actor": act_statedict, "critic": critic_statedict}
+    
+    def load_replaybuffer(self, path):
+        """load replay buffer"""
+        self.replay_buffer.load_state_dict(torch.load(path))
+        print("Replay Buffer loaded")
+        print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
+
+    def create_replay_buffer(self, prb=False, buffer_size=100000, device="cpu"):
         
         if prb:
             replay_buffer = TensorDictPrioritizedReplayBuffer(
                 alpha=0.7,
                 beta=0.5,
                 pin_memory=False,
-                prefetch=make_replay_buffer,
-                storage=LazyMemmapStorage(
+                prefetch=1,
+                storage=LazyTensorStorage(
                     buffer_size,
-                    scratch_dir=buffer_scratch_dir,
                     device=device,
                 ),
             )
         else:
             replay_buffer = TensorDictReplayBuffer(
                 pin_memory=False,
-                prefetch=make_replay_buffer,
-                storage=LazyMemmapStorage(
+                prefetch=1,
+                storage=LazyTensorStorage(
                     buffer_size,
-                    scratch_dir=buffer_scratch_dir,
                     device=device,
                 ),
             )

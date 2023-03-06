@@ -4,18 +4,19 @@ import numpy as np
 import wandb
 
 from agents import TD3Agent, SACAgent
-from environments import RunAwayEnv
+from environments import make
 from environments.wrapper import TorchEnvWrapper, StartControlWrapper
 from seb_examples.utils import logout, login, create_transition_td, tensordict2dict
+
+
+
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def run(cfg : DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
     
     # Create environment.
-    env = RunAwayEnv(max_episode_steps=10,
-                     max_distance=1000.,
-                     min_distance=40.) #StartControlWrapper(TorchEnvWrapper(
+    env = make(name=cfg.env_name, max_episode_steps=cfg.max_episode_steps)
 
     action_space = env.action_space
     state_space = env.observation_space
