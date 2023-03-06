@@ -65,7 +65,7 @@ class PybricksHub:
 
     def disconnect(self)-> None:
         self.loop.run_until_complete(self._disconnect())
-
+        self.loop.close()
 
     async def _disconnect(self)-> None:
         try:
@@ -78,7 +78,9 @@ class PybricksHub:
         except Exception as e:
             # Handle exceptions.
             print(e)
-        self.loop.close()
+        finally:
+            self.disconnected = True
+
 
     @staticmethod
     def _hub_filter(device: BLEDevice, ad)-> None:
@@ -91,20 +93,45 @@ class PybricksHub:
     async def _handle_rx(self, _, data: bytes)-> None:
         # add received data to the queue
         await self.rx_queue.put(data)
-
-    def read(self)-> bytes:
-        """Read data from the hub and return it as a bytearray."""
+    
+    async def _read_data(self)-> bytes:
         try:
             # get data from the queue
-            return self.rx_queue.get_nowait()
+            return await self.rx_queue.get()
         except asyncio.QueueEmpty:
-            # TODO: handle exceptions currently just return zeros
             print("Queue is empty, returning zeros")
             return self.exception_out_data #struct.pack("!fffff", 0.0, 0.0, 0.0, 0.0, 0.0)
+            
+    
+    def read(self)-> bytes:
+        """Read data from the hub and return it as a bytearray."""
+        # try:
+        #     # get data from the queue
+        #     return self.rx_queue.get_nowait()
+        # except asyncio.QueueEmpty:
+        #     # TODO: handle exceptions currently just return zeros
+        #     print("Queue is empty, returning zeros")
+        #     return self.exception_out_data #struct.pack("!fffff", 0.0, 0.0, 0.0, 0.0, 0.0)
+        return self.loop.run_until_complete(self._read_data())
+
 
     def close(self)-> None:
         # TODO: this is not working correctly -- "never awaited disconnect"
-        self.disconnect()
+        # self.disconnect()
+        # Disconnect from the hub.
+        self.loop.run_until_complete(self._disconnect())
+
+        # Wait for the disconnection to complete.
+        timeout = 5  # seconds
+        start_time = self.loop.time()
+        while not self.disconnected:
+            self.loop.run_until_complete(asyncio.sleep(0.1))
+            if self.loop.time() - start_time > timeout:
+                print("Timed out waiting for disconnection to complete.")
+                break
+
+        # Close the event loop.
+        self.loop.close()
 
     
 # # Create an instance of the PybricksHub class.

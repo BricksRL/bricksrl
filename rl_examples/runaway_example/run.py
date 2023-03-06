@@ -14,12 +14,17 @@ def run(cfg : DictConfig) -> None:
     
     # Create environment.
     env = RunAwayEnv(max_episode_steps=10,
-                                     max_distance=1000.,
-                                     min_distance=40.) #StartControlWrapper(TorchEnvWrapper(
+                     max_distance=1000.,
+                     min_distance=40.) #StartControlWrapper(TorchEnvWrapper(
+
     action_space = env.action_space
     state_space = env.observation_space
     
-    agent = TD3Agent(action_space=action_space, state_space=state_space, learning_rate=cfg.agent.lr, device=cfg.device)
+    # agent = TD3Agent(action_space=action_space, state_space=state_space, learning_rate=cfg.agent.lr, device=cfg.device)
+    agent = SACAgent(action_space=action_space, state_space=state_space, learning_rate=cfg.agent.lr, device=cfg.device)
+    
+    login(agent)
+    
     print("--- Agent initialized ---", flush=True)
     # Initialize wandb
     wandb.init(project="lego-wall-td3", config=None) # TODO add config
@@ -38,23 +43,28 @@ def run(cfg : DictConfig) -> None:
                 agent.add_experience(transition)
                 state = next_state
     
-    prefill_buffer(env, agent, 10)
+    prefill_buffer(env, agent, 5)
     print("Prefill done! Buffer size: ", agent.replay_buffer.__len__())
     
     print("Start training...")
-    state = env.reset()
+
     for e in range(cfg.episodes):
-        
+        state = env.reset()        
         done = False
         ep_return = 0
         # Train agent
         loss_info =agent.train(batch_size=cfg.agent.batch_size,
                                num_updates=cfg.agent.num_updates)
         print("Start new data collection...", flush=True)
+        print("Init done: ", done)
         inpt = input("Press Enter to start episode: ")
         while not done:
+            
             action = agent.get_action(state)
+            print("New step")
+            print("Action: ", action)
             next_state, reward, done, info = env.step(action)
+            print("Done: ", done)
             transition = create_transition_td(state, action, np.array([reward]), next_state, np.array([done]))
             agent.add_experience(transition)
             state = next_state
@@ -69,7 +79,7 @@ def run(cfg : DictConfig) -> None:
         log_dict.update(tensordict2dict(loss_info))
         wandb.log(log_dict)
 
-
+    env.close()
 
 if __name__ == "__main__":
     run()

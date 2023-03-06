@@ -50,8 +50,9 @@ class RunAwayEnv(BaseEnv):
         self.episode_step_iter = 0
 
         self.send_to_hub(np.array([0.001]))
-        self.observation = self.normalize_state(self.read_from_hub())
         time.sleep(0.4)
+        self.observation = self.normalize_state(self.read_from_hub())
+
         return self.observation
     
     def reward(self,
@@ -83,7 +84,7 @@ class RunAwayEnv(BaseEnv):
 
         # Send action to hub to receive next state
         self.send_to_hub(action)
-        time.sleep(0.6) # we need to wait some time for sensors to read and to 
+        time.sleep(0.2) # we need to wait some time for sensors to read and to 
                         # receive the next state
         next_observation = self.normalize_state(self.read_from_hub())
         
