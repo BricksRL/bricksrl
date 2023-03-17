@@ -91,6 +91,7 @@ class RunAwayEnv(BaseEnv):
         # calc reward and done
         reward, done = self.reward(state=self.observation, action=action, next_state=next_observation)
         
+        print("Reward", reward)
         # set next state as current state
         self.observation = next_observation
         

@@ -15,7 +15,7 @@ class PybricksHub:
         self.device = None
         self.client = None
         self.rx_char = None
-        self.rx_queue = asyncio.LifoQueue()
+        self.rx_queue = asyncio.LifoQueue(maxsize=5)# LifoQueue
         self.loop = asyncio.get_event_loop()
         # asyncio.set_event_loop(self.loop)
         
@@ -100,8 +100,8 @@ class PybricksHub:
             return await self.rx_queue.get()
         except asyncio.QueueEmpty:
             print("Queue is empty, returning zeros")
-            return self.exception_out_data #struct.pack("!fffff", 0.0, 0.0, 0.0, 0.0, 0.0)
-            
+            return self.exception_out_data
+
     
     def read(self)-> bytes:
         """Read data from the hub and return it as a bytearray."""

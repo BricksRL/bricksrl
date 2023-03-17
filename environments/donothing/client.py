@@ -13,8 +13,7 @@ from uselect import poll
 import ustruct
 
 hub = InventorHub()
-#hub.displaytext('ANDRE',on=1000,off=100)
-#hub.display.text("{}".format(hub.battery.voltage()))
+
 # Initialize the drive base.
 left_motor = Motor(Port.E, Direction.COUNTERCLOCKWISE)
 right_motor = Motor(Port.A)
@@ -27,35 +26,27 @@ sensor = UltrasonicSensor(Port.C)
 keyboard = poll()
 keyboard.register(stdin)
 
-
 while True:
 
     # Optional: Check available input.
     while not keyboard.poll(0):
-        # Optional: Do something here.
         wait(1)
 
-    # Read action command
-    action_cmd = stdin.buffer.read(4)
-    # action_cmd = b'\xbf\xa0\x00\x00' # 1.25
-    action_value = ustruct.unpack("!f", action_cmd)[0]
-    
+    action_value = ustruct.unpack("!f", stdin.buffer.read(4))[0]
     action = action_value * 100
-    sign = action_value // (abs(action_value) + 1e-12)
-
-    if action_value > 0.0: # forward 
-        drive_base.straight(abs(action))
-    elif action_value < 0.0: # backward
-        drive_base.straight(abs(action))
+    if type(action) == float:
+        pass
     else:
-        raise ValueError("Invalid action value: {}".format(action_value))
+        action = 0.0
+    drive_base.straight(action, wait=True)
+
+    wait(200)
 
     # get current state of the robot
-    wait(20)
     (left, right) = (left_motor.angle(), right_motor.angle())
     (pitch, roll) = hub.imu.tilt()
     dist = sensor.distance()
 
     # send current state
-    out_msg = ustruct.pack('!fffff',left,right,pitch,roll,dist)
+    out_msg = ustruct.pack('!fffff',left, right, pitch, roll, dist)
     stdout.buffer.write(out_msg)
