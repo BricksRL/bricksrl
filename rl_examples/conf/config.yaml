@@ -8,7 +8,7 @@ device: "cpu"
 episodes: 20
 
 # environment
-env_name: "DoNothing"
+env_name: "RunAway"
 max_episode_steps: 10
 
 defaults:

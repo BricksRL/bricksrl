@@ -2,6 +2,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 import numpy as np
 import wandb
+import time
 
 from agents import TD3Agent, SACAgent
 from environments import make
@@ -21,14 +22,15 @@ def run(cfg : DictConfig) -> None:
     action_space = env.action_space
     state_space = env.observation_space
     
-    # agent = TD3Agent(action_space=action_space, state_space=state_space, learning_rate=cfg.agent.lr, device=cfg.device)
-    agent = SACAgent(action_space=action_space, state_space=state_space, learning_rate=cfg.agent.lr, device=cfg.device)
+    # TODO: make create agent function
+    agent = TD3Agent(action_space=action_space, state_space=state_space, learning_rate=cfg.agent.lr, device=cfg.device)
+    # agent = SACAgent(action_space=action_space, state_space=state_space, learning_rate=cfg.agent.lr, device=cfg.device)
     
     login(agent)
     
     print("--- Agent initialized ---", flush=True)
     # Initialize wandb
-    wandb.init(project="lego-wall-td3", config=None) # TODO add config
+    wandb.init(project="lego-runaway-td3", config=cfg)
     wandb.watch(agent.actor, log_freq=1)
                              
     def prefill_buffer(env, agent, num_episodes):
@@ -39,30 +41,36 @@ def run(cfg : DictConfig) -> None:
             done = False
             while not done:
                 action = np.random.uniform(-1, 1, size=1)
+                print("Random action: ", action)
                 next_state, reward, done, info = env.step(action)
                 transition = create_transition_td(state, action, np.array([reward]), next_state, np.array([done]))
                 agent.add_experience(transition)
                 state = next_state
     
-    prefill_buffer(env, agent, 5)
+    prefill_buffer(env, agent, 3)
     print("Prefill done! Buffer size: ", agent.replay_buffer.__len__())
     
     print("Start training...")
-
+    quit = False
     for e in range(cfg.episodes):
         state = env.reset()        
         done = False
         ep_return = 0
         # Train agent
-        loss_info =agent.train(batch_size=cfg.agent.batch_size,
-                               num_updates=cfg.agent.num_updates)
+        #loss_info = agent.train(batch_size=cfg.agent.batch_size,
+        #                        num_updates=cfg.agent.num_updates)
+
         print("Start new data collection...", flush=True)
         print("Init done: ", done)
-        inpt = input("Press Enter to start episode: ")
+        inpt = input("Press Enter to start episode or q to quit: ")
+        if inpt == "q":
+            done = True
+            quit = True
         while not done:
-            
+            step_start_time = time.time()
             action = agent.get_action(state)
             print("New step")
+            print("State: ", state)
             print("Action: ", action)
             next_state, reward, done, info = env.step(action)
             print("Done: ", done)
@@ -70,7 +78,13 @@ def run(cfg : DictConfig) -> None:
             agent.add_experience(transition)
             state = next_state
             ep_return += reward
-            
+            loss_info = agent.train(batch_size=cfg.agent.batch_size,
+                        num_updates=cfg.agent.num_updates)
+            print("Step time: ", time.time() - step_start_time)
+            print("---"*5)
+        if quit:
+            break
+
         print("Episode: ", e, "Return: ", ep_return)
         # Metrics Logging
         log_dict = {"epoch": e,
@@ -79,7 +93,9 @@ def run(cfg : DictConfig) -> None:
                     "final_distance": state[:, -1]}
         log_dict.update(tensordict2dict(loss_info))
         wandb.log(log_dict)
-
+        
+    
+    logout(agent)
     env.close()
 
 if __name__ == "__main__":
