@@ -11,9 +11,10 @@ class BaseEnv():
         
         self.action_format_str = "!" + "f" * self.action_dim
         self.state_format_str = "!" + "f" * self.state_dim
-        
-        self.expected_bytesize = struct.calcsize(self.state_format_str)
-        
+            
+        self.state_bytesize = struct.calcsize(self.state_format_str)
+        self.action_bytesize = struct.calcsize(self.action_format_str)
+    
         # buffer state in case of missing data
         self.buffered_state = np.zeros(self.state_dim, dtype=np.float32)
 
@@ -22,9 +23,13 @@ class BaseEnv():
         print("Connected to hub.")
 
     def send_to_hub(self, action: np.array)-> None:
+        
         """ Takes action as numpy array and sends it to the hub as bytes. """
-        assert action.shape[0] == self.action_dim, "Action shape does not match action dimension."
-        byte_action = struct.pack(self.action_format_str, action)
+        try:
+            byte_action = struct.pack(self.action_format_str, *action)
+        except ValueError:
+            print("Action shape does not match action dimension.")
+            return
         self.hub.send(byte_action)
         
     def read_from_hub(self)-> np.array:
@@ -34,8 +39,8 @@ class BaseEnv():
         print("Reading data: ", byte_state)
         print("len: ", len(byte_state))
         # assert sys.getsizeof(byte_state) == 53, f"State has size {sys.getsizeof(byte_state)} but should have size 53."
-        if len(byte_state) != self.expected_bytesize:
-            print("State has size {} but should have size {}.".format(len(byte_state), struct.calcsize(self.state_format_str)))
+        if len(byte_state) != self.state_bytesize:
+            print("State has size {} but should have size {}.".format(len(byte_state), self.state_bytesize))
             print("Returning previous state.")
             state = self.buffered_state
             print("State: ", state)

@@ -11,6 +11,7 @@ from pybricks.robotics import DriveBase
 from usys import stdin, stdout
 from uselect import poll
 import ustruct
+from micropython import kbd_intr
 
 hub = InventorHub()
 
@@ -25,6 +26,9 @@ sensor = UltrasonicSensor(Port.C)
 # you to wait for incoming data without blocking.
 keyboard = poll()
 keyboard.register(stdin)
+# ignore keyboard interrupt
+kbd_intr(-1)
+# stop button pressed could be due to low energy
 
 while True:
 

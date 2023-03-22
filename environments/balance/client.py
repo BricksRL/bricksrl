@@ -2,7 +2,7 @@
 # firmware provided via https://beta.pybricks.com/
 
 from pybricks.hubs import InventorHub
-from pybricks.pupdevices import Motor, UltrasonicSensor
+from pybricks.pupdevices import Motor
 from pybricks.parameters import Port, Direction
 from pybricks.tools import wait
 from pybricks.robotics import DriveBase
@@ -10,8 +10,8 @@ from pybricks.robotics import DriveBase
 # Standard MicroPython modules
 from usys import stdin, stdout
 from uselect import poll
-from mircopython import kbd_intr
 import ustruct
+from micropython import kbd_intr
 
 hub = InventorHub()
 
@@ -19,8 +19,6 @@ hub = InventorHub()
 left_motor = Motor(Port.E, Direction.COUNTERCLOCKWISE)
 right_motor = Motor(Port.A)
 drive_base = DriveBase(left_motor, right_motor, wheel_diameter=56, axle_track=130)
-# Initialize the distance sensor.
-sensor = UltrasonicSensor(Port.C)
 
 # Optional: Register stdin for polling. This allows
 # you to wait for incoming data without blocking.
@@ -42,15 +40,14 @@ while True:
         pass
     else:
         action = 0.0
-    drive_base.straight(action, wait=True)
+    drive_base.straight(action, wait=False)
 
-    wait(200)
+    wait(50) #800 seems to work 
 
     # get current state of the robot
     (left, right) = (left_motor.angle(), right_motor.angle())
     (pitch, roll) = hub.imu.tilt()
-    dist = sensor.distance()
 
     # send current state
-    out_msg = ustruct.pack('!fffff',left, right, pitch, roll, dist)
+    out_msg = ustruct.pack('!ffff',left, right, pitch, roll)
     stdout.buffer.write(out_msg)

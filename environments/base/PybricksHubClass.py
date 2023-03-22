@@ -15,7 +15,7 @@ class PybricksHub:
         self.device = None
         self.client = None
         self.rx_char = None
-        self.rx_queue = asyncio.LifoQueue(maxsize=5)# LifoQueue
+        self.rx_queue = asyncio.LifoQueue()# Queue(maxsize=5)
         self.loop = asyncio.get_event_loop()
         # asyncio.set_event_loop(self.loop)
         
@@ -34,7 +34,7 @@ class PybricksHub:
             self.client = BleakClient(self.device, disconnected_callback=self._handle_disconnect)
 
             # Connect and get services
-            print("Switch on the hub", flush=True)
+            print("Switch on the hub")
             await self.client.connect()
             await self.client.start_notify(self.UART_TX_CHAR_UUID, self._handle_rx)
             nus = self.client.services.get_service(self.UART_SERVICE_UUID)
@@ -51,6 +51,7 @@ class PybricksHub:
 
     def send(self, data: bytes)-> None:
         """ Send data to the hub as bytes. """
+        print("send action", data)
         self.loop.run_until_complete(self._send(data))
 
 
@@ -64,8 +65,11 @@ class PybricksHub:
             await self.disconnect()
 
     def disconnect(self)-> None:
-        self.loop.run_until_complete(self._disconnect())
-        self.loop.close()
+        if self.loop.is_running():
+            for task in asyncio.all_tasks(loop=self.loop):
+                task.cancel()
+            self.loop.run_until_complete(self._disconnect())
+            self.loop.close()
 
     async def _disconnect(self)-> None:
         try:
@@ -104,14 +108,7 @@ class PybricksHub:
 
     
     def read(self)-> bytes:
-        """Read data from the hub and return it as a bytearray."""
-        # try:
-        #     # get data from the queue
-        #     return self.rx_queue.get_nowait()
-        # except asyncio.QueueEmpty:
-        #     # TODO: handle exceptions currently just return zeros
-        #     print("Queue is empty, returning zeros")
-        #     return self.exception_out_data #struct.pack("!fffff", 0.0, 0.0, 0.0, 0.0, 0.0)
+        """Read data from the hub and return it as a bytearray."""       
         return self.loop.run_until_complete(self._read_data())
 
 
@@ -119,19 +116,21 @@ class PybricksHub:
         # TODO: this is not working correctly -- "never awaited disconnect"
         # self.disconnect()
         # Disconnect from the hub.
-        self.loop.run_until_complete(self._disconnect())
+        self.disconnect()
+        
+        # self.loop.run_until_complete(self._disconnect())
 
-        # Wait for the disconnection to complete.
-        timeout = 5  # seconds
-        start_time = self.loop.time()
-        while not self.disconnected:
-            self.loop.run_until_complete(asyncio.sleep(0.1))
-            if self.loop.time() - start_time > timeout:
-                print("Timed out waiting for disconnection to complete.")
-                break
+        # # Wait for the disconnection to complete.
+        # timeout = 5  # seconds
+        # start_time = self.loop.time()
+        # while not self.disconnected:
+        #     self.loop.run_until_complete(asyncio.sleep(0.1))
+        #     if self.loop.time() - start_time > timeout:
+        #         print("Timed out waiting for disconnection to complete.")
+        #         break
 
-        # Close the event loop.
-        self.loop.close()
+        # # Close the event loop.
+        # self.loop.close()
 
     
 # # Create an instance of the PybricksHub class.
