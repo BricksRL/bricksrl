@@ -18,3 +18,12 @@ pip3 install torchrl
 pip3 install hydra-core
 pip install wandb
 ```
+
+
+
+# TODO:
+
+- update base env with hcanges in balance env. 
+- add balance env 
+- run with current changes runaway
+- cleanup base environment 
