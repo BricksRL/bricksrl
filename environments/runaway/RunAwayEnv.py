@@ -89,7 +89,12 @@ class RunAwayEnv(BaseEnv):
         return state
 
     def reset(self) -> np.ndarray:
-        """Reset environment and return initial state."""
+        """
+        Reset the environment and return the initial state.
+
+        Returns:
+            np.ndarray: The initial state of the environment.
+        """
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
 
