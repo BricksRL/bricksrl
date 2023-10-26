@@ -39,12 +39,16 @@ class SACAgent(BaseAgent):
             in_keys=["observation"],
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             activation_class=nn.ReLU,
+            normalization=agent_config.normalization,
+            dropout=agent_config.dropout,
         )
         self.critic = get_critic(
             in_keys=["observation"],
             out_features=1,
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             activation_class=nn.ReLU,
+            normalization=agent_config.normalization,
+            dropout=agent_config.dropout,
         )
 
         # initialize networks

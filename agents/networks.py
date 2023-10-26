@@ -38,7 +38,12 @@ def get_critic(
 
 
 def get_deterministic_actor(
-    action_spec, in_keys=["observation"], num_cells=[256, 256], activation_class=nn.ReLU
+    action_spec,
+    in_keys=["observation"],
+    num_cells=[256, 256],
+    activation_class=nn.ReLU,
+    normalization=None,
+    dropout=0.0,
 ):
     """Returns a deterministic actor network like it is used in DDPG and TD3"""
 
@@ -46,6 +51,8 @@ def get_deterministic_actor(
         "num_cells": num_cells,
         "out_features": action_spec.shape[-1],
         "activation_class": activation_class,
+        "norm_class": normalization,
+        "dropout": dropout,
     }
 
     actor_net = MLP(**actor_net_kwargs)
@@ -77,7 +84,12 @@ def get_deterministic_actor(
 
 
 def get_stochastic_actor(
-    action_spec, in_keys=["observation"], num_cells=[256, 256], activation_class=nn.ReLU
+    action_spec,
+    in_keys=["observation"],
+    num_cells=[256, 256],
+    normalization=None,
+    dropout=0.0,
+    activation_class=nn.ReLU,
 ):
     """Returns a stochastic actor network like it is used in SAC"""
 
@@ -85,6 +97,8 @@ def get_stochastic_actor(
         "num_cells": num_cells,
         "out_features": 2 * action_spec.shape[-1],
         "activation_class": activation_class,
+        "norm_class": normalization,
+        "dropout": dropout,
     }
 
     actor_net = MLP(**actor_net_kwargs)
