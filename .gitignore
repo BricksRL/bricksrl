@@ -128,3 +128,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# wandb
+wandb/
+# hydra
+outputs/

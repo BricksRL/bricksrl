@@ -63,9 +63,14 @@ class PybricksHub:
             print(e)
             await self.disconnect()
 
+
     def disconnect(self)-> None:
-        self.loop.run_until_complete(self._disconnect())
-        self.loop.close()
+            if self.loop.is_running():
+                for task in asyncio.all_tasks(loop=self.loop):
+                    task.cancel()
+                self.loop.run_until_complete(self._disconnect())
+                self.loop.close()
+
 
     async def _disconnect(self)-> None:
         try:

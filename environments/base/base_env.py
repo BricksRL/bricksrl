@@ -2,8 +2,9 @@ import numpy as np
 from environments.base.PybricksHubClass import PybricksHub
 import struct
 import sys
+from gym import Env
 
-class BaseEnv():
+class BaseEnv(Env):
     """ Base class for all environments to communicate with the Pybricks Hub."""
     def __init__(self, action_dim: int, state_dim: int,):
         self.action_dim = action_dim
@@ -55,6 +56,9 @@ class BaseEnv():
         raise NotImplementedError
     
     def _reward(self,):
+        raise NotImplementedError
+    
+    def render(self, ):
         raise NotImplementedError
     
     

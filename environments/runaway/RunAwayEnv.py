@@ -6,6 +6,8 @@ from torchrl.data import BoundedTensorSpec
 
 from environments.base.base_env import BaseEnv
 import time
+import gym
+
 
 class RunAwayEnv(BaseEnv):
     def __init__(self,
@@ -20,13 +22,21 @@ class RunAwayEnv(BaseEnv):
         self.min_distance = min_distance / self.normalize_factor
         
         self.max_episode_steps = max_episode_steps
-        
-        self.action_space = BoundedTensorSpec(minimum=-torch.ones(action_dim),
-                                              maximum=torch.ones(action_dim),
-                                              shape=(action_dim,))
-        self.observation_space = BoundedTensorSpec(minimum=torch.zeros(state_dim),
-                                              maximum=torch.ones(state_dim)*self.max_distance,
-                                              shape=(state_dim,))
+                
+        self.action_space = gym.spaces.Box(low=-np.ones(action_dim),
+                                             high=np.ones(action_dim),
+                                                shape=(action_dim,))
+
+        self.observation_space = gym.spaces.Box(low=np.zeros(state_dim),
+                                                high=np.ones(state_dim)*self.max_distance,
+                                                shape=(state_dim,))
+
+        # self.action_space = BoundedTensorSpec(minimum=-torch.ones(action_dim),
+        #                                       maximum=torch.ones(action_dim),
+        #                                       shape=(action_dim,))
+        # self.observation_space = BoundedTensorSpec(minimum=torch.zeros(state_dim),
+        #                                       maximum=torch.ones(state_dim)*self.max_distance,
+        #                                       shape=(state_dim,))
         
         super().__init__(action_dim=action_dim, state_dim=state_dim)
     
@@ -53,7 +63,7 @@ class RunAwayEnv(BaseEnv):
         time.sleep(0.4)
         self.observation = self.normalize_state(self.read_from_hub())
 
-        return self.observation
+        return self.observation.squeeze()
     
     def reward(self,
                state: np.ndarray,
@@ -100,5 +110,5 @@ class RunAwayEnv(BaseEnv):
         if self.episode_step_iter >= self.max_episode_steps:
             done = True
         
-        return self.observation, reward, done, {}
+        return self.observation.squeeze(), reward, done, {}
     

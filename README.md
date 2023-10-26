@@ -12,5 +12,9 @@
 conda create --name lego python=3.8
 conda activate lego
 pip install pybricksdev --pre
-conda install pytorch torchvision torchaudio cudatoolkit=11.6 -c pytorch -c conda-forge
+pip3 install torch torchvision torchaudio
+pip3 install tensordict
+pip3 install torchrl
+pip3 install hydra-core
+pip install wandb
 ```
