@@ -2,8 +2,25 @@ import torch
 from torchrl.envs.utils import set_exploration_mode
 from tensordict.tensordict import TensorDict
 
+import torch
+from torchbeast.core.tensor_dict import TensorDict
+from torchbeast.core.util import set_exploration_mode
+
 class BaseAgent():
-    """ Implements a base agent used to interact with the lego robots"""
+    """ Implements a base agent used to interact with the lego robots.
+
+    Args:
+        state_space (gym.Space): The state space of the environment.
+        action_space (gym.Space): The action space of the environment.
+        device (torch.device): The device to use for computation.
+
+    Attributes:
+        state_space (gym.Space): The state space of the environment.
+        action_space (gym.Space): The action space of the environment.
+        state_dim (int): The dimension of the state space.
+        action_dim (int): The dimension of the action space.
+        device (torch.device): The device to use for computation.
+    """
     def __init__(self, state_space, action_space, device):
         
         self.state_space = state_space
@@ -14,7 +31,11 @@ class BaseAgent():
         self.device = device
     
     def get_dummy_td(self):
-        """ Returns a dummy tensor dict"""
+        """ Returns a dummy tensor dict for testing purposes.
+
+        Returns:
+            TensorDict: A dictionary of tensors representing a batch of data.
+        """
         batch=8
 
         # create a tensordict
@@ -38,7 +59,11 @@ class BaseAgent():
         return td
 
     def init_nets(self, model):
-        """ Initializes the networks"""
+        """ Initializes the networks with random data.
+
+        Args:
+            model (list): A list of PyTorch models to initialize.
+        """
         with torch.no_grad(), set_exploration_mode("random"):
             td = self.get_dummy_td()
             td = td.to(self.device)
@@ -47,10 +72,21 @@ class BaseAgent():
         del td
     
     def get_action(self, state):
-        """ Returns an action given a state"""
+        """ Returns an action given a state.
+
+        Args:
+            state (np.ndarray): The current state of the environment.
+
+        Returns:
+            np.ndarray: The action to take in the environment.
+        """
         raise NotImplementedError
     
     def train(self,):
-        """ Trains the agent"""
+        """ Trains the agent.
+
+        Raises:
+            NotImplementedError: This method must be implemented by a subclass.
+        """
         raise NotImplementedError
     

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from tensordict.nn.distributions import NormalParamExtractor
 
 from torchrl.modules import (
     AdditiveGaussianWrapper,
@@ -9,11 +10,15 @@ from torchrl.modules import (
     ValueOperator,
 )
 from torchrl.modules.distributions import TanhDelta, TanhNormal
-from tensordict.nn.distributions import NormalParamExtractor
 
 
-def get_critic(in_keys=["observation"], num_cells=[256, 256], out_features=1, activation_class=nn.ReLU):
-    """ Returns a critic network"""
+def get_critic(
+    in_keys=["observation"],
+    num_cells=[256, 256],
+    out_features=1,
+    activation_class=nn.ReLU,
+):
+    """Returns a critic network"""
     # Define Critic Network
     qvalue_net_kwargs = {
         "num_cells": num_cells,
@@ -31,9 +36,12 @@ def get_critic(in_keys=["observation"], num_cells=[256, 256], out_features=1, ac
     )
     return qvalue
 
-def get_deterministic_actor(action_spec, in_keys=["observation"], num_cells=[256, 256], activation_class=nn.ReLU):
-    """ Returns a deterministic actor network like it is used in DDPG and TD3"""
-     
+
+def get_deterministic_actor(
+    action_spec, in_keys=["observation"], num_cells=[256, 256], activation_class=nn.ReLU
+):
+    """Returns a deterministic actor network like it is used in DDPG and TD3"""
+
     actor_net_kwargs = {
         "num_cells": num_cells,
         "out_features": action_spec.shape[-1],
@@ -41,7 +49,7 @@ def get_deterministic_actor(action_spec, in_keys=["observation"], num_cells=[256
     }
 
     actor_net = MLP(**actor_net_kwargs)
-        
+
     dist_class = TanhDelta
     dist_kwargs = {
         "min": action_spec.space.minimum,
@@ -67,9 +75,12 @@ def get_deterministic_actor(action_spec, in_keys=["observation"], num_cells=[256
     )
     return actor
 
-def get_stochastic_actor(action_spec, in_keys=["observation"], num_cells=[256, 256], activation_class=nn.ReLU):
-    """ Returns a stochastic actor network like it is used in SAC"""
-    
+
+def get_stochastic_actor(
+    action_spec, in_keys=["observation"], num_cells=[256, 256], activation_class=nn.ReLU
+):
+    """Returns a stochastic actor network like it is used in SAC"""
+
     actor_net_kwargs = {
         "num_cells": num_cells,
         "out_features": 2 * action_spec.shape[-1],
