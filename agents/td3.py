@@ -98,6 +98,8 @@ class TD3Agent(BaseAgent):
         # general stats
         self.collected_transitions = 0
         self.episodes = 0
+        # td stats for delayed update
+        self.total_updates = 0
 
     def get_agent_statedict(self):
         """Save agent"""
@@ -151,26 +153,32 @@ class TD3Agent(BaseAgent):
 
     def train(self, batch_size=64, num_updates=1):
         """Train the agent"""
+        log_data = {}
         for i in range(num_updates):
             # Sample a batch from the replay buffer
             batch = self.replay_buffer.sample(batch_size)
-            # Compute TD3 Loss
-            loss = self.loss_module(batch)
+
             # Update Critic Network
+            q_loss, q_loss_metadata = self.loss_module.value_loss(batch)
             self.optimizer_critic.zero_grad()
-            loss["loss_qvalue"].backward(retain_graph=True)
+            q_loss.backward()
             self.optimizer_critic.step()
+            log_data.update(q_loss_metadata)
+            log_data.update({"critic_loss": q_loss.item()})
             # Update Actor Network
-            if i % 2 == 0:
+            if self.total_updates % 2 == 0:
+                actor_loss, actor_loss_metadata = self.loss_module.actor_loss(batch)
                 self.optimizer_actor.zero_grad()
-                loss["loss_actor"].backward()
+                actor_loss.backward()
                 self.optimizer_actor.step()
                 # Update Target Networks
                 self.target_net_updater.step()
+                log_data.update(actor_loss_metadata)
+                log_data.update({"actor_loss": actor_loss.item()})
+
             # Update Prioritized Replay Buffer
             if isinstance(self.replay_buffer, TensorDictPrioritizedReplayBuffer):
-                self.replay_buffer.update_priorities(
-                    batch["indices"],
-                    loss["critic_loss"].detach().cpu().numpy(),
-                )
-        return loss
+                self.replay_buffer.update_priorities(batch)
+            self.total_updates += 1
+
+        return log_data
