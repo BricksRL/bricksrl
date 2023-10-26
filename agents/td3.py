@@ -72,7 +72,7 @@ class TD3Agent(BaseAgent):
         )
         # Define Target Network Updater
         self.target_net_updater = SoftUpdate(
-            self.loss_module, agent_config.soft_update_eps
+            self.loss_module, eps=agent_config.soft_update_eps
         )
         self.target_net_updater.init_()
 

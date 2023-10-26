@@ -56,7 +56,7 @@ class SACAgent(BaseAgent):
 
         # define loss function
         self.loss_module = SACLoss(
-            actor_network=self.actor,   
+            actor_network=self.actor,
             qvalue_network=self.critic,
             delay_qvalue=True,
             value_network=None,  # None to use SAC version 2
@@ -65,7 +65,9 @@ class SACAgent(BaseAgent):
             loss_function=agent_config.loss_function,
         )
         # Define Target Network Updater
-        self.target_net_updater = SoftUpdate(self.loss_module, agent_config.soft_update_eps)
+        self.target_net_updater = SoftUpdate(
+            self.loss_module, eps=agent_config.soft_update_eps
+        )
         self.target_net_updater.init_()
 
         # Define Replay Buffer
