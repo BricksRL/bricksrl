@@ -21,11 +21,16 @@ def make_env(config):
     Returns:
         A tuple containing the new environment, its action space, and its state space.
     """
-    env = make(name=config.env.name, max_episode_steps=config.env.max_episode_steps)
+    env = make(name=config.env.name, env_conf=config.env)
 
-    env = StackObservationsWrapper(env, stack_size=4)
+    if config.env.frame_stack > 1:
+        env = StackObservationsWrapper(env, stack_size=config.env.frame_stack)
+    if config.env.action_filter < 1:
+        env = ActionFilterWrapper(
+            env, current_action_influence=config.env.action_filter
+        )
+    
     # env = FrameSkipWrapper(env, frame_skip=4)
-    env = ActionFilterWrapper(env, current_action_influence=0.8)
 
     action_space = env.action_space
     state_space = env.observation_space

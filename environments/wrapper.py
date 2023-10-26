@@ -68,6 +68,19 @@ class StartControlWrapper(BaseWrapper):
 
 
 class StackObservationsWrapper(gym.Wrapper):
+    """
+    A wrapper that stacks observations from the environment to create a history of observations.
+
+    Args:
+        env (gym.Env): The environment to wrap.
+        stack_size (int): The number of observations to stack.
+
+    Attributes:
+        stack_size (int): The number of observations to stack.
+        observation_space (gym.spaces.Box): The observation space of the wrapped environment.
+        observation_buffer (numpy.ndarray): The buffer used to store the stacked observations.
+    """
+
     def __init__(self, env: Env, stack_size: int = 5):
         super().__init__(env)
         self.stack_size = stack_size
@@ -81,11 +94,26 @@ class StackObservationsWrapper(gym.Wrapper):
         )
 
     def reset(self):
+        """
+        Reset the environment and the observation buffer.
+
+        Returns:
+            numpy.ndarray: The stacked observation buffer.
+        """
         obs = self.env.reset()
         self.observation_buffer[..., : self.env.observation_space.shape[-1]] = obs
         return self.observation_buffer
 
     def step(self, action):
+        """
+        Take a step in the environment and update the observation buffer.
+
+        Args:
+            action (numpy.ndarray): The action to take.
+
+        Returns:
+            Tuple[numpy.ndarray, float, bool, dict]: The stacked observation buffer, reward, done flag, and info dictionary.
+        """
         obs, reward, done, info = self.env.step(action)
         self.observation_buffer[
             ..., : -self.env.observation_space.shape[-1]
@@ -95,11 +123,27 @@ class StackObservationsWrapper(gym.Wrapper):
 
 
 class ActionFilterWrapper(gym.ActionWrapper):
-    def __init__(self, env: Env, current_action_influence: float = 0.2):
+    """
+    A gym environment wrapper that filters actions based on a previous action.
+
+    Args:
+        env (gym.Env): The environment to wrap.
+        current_action_influence (float): The influence of the current action on the filtered action.
+    """
+    def __init__(self, env: gym.Env, current_action_influence: float = 0.2):
         super().__init__(env)
         self.current_action_influence = current_action_influence
 
     def action(self, action: np.array) -> np.array:
+        """
+        Filters the given action based on the previous action.
+
+        Args:
+            action (np.array): The action to filter.
+
+        Returns:
+            np.array: The filtered action.
+        """
         filtered_action = (
             self.current_action_influence * action
             + (1 - self.current_action_influence) * self.prev_action
@@ -108,21 +152,56 @@ class ActionFilterWrapper(gym.ActionWrapper):
         return filtered_action
 
     def reset(self):
+        """
+        Resets the environment and the previous action.
+
+        Returns:
+            The initial observation.
+        """
         self.prev_action = self.action_space.sample()
         return self.env.reset()
 
 
 class FrameSkipWrapper(gym.Wrapper):
+    """
+    A gym environment wrapper that skips frames to speed up training.
+
+    Args:
+        env (gym.Env): The environment to wrap.
+        frame_skip (int): The number of frames to skip between each action.
+
+    Attributes:
+        frame_skip (int): The number of frames to skip between each action.
+        current_step (int): The current step count.
+    """
     def __init__(self, env, frame_skip):
         super().__init__(env)
         self.frame_skip = frame_skip
         self.current_step = 0
 
     def reset(self):
+        """
+        Reset the environment and the current step count.
+
+        Returns:
+            observation (object): The initial observation of the environment.
+        """
         self.current_step = 0
         return self.env.reset()
 
     def step(self, action):
+        """
+        Take an action in the environment and skip frames.
+
+        Args:
+            action (object): The action to take in the environment.
+
+        Returns:
+            observation (object): The new observation of the environment.
+            total_reward (float): The total reward accumulated over the skipped frames.
+            done (bool): Whether the episode is done.
+            info (dict): Additional information about the environment.
+        """
         total_reward = 0
         done = False
         for i in range(self.frame_skip):

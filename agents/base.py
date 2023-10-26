@@ -2,10 +2,6 @@ import torch
 from torchrl.envs.utils import set_exploration_mode
 from tensordict.tensordict import TensorDict
 
-import torch
-from torchbeast.core.tensor_dict import TensorDict
-from torchbeast.core.util import set_exploration_mode
-
 class BaseAgent():
     """ Implements a base agent used to interact with the lego robots.
 
