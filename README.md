@@ -23,7 +23,8 @@ pip install wandb
 
 # TODO:
 
-- update base env with hcanges in balance env. 
+- update base env with changes in balance env. 
 - add balance env 
-- run with current changes runaway
-- cleanup base environment 
+- cleanup base environment
+- work on offline data and offline training
+- integrate CatRobot environment 
