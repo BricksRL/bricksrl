@@ -17,17 +17,17 @@ def get_critic(
     num_cells=[256, 256],
     out_features=1,
     activation_class=nn.ReLU,
+    normalization=None,
+    dropout=0.0,
 ):
     """Returns a critic network"""
-    # Define Critic Network
-    qvalue_net_kwargs = {
-        "num_cells": num_cells,
-        "out_features": out_features,
-        "activation_class": activation_class,
-    }
 
     qvalue_net = MLP(
-        **qvalue_net_kwargs,
+        num_cells=num_cells,
+        out_features=out_features,
+        activation_class=activation_class,
+        norm_class=None if normalization == "None" else normalization,
+        dropout=dropout,
     )
 
     qvalue = ValueOperator(
@@ -47,15 +47,13 @@ def get_deterministic_actor(
 ):
     """Returns a deterministic actor network like it is used in DDPG and TD3"""
 
-    actor_net_kwargs = {
-        "num_cells": num_cells,
-        "out_features": action_spec.shape[-1],
-        "activation_class": activation_class,
-        "norm_class": normalization,
-        "dropout": dropout,
-    }
-
-    actor_net = MLP(**actor_net_kwargs)
+    actor_net = MLP(
+        num_cells=num_cells,
+        out_features=action_spec.shape[-1],
+        activation_class=activation_class,
+        norm_class=None if normalization == "None" else normalization,
+        dropout=dropout,
+    )
 
     dist_class = TanhDelta
     dist_kwargs = {
@@ -93,15 +91,13 @@ def get_stochastic_actor(
 ):
     """Returns a stochastic actor network like it is used in SAC"""
 
-    actor_net_kwargs = {
-        "num_cells": num_cells,
-        "out_features": 2 * action_spec.shape[-1],
-        "activation_class": activation_class,
-        "norm_class": normalization,
-        "dropout": dropout,
-    }
-
-    actor_net = MLP(**actor_net_kwargs)
+    actor_net = MLP(
+        num_cells=num_cells,
+        out_features=2 * action_spec.shape[-1],
+        activation_class=activation_class,
+        norm_class=None if normalization == "None" else normalization,
+        dropout=dropout,
+    )
 
     dist_class = TanhNormal
     dist_kwargs = {

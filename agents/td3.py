@@ -7,7 +7,7 @@ from torchrl.data import (
     TensorDictPrioritizedReplayBuffer,
     TensorDictReplayBuffer,
 )
-from torchrl.data.replay_buffers.storages import LazyTensorStorage
+from torchrl.data.replay_buffers.storages import LazyMemmapStorage, LazyTensorStorage
 from torchrl.modules import AdditiveGaussianWrapper
 from torchrl.objectives import SoftUpdate
 from torchrl.objectives.td3 import TD3Loss
@@ -27,7 +27,9 @@ def initialize(net, std=0.02):
 
 class TD3Agent(BaseAgent):
     def __init__(self, state_space, action_space, agent_config, device="cpu"):
-        super(TD3Agent, self).__init__(state_space, action_space, device)
+        super(TD3Agent, self).__init__(
+            state_space, action_space, agent_config.name, device
+        )
 
         # rewrite action spec to bounded tensor spec
         action_space = BoundedTensorSpec(
@@ -70,6 +72,7 @@ class TD3Agent(BaseAgent):
         self.loss_module = TD3Loss(
             actor_network=self.actor,
             qvalue_network=self.critic,
+            action_spec=action_space,
             num_qvalue_nets=2,
             gamma=agent_config.gamma,
             loss_function=agent_config.loss_function,
@@ -82,7 +85,10 @@ class TD3Agent(BaseAgent):
 
         # Define Replay Buffer
         self.replay_buffer = self.create_replay_buffer(
-            prb=False, buffer_size=100_000, device=device
+            batch_size=agent_config.batch_size,
+            prb=False,
+            buffer_size=100_000,
+            device=device,
         )
 
         # Define Optimizer
@@ -117,13 +123,23 @@ class TD3Agent(BaseAgent):
         print("Replay Buffer loaded")
         print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
 
-    def create_replay_buffer(self, prb=False, buffer_size=100000, device="cpu"):
+    def create_replay_buffer(
+        self,
+        batch_size=256,
+        prb=False,
+        buffer_size=100000,
+        buffer_scratch_dir=None,
+        device="cpu",
+        prefetch=3,
+    ):
+        """Create replay buffer"""
+        # TODO: make this part of base off policy agent
         if prb:
             replay_buffer = TensorDictPrioritizedReplayBuffer(
                 alpha=0.7,
                 beta=0.5,
                 pin_memory=False,
-                prefetch=3,
+                prefetch=1,
                 storage=LazyTensorStorage(
                     buffer_size,
                     device=device,
@@ -132,11 +148,13 @@ class TD3Agent(BaseAgent):
         else:
             replay_buffer = TensorDictReplayBuffer(
                 pin_memory=False,
-                prefetch=3,
-                storage=LazyTensorStorage(
+                prefetch=prefetch,
+                storage=LazyMemmapStorage(
                     buffer_size,
+                    scratch_dir=buffer_scratch_dir,
                     device=device,
                 ),
+                batch_size=batch_size,
             )
         return replay_buffer
 
@@ -159,6 +177,7 @@ class TD3Agent(BaseAgent):
         """Train the agent"""
         log_data = {}
         for i in range(num_updates):
+            self.total_updates += 1
             # Sample a batch from the replay buffer
             batch = self.replay_buffer.sample(batch_size)
 
@@ -171,18 +190,17 @@ class TD3Agent(BaseAgent):
             log_data.update({"critic_loss": q_loss.item()})
             # Update Actor Network
             if self.total_updates % 2 == 0:
-                actor_loss, actor_loss_metadata = self.loss_module.actor_loss(batch)
+                actor_loss, *_ = self.loss_module.actor_loss(batch)
                 self.optimizer_actor.zero_grad()
                 actor_loss.backward()
                 self.optimizer_actor.step()
                 # Update Target Networks
                 self.target_net_updater.step()
-                log_data.update(actor_loss_metadata)
                 log_data.update({"actor_loss": actor_loss.item()})
 
             # Update Prioritized Replay Buffer
             if isinstance(self.replay_buffer, TensorDictPrioritizedReplayBuffer):
                 self.replay_buffer.update_priorities(batch)
-            self.total_updates += 1
+            
 
         return log_data

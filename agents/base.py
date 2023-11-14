@@ -17,8 +17,9 @@ class BaseAgent():
         action_dim (int): The dimension of the action space.
         device (torch.device): The device to use for computation.
     """
-    def __init__(self, state_space, action_space, device):
+    def __init__(self, state_space, action_space, agent_name, device):
         
+        self.name = agent_name
         self.state_space = state_space
         self.action_space = action_space
         self.state_dim = state_space.shape[0]

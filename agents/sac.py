@@ -7,7 +7,7 @@ from torchrl.data import (
     TensorDictPrioritizedReplayBuffer,
     TensorDictReplayBuffer,
 )
-from torchrl.data.replay_buffers.storages import LazyTensorStorage
+from torchrl.data.replay_buffers.storages import LazyMemmapStorage, LazyTensorStorage
 from torchrl.objectives import SoftUpdate
 from torchrl.objectives.sac import SACLoss
 
@@ -26,7 +26,7 @@ def initialize(net, std=0.02):
 
 class SACAgent(BaseAgent):
     def __init__(self, state_space, action_space, agent_config, device="cpu"):
-        super(SACAgent, self).__init__(state_space, action_space, device)
+        super(SACAgent, self).__init__(state_space, action_space, agent_config.name, device)
 
         # rewrite action spec to bounded tensor spec
         action_space = BoundedTensorSpec(
@@ -75,7 +75,7 @@ class SACAgent(BaseAgent):
         self.target_net_updater.init_()
 
         # Define Replay Buffer
-        self.replay_buffer = self.create_replay_buffer(
+        self.replay_buffer = self.create_replay_buffer(batch_size=agent_config.batch_size,
             prb=False, buffer_size=100_000, device=device
         )
 
@@ -109,7 +109,17 @@ class SACAgent(BaseAgent):
         print("Replay Buffer loaded")
         print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
 
-    def create_replay_buffer(self, prb=False, buffer_size=100000, device="cpu"):
+    def create_replay_buffer(
+        self,
+        batch_size=256,
+        prb=False,
+        buffer_size=100000,
+        buffer_scratch_dir=None,
+        device="cpu",
+        prefetch=3,
+    ):
+        """Create replay buffer"""
+        # TODO: make this part of base off policy agent
         if prb:
             replay_buffer = TensorDictPrioritizedReplayBuffer(
                 alpha=0.7,
@@ -124,11 +134,13 @@ class SACAgent(BaseAgent):
         else:
             replay_buffer = TensorDictReplayBuffer(
                 pin_memory=False,
-                prefetch=1,
-                storage=LazyTensorStorage(
+                prefetch=prefetch,
+                storage=LazyMemmapStorage(
                     buffer_size,
+                    scratch_dir=buffer_scratch_dir,
                     device=device,
                 ),
+                batch_size=batch_size,
             )
         return replay_buffer
 

@@ -13,7 +13,7 @@ from environments import make_env
 @hydra.main(version_base=None, config_path="./conf", config_name="config")
 def run(cfg : DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
-    
+    verbose = cfg.verbose
     # make environment.
     env, action_space, state_space = make_env(cfg)
     
@@ -43,23 +43,26 @@ def run(cfg : DictConfig) -> None:
         while not done:
             step_start_time = time.time()
             action = agent.get_action(state)
-            print("New step")
-            print("State: ", state)
-            print("Action: ", action)
+            if verbose == 1:
+                print("New step")
+                print("State: ", state)
+                print("Action: ", action)
             next_state, reward, done, info = env.step(action)
-            print("Done: ", done)
             transition = create_transition_td(state, action, np.array([reward]), next_state, np.array([done]))
             agent.add_experience(transition)
             state = next_state
             ep_return += reward
             loss_info = agent.train(batch_size=cfg.agent.batch_size,
                         num_updates=cfg.agent.num_updates)
-            print("Step time: ", time.time() - step_start_time)
-            print("---"*5)
+            if verbose == 1:
+                print("Done: ", done)
+                print("Step time: ", time.time() - step_start_time)
+                print("---"*5)
         if quit:
             break
-
-        print("Episode: ", e, "Return: ", ep_return)
+        
+        if verbose == 1:
+            print("Episode: ", e, "Return: ", ep_return)
         # Metrics Logging
         log_dict = {"epoch": e,
                     "reward": ep_return,
