@@ -1,5 +1,6 @@
 from environments.donothing.donothing import DoNothingEnv
-from environments.runaway.RunAwayEnv import RunAwayEnv
+from environments.runaway_v0.RunAwayEnv import RunAwayEnv_v0
+from environments.runaway_v1.RunAwayEnv import RunAwayEnv_v1
 from environments.utils import make
 
 from environments.wrapper import (

@@ -50,7 +50,7 @@ class BaseEnv(Env):
         assert (
             action.shape[0] == self.action_dim
         ), "Action shape does not match action dimension."
-        byte_action = struct.pack(self.action_format_str, action)
+        byte_action = struct.pack(self.action_format_str, *action)
         self.hub.send(byte_action)
 
     def read_from_hub(self) -> np.array:

@@ -3,12 +3,11 @@ from typing import Tuple
 
 import gym
 import numpy as np
-import torch
 
 from environments.base.base_env import BaseEnv
 
 
-class RunAwayEnv(BaseEnv):
+class RunAwayEnv_v0(BaseEnv):
     """
     A reinforcement learning environment for training agents to get away from a wall.
 
@@ -34,6 +33,7 @@ class RunAwayEnv(BaseEnv):
         reward(state: np.ndarray, action: np.ndarray, next_state: np.ndarray) -> Tuple[float, bool]: Calculates the reward based on the change in distance to the wall.
         step(action: np.ndarray) -> Tuple[np.ndarray, float, bool, dict]: Performs the given action and returns the next state, reward, and done status.
     """
+
     def __init__(
         self,
         max_episode_steps: int = 10,
@@ -41,7 +41,7 @@ class RunAwayEnv(BaseEnv):
         min_distance: float = 40,
         sleep_time: float = 0.2,
     ):
-        action_dim = 1
+        action_dim = 1 # to control the wheel motors together
         state_dim = 5  # 4 sensors (left,right,pitch,roll) + 1 distance to the wall
         self.sleep_time = sleep_time
         self.normalize_factor = 1000.0

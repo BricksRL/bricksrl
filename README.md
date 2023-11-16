@@ -19,6 +19,10 @@ pip3 install hydra-core
 pip install wandb
 ```
 
+## Client 
+Update your client script on the [PyBricks Hub](https://beta.pybricks.com/) whenever you want to run a new environment
+
+
 ## Helpers:
 
 #### [PyBricks GPT](https://chat.openai.com/g/g-YZYA1j4yF-pybrics-lego-doc) 

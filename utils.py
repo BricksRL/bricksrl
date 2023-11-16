@@ -90,7 +90,7 @@ def prefill_buffer(env, agent, num_episodes):
             state = env.reset()
             done = False
             while not done:
-                action = np.random.uniform(-1, 1, size=1)
+                action = np.random.uniform(-1, 1, size=agent.action_space.shape[0])
                 print("Random action: ", action)
                 next_state, reward, done, info = env.step(action)
                 transition = create_transition_td(
