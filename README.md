@@ -19,6 +19,9 @@ pip3 install hydra-core
 pip install wandb
 ```
 
+## Helpers:
+
+#### [PyBricks GPT](https://chat.openai.com/g/g-YZYA1j4yF-pybrics-lego-doc) 
 
 
 # TODO:
@@ -27,6 +30,9 @@ pip install wandb
     - update base env with changes in balance env. 
     - add balance env
     - cleanup base environment
+        - addons?
+        - runaway-v0 as it currently is
+        - runaway-v1 with independent wheel control
 
 - Milestone Offline Datasets [ ]
     - collect dataset for wall-distance/run away [ ]
@@ -47,4 +53,3 @@ pip install wandb
         - Grab cube 
         - more ? 
     - Create offline dataset
-    
