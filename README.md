@@ -23,8 +23,28 @@ pip install wandb
 
 # TODO:
 
-- update base env with changes in balance env. 
-- add balance env 
-- cleanup base environment
-- work on offline data and offline training
-- integrate CatRobot environment 
+- Milestone Cleanup []
+    - update base env with changes in balance env. 
+    - add balance env
+    - cleanup base environment
+
+- Milestone Offline Datasets [ ]
+    - collect dataset for wall-distance/run away [ ]
+    - create datasets that can be loaded for torchrl offline datasets [ ]
+    - do offline training for run-away robot []
+        - create script for offline training and evaluation [ ]
+
+- Milestone CatRobot
+    - integrate CatRobot environment
+    - create CatRobot Env [ ]
+    - create CatRobot offlline datasets []
+    - other ideas but walking max distance? [ ]
+
+- Milestone RoboArm 
+    - integrate RoboArm environment [ ]
+    - Possible task? 
+        - reach some point e.g. ReachingEnv
+        - Grab cube 
+        - more ? 
+    - Create offline dataset
+    
