@@ -35,8 +35,8 @@ Update your client script on the [PyBricks Hub](https://beta.pybricks.com/) when
     - add balance env
     - cleanup base environment
         - addons?
-        - runaway-v0 as it currently is
-        - runaway-v1 with independent wheel control
+        - runaway-v0 as it currently is [X]
+        - runaway-v1 with independent wheel control [still needs to get fixed]
 
 - Milestone Offline Datasets [ ]
     - collect dataset for wall-distance/run away [ ]
