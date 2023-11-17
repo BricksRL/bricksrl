@@ -31,14 +31,13 @@ Update your client script on the [PyBricks Hub](https://beta.pybricks.com/) when
 # TODO:
 
 - Milestone Cleanup []
-    - update base env with changes in balance env. 
-    - add balance env
     - cleanup base environment
-        - addons?
+        - addons? balance?
         - runaway-v0 as it currently is [X]
         - runaway-v1 with independent wheel control [X]
             - might play around with reward function to stand still when max dist reached
             - if reward done well could be maybe applied to a labyrinth ?
+    - fix disconnect / reconnect error [ ]
 
 - Milestone Offline Datasets [ ]
     - collect dataset for wall-distance/run away [ ]
