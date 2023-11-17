@@ -1,0 +1,13 @@
+name: sac
+lr: 3e-4
+batch_size: 128
+num_updates: 10
+prefill_episodes: 5
+
+num_cells: 256
+gamma: 0.99
+soft_update_eps: 0.995
+loss_function: smooth_l1
+
+normalization: None
+dropout: 0.0

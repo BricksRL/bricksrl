@@ -1,0 +1,14 @@
+# Base Config to run all examples
+
+# logging
+run_name: ""
+mode: "offline"
+verbose: 0
+
+device: "cpu"
+episodes: 200
+
+defaults:
+  - _self_
+  - agent: sac
+  - env: runaway-v1
