@@ -5,17 +5,22 @@ from pybricks.hubs import InventorHub
 from pybricks.pupdevices import Motor, UltrasonicSensor
 from pybricks.parameters import Port, Direction
 from pybricks.tools import wait
+from pybricks.robotics import DriveBase
 
 # Standard MicroPython modules
 from usys import stdin, stdout
 from uselect import poll
 import ustruct
+from micropython import kbd_intr
+
+kbd_intr(-1)
 
 hub = InventorHub()
 
 # Initialize the drive base.
 left_motor = Motor(Port.E, Direction.COUNTERCLOCKWISE)
 right_motor = Motor(Port.A)
+#drive_base = DriveBase(left_motor, right_motor, wheel_diameter=56, axle_track=130)
 # Initialize the distance sensor.
 sensor = UltrasonicSensor(Port.C)
 
@@ -38,10 +43,11 @@ while True:
     else:
         action = 0.0
     # Apply action to each motor
-    left_motor.run_angle(speed=200, rotation_angle=left_action_value * 100, wait=True)
-    right_motor.run_angle(speed=200, rotation_angle=right_action_value * 100, wait=True)
 
-    wait(200)
+    left_motor.run_angle(speed=200, rotation_angle=left_action_value * 100, wait=False)
+    right_motor.run_angle(speed=200, rotation_angle=right_action_value * 100, wait=False)
+
+    wait(50)  # Small delay 
 
     # get current state of the robot
     (left, right) = (left_motor.angle(), right_motor.angle())
