@@ -19,7 +19,9 @@ class BaseEnv(Env):
         self,
         action_dim: int,
         state_dim: int,
-    ):
+        verbose: bool = False,
+    ):  
+        self.verbose = verbose
         self.action_dim = action_dim
         self.state_dim = state_dim
 
@@ -51,6 +53,9 @@ class BaseEnv(Env):
             action.shape[0] == self.action_dim
         ), "Action shape does not match action dimension."
         byte_action = struct.pack(self.action_format_str, *action)
+        if self.verbose:
+            print("Sending data size: ", len(byte_action))
+            print("Sending data: ", byte_action)
         self.hub.send(byte_action)
 
     def read_from_hub(self) -> np.array:
@@ -61,9 +66,10 @@ class BaseEnv(Env):
             np.array: The current state of the environment as a numpy array.
         """
         byte_state = self.hub.read()
-        print("Reading data size: ", sys.getsizeof(byte_state))
-        print("Reading data: ", byte_state)
-        print("len: ", len(byte_state))
+        if self.verbose:
+            print("Reading data size: ", sys.getsizeof(byte_state))
+            print("Reading data: ", byte_state)
+            print("len: ", len(byte_state))
         # assert sys.getsizeof(byte_state) == 53, f"State has size {sys.getsizeof(byte_state)} but should have size 53."
         if len(byte_state) != self.expected_bytesize:
             print(

@@ -17,7 +17,6 @@ class PybricksHub:
         self.rx_char = None
         self.rx_queue = asyncio.LifoQueue(maxsize=5)# LifoQueue
         self.loop = asyncio.get_event_loop()
-        # asyncio.set_event_loop(self.loop)
         
         self.exception_out_data = struct.pack(out_format_str, *([0.0] * state_dim))
         
@@ -138,21 +137,3 @@ class PybricksHub:
         # Close the event loop.
         self.loop.close()
 
-    
-# # Create an instance of the PybricksHub class.
-# hub = PybricksHub()
-
-# # Connect to the hub.
-# hub.connect()
-
-# # Send a few messages to the hub.
-# for i in range(5):
-#     byte_action = struct.pack("!f", -0.5)
-#     hub.send(byte_action)
-#     time.sleep(1)
-#     data = hub.read()
-#     print("Reading data: ", struct.unpack("!fffff", data))
-#     time.sleep(1)
-#     byte_action = struct.pack("!f", 0.5)
-#     hub.send(byte_action)
-#     time.sleep(1)

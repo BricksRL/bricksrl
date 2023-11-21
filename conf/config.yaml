@@ -11,4 +11,4 @@ episodes: 200
 defaults:
   - _self_
   - agent: sac
-  - env: runaway-v1
+  - env: walker-v0
