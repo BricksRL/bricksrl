@@ -46,7 +46,8 @@ class WalkerEnv_v0(BaseEnv):
     ):
         action_dim = 4 # (lf_value, lb_value, rf_value, rb_value)
         # angles are in range [-180, 179]
-        state_dim = 8  # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, dist)
+
+        state_dim = 7  # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, dist)
         self.sleep_time = sleep_time
         self.normalize_factor = 1000.0
         self.max_distance = max_distance
@@ -118,7 +119,11 @@ class WalkerEnv_v0(BaseEnv):
 
         """
 
+        # TODO: maybe is better to make the robot increase the distance
+        # TODO: half cheetah penalizes high actions check reward!
+        # TODO: use roll and pitch to penalize robot for falling down and set done to True
         done = False
+        # pitch and roll need to stay in range [-50, 50] outside done = True
 
         if (
             next_state[:, -1] <= self.min_distance

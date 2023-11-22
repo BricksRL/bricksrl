@@ -36,7 +36,15 @@ We created a [PyBricks GPT](https://chat.openai.com/g/g-YZYA1j4yF-pybrics-lego-d
         - runaway-v1 with independent wheel control [X]
             - might play around with reward function to stand still when max dist reached
             - if reward done well could be maybe applied to a labyrinth ?
-    - fix disconnect / reconnect error [ ]
+    - fix disconnect / reconnect error [X]
+
+
+- Milestone CatRobot
+    - integrate CatRobot environment
+    - create CatRobot Env [X]
+    - create CatRobot offlline datasets []
+    - other ideas but walking max distance? [ ]
+
 
 - Milestone Offline Datasets [ ]
     - collect dataset for wall-distance/run away [ ]
@@ -44,11 +52,6 @@ We created a [PyBricks GPT](https://chat.openai.com/g/g-YZYA1j4yF-pybrics-lego-d
     - do offline training for run-away robot []
         - create script for offline training and evaluation [ ]
 
-- Milestone CatRobot
-    - integrate CatRobot environment
-    - create CatRobot Env [ ]
-    - create CatRobot offlline datasets []
-    - other ideas but walking max distance? [ ]
 
 - Milestone RoboArm 
     - integrate RoboArm environment [ ]
