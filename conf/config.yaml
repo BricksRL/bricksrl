@@ -3,7 +3,7 @@
 # logging
 run_name: ""
 mode: "offline"
-verbose: 0
+verbose: 1
 
 device: "cpu"
 episodes: 200

@@ -45,7 +45,9 @@ class WalkerEnv_v0(BaseEnv):
         verbose: bool = False,
     ):
         action_dim = 4 # (lf_value, lb_value, rf_value, rb_value)
-        # angles are in range [-180, 179]
+        # angles are in range [-180, 179] 
+        # TODO: we maybe have to decrease this range. Its not needed to have the full range and might be more difficult to learn
+        # -50/-40 is the most extended to the back. ~ 100/110 is the most upright position so in a range of that might be better
 
         state_dim = 7  # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, dist)
         self.sleep_time = sleep_time
@@ -102,10 +104,15 @@ class WalkerEnv_v0(BaseEnv):
         """
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
-        action = np.zeros(self.action_dim) + 1 # to bring in starting position!
+        action = np.zeros(self.action_dim) + 1 # to bring robot in starting position!
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
-        self.observation = self.normalize_state(self.read_from_hub())
+        raw_state = self.read_from_hub()
+
+        self.observation = self.normalize_state(raw_state)
+        if self.verbose:
+            print("Raw state received: ", raw_state)
+            print("Normalized state: ", self.observation)
 
         return self.observation.squeeze()
 

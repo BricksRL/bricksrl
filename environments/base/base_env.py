@@ -70,7 +70,6 @@ class BaseEnv(Env):
             print("Reading data size: ", sys.getsizeof(byte_state))
             print("Reading data: ", byte_state)
             print("len: ", len(byte_state))
-        # assert sys.getsizeof(byte_state) == 53, f"State has size {sys.getsizeof(byte_state)} but should have size 53."
         if len(byte_state) != self.expected_bytesize:
             print(
                 "State has size {} but should have size {}.".format(
