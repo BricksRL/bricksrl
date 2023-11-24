@@ -84,18 +84,23 @@ def prefill_buffer(env, agent, num_episodes):
     Returns: None
     """
     if agent.name in ["sac", "td3"]:
+        inpt = input("Press Enter to start prefilling episode: ")
         for e in range(num_episodes):
-            inpt = input("Press Enter to start prefilling episode: ")
             print("Prefill episode: ", e)
             state = env.reset()
             done = False
-            while not done:
+            truncated = False
+            while not done and not truncated:
                 action = np.random.uniform(-1, 1, size=agent.action_space.shape[0])
                 print("Random action: ", action)
-                next_state, reward, done, info = env.step(action)
+                next_state, reward, done, truncated, info = env.step(action)
                 transition = create_transition_td(
                     state, action, np.array([reward]), next_state, np.array([done])
                 )
                 agent.add_experience(transition)
                 state = next_state
+                if done:
+                    inpt = input("Please reset the robot to the starting position and press Enter to continue or q to quit:")
+                    if inpt == "q":
+                        break
         print("Prefill done! Buffer size: ", agent.replay_buffer.__len__())

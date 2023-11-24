@@ -66,6 +66,8 @@ class SACAgent(BaseAgent):
             value_network=None,  # None to use SAC version 2
             num_qvalue_nets=2,
             gamma=agent_config.gamma,
+            fixed_alpha=agent_config.fixed_alpha,
+            alpha_init=agent_config.alpha_init,
             loss_function=agent_config.loss_function,
         )
         # Define Target Network Updater
@@ -91,6 +93,10 @@ class SACAgent(BaseAgent):
         )
         self.optimizer_critic = optim.Adam(
             critic_params, lr=agent_config.lr, weight_decay=0.0
+        )
+        self.optimizer_alpha = optim.Adam(
+            [self.loss_module.log_alpha],
+            lr=3.0e-4,
         )
 
         # general stats
@@ -176,6 +182,12 @@ class SACAgent(BaseAgent):
             loss["loss_qvalue"].backward()
             torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 0.5)
             self.optimizer_critic.step()
+
+            # Update alpha
+            self.optimizer_alpha.zero_grad()
+            loss["loss_alpha"].backward()
+            self.optimizer_alpha.step()
+
             # Update Target Networks
             self.target_net_updater.step()
             # Update Prioritized Replay Buffer

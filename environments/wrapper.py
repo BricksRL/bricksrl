@@ -40,11 +40,12 @@ class TorchEnvWrapper(BaseWrapper):
         self, action: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict]:
         action = action.cpu().numpy()
-        obs, reward, done, info = self.env.step(action)
+        obs, reward, done, truncated, info = self.env.step(action)
         return (
             torch.from_numpy(obs).float().to(self.device),
             torch.from_numpy(np.array(reward)).float().to(self.device),
             torch.from_numpy(np.array(done)).float().to(self.device),
+            torch.from_numpy(np.array(truncated)).float().to(self.device),
             info,
         )
 
@@ -114,12 +115,12 @@ class StackObservationsWrapper(gym.Wrapper):
         Returns:
             Tuple[numpy.ndarray, float, bool, dict]: The stacked observation buffer, reward, done flag, and info dictionary.
         """
-        obs, reward, done, info = self.env.step(action)
+        obs, reward, done, truncated, info = self.env.step(action)
         self.observation_buffer[
             ..., : -self.env.observation_space.shape[-1]
         ] = self.observation_buffer[..., self.env.observation_space.shape[-1] :]
         self.observation_buffer[..., -self.env.observation_space.shape[-1] :] = obs
-        return self.observation_buffer, reward, done, info
+        return self.observation_buffer, reward, done, truncated, info
 
 
 class ActionFilterWrapper(gym.ActionWrapper):
@@ -205,9 +206,9 @@ class FrameSkipWrapper(gym.Wrapper):
         total_reward = 0
         done = False
         for i in range(self.frame_skip):
-            observation, reward, done, info = self.env.step(action)
+            observation, reward, done, truncated, info = self.env.step(action)
             total_reward += reward
             self.current_step += 1
             if done:
                 break
-        return observation, total_reward, done, info
+        return observation, total_reward, done, truncated, info

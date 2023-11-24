@@ -39,9 +39,10 @@ class WalkerEnv_v0(BaseEnv):
     def __init__(
         self,
         max_episode_steps: int = 50,
-        max_distance: float = 2000.0,
-        min_distance: float = 40,
+        max_acc: float = 3000.0,
+        reward_normalization_factor: float = 1000.0,
         sleep_time: float = 0.2,
+        dt: float = 1.0,
         verbose: bool = False,
     ):
         action_dim = 4 # (lf_value, lb_value, rf_value, rb_value)
@@ -50,21 +51,23 @@ class WalkerEnv_v0(BaseEnv):
         # -50/-40 is the most extended to the back. ~ 100/110 is the most upright position so in a range of that might be better
 
         state_dim = 7  # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, dist)
+        self.dt = dt
         self.sleep_time = sleep_time
-        self.normalize_factor = 1000.0
-        self.max_distance = max_distance
-        self.min_distance = min_distance / self.normalize_factor
+        self.normalize_factor = reward_normalization_factor
+        self.max_acc = max_acc
+
 
         self.max_episode_steps = max_episode_steps
 
         self.action_space = gym.spaces.Box(
             low=-np.ones(action_dim), high=np.ones(action_dim), shape=(action_dim,)
         )
-
+        motor_range = (-179, 179)
+        pitch_roll_range = (-50, 50)
+        max_acc_range = (-self.max_acc, self.max_acc)
         self.observation_space = gym.spaces.Box(
-            low=np.zeros(state_dim),
-            high=np.ones(state_dim) * self.max_distance,
-            shape=(state_dim,),
+            low=np.array([motor_range[0], motor_range[0], motor_range[0], motor_range[0], pitch_roll_range[0], pitch_roll_range[0], max_acc_range[0]]),
+            high=np.array([motor_range[1], motor_range[1], motor_range[1], motor_range[1], pitch_roll_range[1], pitch_roll_range[1], max_acc_range[1]]),
         )
 
         super().__init__(action_dim=action_dim, state_dim=state_dim, verbose=verbose)
@@ -91,8 +94,8 @@ class WalkerEnv_v0(BaseEnv):
         Returns:
             np.ndarray: The normalized and clipped state.
         """
-        state = np.clip(state, 0, self.max_distance)
-        state = state / self.normalize_factor
+        state = np.clip(state, self.observation_space.low, self.observation_space.high)
+        state = (state - self.observation_space.low) / (self.observation_space.high - self.observation_space.low)
         return state
 
     def reset(self) -> np.ndarray:
@@ -107,14 +110,12 @@ class WalkerEnv_v0(BaseEnv):
         action = np.zeros(self.action_dim) + 1 # to bring robot in starting position!
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
-        raw_state = self.read_from_hub()
+        self.observation = self.read_from_hub()
 
-        self.observation = self.normalize_state(raw_state)
         if self.verbose:
-            print("Raw state received: ", raw_state)
-            print("Normalized state: ", self.observation)
+            print("Raw state received: ", self.observation)
 
-        return self.observation.squeeze()
+        return self.normalize_state(self.observation.squeeze())
 
     def reward(
         self, state: np.ndarray, action: np.ndarray, next_state: np.ndarray
@@ -126,25 +127,18 @@ class WalkerEnv_v0(BaseEnv):
 
         """
 
-        # TODO: maybe is better to make the robot increase the distance
-        # TODO: half cheetah penalizes high actions check reward!
-        # TODO: use roll and pitch to penalize robot for falling down and set done to True
         done = False
         # pitch and roll need to stay in range [-50, 50] outside done = True
-
-        if (
-            next_state[:, -1] <= self.min_distance
-        ):  # too close to the wall break episode
-            reward = -10
+        pitch, roll = next_state[:, -3], next_state[:, -2]
+        if np.abs(pitch) > 50 or np.abs(roll) > 50:
             done = True
-        elif next_state[:, -1] < state[:, -1]:
-            reward = -1.0
-        elif next_state[:, -1] > state[:, -1]:
-            reward = 1.0
-        else:
-            reward = 0.0
-
-        return reward, done
+            reward = -10
+            return reward, done
+        reward_ctrl = -0.1 * np.square(action).sum()
+        reward_run = (next_state[:, -1] - state[:, -1]) * self.dt
+        reward_run = reward_run / self.normalize_factor
+        reward = reward_ctrl + reward_run
+        return reward.item(), done
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, dict]:
         """
@@ -158,14 +152,14 @@ class WalkerEnv_v0(BaseEnv):
             received for performing the action, a boolean indicating whether the episode is done,
             and an empty dictionary.
         """
-
+        truncated = False
         # Send action to hub to receive next state
         self.send_to_hub(action)
         time.sleep(
             self.sleep_time
         )  # we need to wait some time for sensors to read and to
         # receive the next state
-        next_observation = self.normalize_state(self.read_from_hub())
+        next_observation = self.read_from_hub()
 
         # calc reward and done
         reward, done = self.reward(
@@ -174,11 +168,11 @@ class WalkerEnv_v0(BaseEnv):
 
         print("Reward", reward)
         # set next state as current state
-        self.observation = next_observation
+        self.observation = self.normalize_state(next_observation)
 
         # increment episode step counter
         self.episode_step_iter += 1
         if self.episode_step_iter >= self.max_episode_steps:
-            done = True
+            truncated = True
 
-        return self.observation.squeeze(), reward, done, {}
+        return self.observation.squeeze(), reward, done, truncated, {}

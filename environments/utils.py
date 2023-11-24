@@ -17,8 +17,10 @@ def make(name="RunAway", env_conf=None):
     elif name == "Walker-v0":
         return WalkerEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
-            max_distance=env_conf.max_distance,
-            min_distance=env_conf.min_distance,
+            max_acc=env_conf.max_acceleration,
+            reward_normalization_factor=env_conf.reward_normalization_factor,
+            dt=env_conf.dt,
+            verbose=env_conf.verbose,
         )
     elif name == "DoNothing":
         return DoNothingEnv(

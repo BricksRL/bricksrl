@@ -60,8 +60,8 @@ class PybricksHub:
             # Send some data to the hub.
             await self.client.write_gatt_char(
                 self.PYBRICKS_COMMAND_EVENT_CHAR_UUID,
-                b"\x06" + data,  # Prepend "write stdin" command b"\x06" + data
-                response=False, # True / false?
+                b"\x06" + data,  # Prepend "write stdin" command
+                response=False, 
             )
         except Exception as e:
             # Handle exceptions.
@@ -101,7 +101,7 @@ class PybricksHub:
         # add received data to the queue
         if data[0] == 0x01:  # "write stdout" event (0x01)
             payload = data[1:]
-            print("Received:", payload)
+            #print("Received:", payload)
             if len(payload) != self.exception_out_data and self.payload_buffer is None:
                 self.payload_buffer = payload
             elif len(payload) != self.exception_out_data and self.payload_buffer is not None:

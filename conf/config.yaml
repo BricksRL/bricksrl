@@ -2,8 +2,8 @@
 
 # logging
 run_name: ""
-mode: "offline"
-verbose: 1
+mode: "online"
+verbose: 0
 
 device: "cpu"
 episodes: 200

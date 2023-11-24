@@ -143,7 +143,7 @@ class RunAwayEnv_v1(BaseEnv):
             received for performing the action, a boolean indicating whether the episode is done,
             and an empty dictionary.
         """
-
+        truncated = False
         # Send action to hub to receive next state
         self.send_to_hub(action)
         time.sleep(
@@ -164,6 +164,6 @@ class RunAwayEnv_v1(BaseEnv):
         # increment episode step counter
         self.episode_step_iter += 1
         if self.episode_step_iter >= self.max_episode_steps:
-            done = True
+            truncated = True
 
-        return self.observation.squeeze(), reward, done, {}
+        return self.observation.squeeze(), reward, done, truncated, {}
