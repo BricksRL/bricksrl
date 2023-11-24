@@ -35,7 +35,6 @@ def run(cfg : DictConfig) -> None:
         done = False
         ep_return = 0
         print("Start new data collection...", flush=True)
-        print("Init done: ", done)
         inpt = input("Press Enter to start episode or q to quit: ")
         if inpt == "q":
             done = True
