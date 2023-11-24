@@ -7,7 +7,7 @@ import numpy as np
 from environments.base.base_env import BaseEnv
 
 
-class RunAwayEnv_v1(BaseEnv):
+class WalkerEnv_v0(BaseEnv):
     """
     A reinforcement learning environment for training agents to get away from a wall.
     This is the v1 version of the environment which is a bit more difficult where you have to control the wheel motors independently.
@@ -22,7 +22,7 @@ class RunAwayEnv_v1(BaseEnv):
         max_distance (float): The maximum distance to the wall. Defaults to 1000.0.
         min_distance (float): The minimum distance to the wall. Defaults to 40.
         sleep_time (float): The time to wait between sending actions and receiving the next state. Defaults to 0.2.
-        verbose (bool): Whether to print verbose information during the environment's execution. Defaults to False.
+        verbose (bool): Whether to print additional information. Defaults to False.
 
     Attributes:
         action_space (gym.spaces.Box): The continuous action space in the range [-1, 1].
@@ -38,31 +38,38 @@ class RunAwayEnv_v1(BaseEnv):
 
     def __init__(
         self,
-        max_episode_steps: int = 10,
-        max_distance: float = 1000.0,
-        min_distance: float = 40,
+        max_episode_steps: int = 50,
+        max_acc: float = 3000.0,
+        reward_normalization_factor: float = 1000.0,
         sleep_time: float = 0.2,
+        dt: float = 1.0,
         verbose: bool = False,
     ):
-        action_dim = 2 # to control the wheel motors independently
-        state_dim = 5  # 4 sensors (left,right,pitch,roll) + 1 distance to the wall
+        action_dim = 4 # (lf_value, lb_value, rf_value, rb_value)
+        # angles are in range [-180, 179] 
+        # TODO: we maybe have to decrease this range. Its not needed to have the full range and might be more difficult to learn
+        # -50/-40 is the most extended to the back. ~ 100/110 is the most upright position so in a range of that might be better
+
+        state_dim = 7  # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, dist)
+        self.dt = dt
         self.sleep_time = sleep_time
-        self.normalize_factor = 1000.0
-        self.max_distance = max_distance
-        self.min_distance = min_distance / self.normalize_factor
+        self.normalize_factor = reward_normalization_factor
+        self.max_acc = max_acc
+
 
         self.max_episode_steps = max_episode_steps
 
         self.action_space = gym.spaces.Box(
             low=-np.ones(action_dim), high=np.ones(action_dim), shape=(action_dim,)
         )
-
+        motor_range = (-179, 179)
+        pitch_roll_range = (-50, 50)
+        max_acc_range = (-self.max_acc, self.max_acc)
         self.observation_space = gym.spaces.Box(
-            low=np.zeros(state_dim),
-            high=np.ones(state_dim) * self.max_distance,
-            shape=(state_dim,),
+            low=np.array([motor_range[0], motor_range[0], motor_range[0], motor_range[0], pitch_roll_range[0], pitch_roll_range[0], max_acc_range[0]]),
+            high=np.array([motor_range[1], motor_range[1], motor_range[1], motor_range[1], pitch_roll_range[1], pitch_roll_range[1], max_acc_range[1]]),
         )
-        self.verbose = verbose
+
         super().__init__(action_dim=action_dim, state_dim=state_dim, verbose=verbose)
 
     def sample_random_action(self) -> np.ndarray:
@@ -87,8 +94,8 @@ class RunAwayEnv_v1(BaseEnv):
         Returns:
             np.ndarray: The normalized and clipped state.
         """
-        state = np.clip(state, 0, self.max_distance)
-        state = state / self.normalize_factor
+        state = np.clip(state, self.observation_space.low, self.observation_space.high)
+        state = (state - self.observation_space.low) / (self.observation_space.high - self.observation_space.low)
         return state
 
     def reset(self) -> np.ndarray:
@@ -100,12 +107,15 @@ class RunAwayEnv_v1(BaseEnv):
         """
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
-        action = np.zeros(self.action_dim)
+        action = np.zeros(self.action_dim) + 1 # to bring robot in starting position!
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
-        self.observation = self.normalize_state(self.read_from_hub())
+        self.observation = self.read_from_hub()
 
-        return self.observation.squeeze()
+        if self.verbose:
+            print("Raw state received: ", self.observation)
+
+        return self.normalize_state(self.observation.squeeze())
 
     def reward(
         self, state: np.ndarray, action: np.ndarray, next_state: np.ndarray
@@ -116,22 +126,19 @@ class RunAwayEnv_v1(BaseEnv):
         get away from the wall as fast as possible.
 
         """
-        # TODO: maybe add reward for low motor usage (energy efficiency) so that the robot relaxes when max distance is reached
+
         done = False
-
-        if (
-            next_state[:, -1] <= self.min_distance
-        ):  # too close to the wall break episode
-            reward = -10
+        # pitch and roll need to stay in range [-50, 50] outside done = True
+        pitch, roll = next_state[:, -3], next_state[:, -2]
+        if np.abs(pitch) > 50 or np.abs(roll) > 50:
             done = True
-        elif next_state[:, -1] < state[:, -1]:
-            reward = -1.0
-        elif next_state[:, -1] > state[:, -1]:
-            reward = 1.0
-        else:
-            reward = 0.0
-
-        return reward, done
+            reward = -10
+            return reward, done
+        reward_ctrl = -0.1 * np.square(action).sum()
+        reward_run = (next_state[:, -1] - state[:, -1]) * self.dt
+        reward_run = reward_run / self.normalize_factor
+        reward = reward_ctrl + reward_run
+        return reward.item(), done
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, dict]:
         """
@@ -152,19 +159,16 @@ class RunAwayEnv_v1(BaseEnv):
             self.sleep_time
         )  # we need to wait some time for sensors to read and to
         # receive the next state
-        next_observation = self.normalize_state(self.read_from_hub())
+        next_observation = self.read_from_hub()
 
         # calc reward and done
         reward, done = self.reward(
             state=self.observation, action=action, next_state=next_observation
         )
-        if self.verbose:
-            print("Action", action)
-            print("Old distance", self.observation[:, -1])
-            print("New distance", next_observation[:, -1])
-            print("Reward", reward)
+
+        print("Reward", reward)
         # set next state as current state
-        self.observation = next_observation
+        self.observation = self.normalize_state(next_observation)
 
         # increment episode step counter
         self.episode_step_iter += 1
