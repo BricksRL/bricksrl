@@ -22,6 +22,7 @@ class RunAwayEnv_v1(BaseEnv):
         max_distance (float): The maximum distance to the wall. Defaults to 1000.0.
         min_distance (float): The minimum distance to the wall. Defaults to 40.
         sleep_time (float): The time to wait between sending actions and receiving the next state. Defaults to 0.2.
+        verbose (bool): Whether to print verbose information during the environment's execution. Defaults to False.
 
     Attributes:
         action_space (gym.spaces.Box): The continuous action space in the range [-1, 1].
@@ -41,6 +42,7 @@ class RunAwayEnv_v1(BaseEnv):
         max_distance: float = 1000.0,
         min_distance: float = 40,
         sleep_time: float = 0.2,
+        verbose: bool = False,
     ):
         action_dim = 2 # to control the wheel motors independently
         state_dim = 5  # 4 sensors (left,right,pitch,roll) + 1 distance to the wall
@@ -60,8 +62,8 @@ class RunAwayEnv_v1(BaseEnv):
             high=np.ones(state_dim) * self.max_distance,
             shape=(state_dim,),
         )
-
-        super().__init__(action_dim=action_dim, state_dim=state_dim)
+        self.verbose = verbose
+        super().__init__(action_dim=action_dim, state_dim=state_dim, verbose=verbose)
 
     def sample_random_action(self) -> np.ndarray:
         """
@@ -156,8 +158,11 @@ class RunAwayEnv_v1(BaseEnv):
         reward, done = self.reward(
             state=self.observation, action=action, next_state=next_observation
         )
-
-        print("Reward", reward)
+        if self.verbose:
+            print("Action", action)
+            print("Old distance", self.observation[:, -1])
+            print("New distance", next_observation[:, -1])
+            print("Reward", reward)
         # set next state as current state
         self.observation = next_observation
 

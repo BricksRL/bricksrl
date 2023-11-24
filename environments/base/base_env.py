@@ -70,6 +70,7 @@ class BaseEnv(Env):
             print("Reading data size: ", sys.getsizeof(byte_state))
             print("Reading data: ", byte_state)
             print("len: ", len(byte_state))
+
         if len(byte_state) != self.expected_bytesize:
             print(
                 "State has size {} but should have size {}.".format(

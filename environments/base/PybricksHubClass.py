@@ -25,7 +25,6 @@ class PybricksHub:
         print("Connecting to the hub...")
         self.loop.run_until_complete(self._connect())
 
-
     async def _connect(self) -> None:
         """Connect to the hub."""
         try:
@@ -68,7 +67,6 @@ class PybricksHub:
             print(e)
             await self.disconnect()
 
-
     def disconnect(self) -> None:
         """
         Disconnect from the hub.
@@ -76,7 +74,6 @@ class PybricksHub:
         """
         if self.client and not self.disconnected:
             asyncio.create_task(self._disconnect())
-
 
     async def _disconnect(self) -> None:
         try:
@@ -101,17 +98,19 @@ class PybricksHub:
         # add received data to the queue
         if data[0] == 0x01:  # "write stdout" event (0x01)
             payload = data[1:]
-            #print("Received:", payload)
+            # print("Received:", payload)
             if len(payload) != self.exception_out_data and self.payload_buffer is None:
                 self.payload_buffer = payload
-            elif len(payload) != self.exception_out_data and self.payload_buffer is not None:
+            elif (
+                len(payload) != self.exception_out_data
+                and self.payload_buffer is not None
+            ):
                 self.payload_buffer += payload
                 if self.payload_buffer.__len__() == len(self.exception_out_data):
                     await self.rx_queue.put(self.payload_buffer)
                     self.payload_buffer = None
             else:
                 await self.rx_queue.put(payload)
-
 
     async def _read_data(self) -> bytes:
         try:

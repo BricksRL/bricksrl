@@ -71,7 +71,7 @@ def run(cfg : DictConfig) -> None:
 
             if quit:
                 break
-            
+          
             if verbose == 1:
                 print("Episode: ", e, "Return: ", ep_return)
             # Metrics Logging
