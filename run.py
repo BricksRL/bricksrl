@@ -71,7 +71,7 @@ def run(cfg : DictConfig) -> None:
 
             if quit:
                 break
-
+            
             if verbose == 1:
                 print("Episode: ", e, "Return: ", ep_return)
             # Metrics Logging
@@ -81,10 +81,9 @@ def run(cfg : DictConfig) -> None:
                         "final_distance": state[-1]}
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)
-
+            
     except KeyboardInterrupt:
         print("Training interrupted by user.")
-
     
     logout(agent)
     env.close()
