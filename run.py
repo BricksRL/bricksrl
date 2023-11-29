@@ -77,8 +77,8 @@ def run(cfg : DictConfig) -> None:
             # Metrics Logging
             log_dict = {"epoch": e,
                         "reward": ep_return,
-                        "buffer_size": agent.replay_buffer.__len__(),
-                        "final_distance": state[-1]}
+                        "buffer_size": agent.replay_buffer.__len__(),}
+            log_dict.update(info)
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)
             

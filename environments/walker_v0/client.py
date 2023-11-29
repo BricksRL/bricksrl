@@ -59,12 +59,11 @@ while True:
     dist = eyes.distance()
     a_x = hub.imu.acceleration(Axis.X)
 
-    # roll & pitch should be <50 and >-50
-    if umath.fabs(pitch) > 50 or umath.fabs(roll) > 50 or dist <= 40:
+    # roll & pitch should be <75 and >-75
+    if umath.fabs(pitch) > 75 or umath.fabs(roll) > 75 or dist <= 40:
         hub.display.text(text="Help", on=500, off=50)
         hub.speaker.beep(frequency=500, duration=100)
 
     # send current state
     out_msg = ustruct.pack('!fffffff', lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, a_x)
     stdout.buffer.write(out_msg)
-
