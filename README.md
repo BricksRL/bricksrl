@@ -27,6 +27,9 @@ Update your client script on the [PyBricks Hub](https://beta.pybricks.com/) when
 We created a [PyBricks GPT](https://chat.openai.com/g/g-YZYA1j4yF-pybrics-lego-doc) which is an expert on the PyBricks documentation and can help you with coding and debugging client code for the PyBricks Hub.
 
 
+# Additional Info
+Code examples from PyBricks. Might be interesting as expert policies for offline RL. [GitHub Pybricks examples](https://github.com/pybricks/pybricks-projects/blob/master/sets/mindstorms-robot-inventor/main-models/gelo/gelo_basic.py)
+
 # TODO:
 
 - Milestone Cleanup []
