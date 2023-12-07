@@ -132,12 +132,12 @@ class WalkerEnv_v0(BaseEnv):
         pitch, roll = next_state[:, -3], next_state[:, -2]
         if np.abs(pitch) > 75 or np.abs(roll) > 75:
             done = True
-            reward = -10
+            reward = 0
             return reward, done
         reward_ctrl = -0.1 * np.square(action).sum()
 
         # Change in velocity (Δv = a * dt)
-        reward_run = (next_state[:, -1] - state[:, -1]) * delta_t
+        reward_run = - next_state[:, -1]  * delta_t # - state[:, -1])
         reward_run = reward_run / self.normalize_factor
         reward = reward_ctrl + reward_run
         return reward.item(), done
@@ -182,5 +182,5 @@ class WalkerEnv_v0(BaseEnv):
         self.episode_step_iter += 1
         if self.episode_step_iter >= self.max_episode_steps:
             truncated = True
-        self.dt_ = current_time
+        self.dt = current_time
         return self.observation.squeeze(), reward, done, truncated, {"step_time": delta_t}

@@ -6,7 +6,7 @@ mode: "online"
 verbose: 0
 
 device: "cpu"
-episodes: 200
+episodes: 1000
 
 defaults:
   - _self_

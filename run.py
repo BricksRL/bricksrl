@@ -30,6 +30,8 @@ def run(cfg : DictConfig) -> None:
     # prefill buffer  
     prefill_buffer(env=env, agent=agent, num_episodes=cfg.agent.prefill_episodes)
     
+    batch_size = cfg.agent.batch_size
+    num_updates = cfg.agent.num_updates
     print("Start training...")
     quit = False
     try:
@@ -38,8 +40,11 @@ def run(cfg : DictConfig) -> None:
             done = False
             truncated = False
             ep_return = 0
+            ep_steps = 0
+            total_step_times = []
             print("Start new data collection...", flush=True)
             while not done and not truncated:
+                ep_steps += 1
                 step_start_time = time.time()
                 action = agent.get_action(state)
                 if verbose == 1:
@@ -51,24 +56,17 @@ def run(cfg : DictConfig) -> None:
                 agent.add_experience(transition)
                 state = next_state
                 ep_return += reward
-                loss_info = agent.train(batch_size=cfg.agent.batch_size,
-                            num_updates=cfg.agent.num_updates)
-                if verbose == 1:
-                    print("Done: ", done)
-                    print("Step time: ", time.time() - step_start_time)
-                    print("---"*5)
+
+                total_agent_step_time = time.time() - step_start_time
+                total_step_times.append(total_agent_step_time)
                 
                 if done:
                     inpt = input("Please reset the robot to the starting position and press Enter to continue or q to quit:")
                     if inpt == "q":
                         quit = True
                         break
-                    else:
-                        done = False
-                        state = env.reset()
-                        ep_return = 0
-                        print("Start new data collection...", flush=True)
-
+            loss_info = agent.train(batch_size=batch_size,
+                        num_updates=num_updates*ep_steps)
             if quit:
                 break
           
@@ -77,6 +75,8 @@ def run(cfg : DictConfig) -> None:
             # Metrics Logging
             log_dict = {"epoch": e,
                         "reward": ep_return,
+                        "steps": ep_steps,
+                        "total_step_time": np.mean(total_step_times),
                         "buffer_size": agent.replay_buffer.__len__(),}
             log_dict.update(info)
             log_dict.update(tensordict2dict(loss_info))
