@@ -72,7 +72,7 @@ def login(agent):
         print("Buffer not loaded!")
 
 
-def prefill_buffer(env, agent, num_episodes):
+def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
     """
     Prefills the agent's replay buffer with experiences by running the environment for a specified number of episodes.
     
@@ -86,6 +86,14 @@ def prefill_buffer(env, agent, num_episodes):
     if agent.name in ["sac", "td3"]:
         inpt = input("Press Enter to start prefilling episode: ")
         for e in range(num_episodes):
+            if checking_mode == 1:
+                inp = input("Press Enter to start episode: ")
+                if inp == "q":
+                    break
+                else:
+                    pass
+            else:
+                pass 
             print("Prefill episode: ", e)
             state = env.reset()
             done = False

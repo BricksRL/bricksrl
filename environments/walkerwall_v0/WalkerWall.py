@@ -103,6 +103,8 @@ class WalkerWallEnv_v0(BaseEnv):
         time.sleep(self.sleep_time)
         self.observation = self.read_from_hub()
 
+        self.init_distance = self.observation[:, -1]
+
         if self.verbose:
             print("Raw state received: ", self.observation)
         self.dt = time.time()
@@ -133,10 +135,7 @@ class WalkerWallEnv_v0(BaseEnv):
             reward = 0
             return reward, done
 
-        next_dist = next_state[:, -1]
-        past_dist = state[:, -1]
-
-        if next_dist < past_dist:
+        if next_state[:, -1] < state[:, -1]:
             reward = 1
         else:
             reward = -1
@@ -179,9 +178,11 @@ class WalkerWallEnv_v0(BaseEnv):
         # set next state as current state
         self.observation = self.normalize_state(next_observation)
 
+        final_distance = next_observation[:, -1]
+
         # increment episode step counter
         self.episode_step_iter += 1
         if self.episode_step_iter >= self.max_episode_steps:
             truncated = True
         self.dt = current_time
-        return self.observation.squeeze(), reward, done, truncated, {"step_time": delta_t}
+        return self.observation.squeeze(), reward, done, truncated, {"step_time": delta_t, "initial_distance": self.init_distance, "final_distance": final_distance}

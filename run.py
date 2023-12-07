@@ -16,6 +16,7 @@ import signal
 def run(cfg : DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
     verbose = cfg.verbose
+    checking_mode = cfg.checking_mode
     # make environment.
     env, action_space, state_space = make_env(cfg)
     
@@ -28,8 +29,8 @@ def run(cfg : DictConfig) -> None:
     wandb.watch(agent.actor, log_freq=1)
 
     # prefill buffer  
-    prefill_buffer(env=env, agent=agent, num_episodes=cfg.agent.prefill_episodes)
-    
+    prefill_buffer(env=env, agent=agent, checking_mode=checking_mode, num_episodes=cfg.agent.prefill_episodes)
+
     batch_size = cfg.agent.batch_size
     num_updates = cfg.agent.num_updates
     print("Start training...")
@@ -42,6 +43,15 @@ def run(cfg : DictConfig) -> None:
             ep_return = 0
             ep_steps = 0
             total_step_times = []
+            if checking_mode == 1:
+                inp = input("Press Enter to start episode: ")
+                if inp == "q":
+                    quit = True
+                    break
+                else:
+                    pass
+            else:
+                pass 
             print("Start new data collection...", flush=True)
             while not done and not truncated:
                 ep_steps += 1

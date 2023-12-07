@@ -4,6 +4,7 @@
 run_name: ""
 mode: "online"
 verbose: 0
+checking_mode: 1 # if 1 you have to allow each new episode to start if 0 it will run without stopping
 
 device: "cpu"
 episodes: 1000
@@ -11,4 +12,4 @@ episodes: 1000
 defaults:
   - _self_
   - agent: sac
-  - env: walker-v0
+  - env: walkerwall-v0
