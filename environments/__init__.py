@@ -2,6 +2,7 @@ from environments.donothing.donothing import DoNothingEnv
 from environments.runaway_v0.RunAwayEnv import RunAwayEnv_v0
 from environments.runaway_v1.RunAwayEnv import RunAwayEnv_v1
 from environments.walker_v0.WalkerEnv import WalkerEnv_v0
+from environments.walkerwall_v0.WalkerWall import WalkerWallEnv_v0
 from environments.utils import make
 
 from environments.wrapper import (
