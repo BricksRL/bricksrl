@@ -53,15 +53,18 @@ def logout(agent):
     x = input("Do you want to save the replay buffer? (y/n)")
     if x == "y":
         buffer_dict = agent.replay_buffer.state_dict()
+        save_dict.update(buffer_dict)
+    if len(save_dict) > 0:
         save_name = input("Enter the name of the file to save: ")
-        torch.save(buffer_dict, save_name + ".pth")
+        torch.save(save_dict, save_name + ".pth")
 
 
 
 def login(agent):
     x = input("Do you want to load the model? (y/n)")
     if x == "y":
-        agent.load_model("lego-wall-td3")
+        save_name = input("Enter the name of the file to load: ")
+        agent.load_model(save_name)
     else:
         print("Model not loaded!")
     x = input("Do you want to load the replay buffer? (y/n)")
@@ -72,7 +75,7 @@ def login(agent):
         print("Buffer not loaded!")
 
 
-def prefill_buffer(env, agent, num_episodes):
+def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
     """
     Prefills the agent's replay buffer with experiences by running the environment for a specified number of episodes.
     
@@ -86,6 +89,14 @@ def prefill_buffer(env, agent, num_episodes):
     if agent.name in ["sac", "td3"]:
         inpt = input("Press Enter to start prefilling episode: ")
         for e in range(num_episodes):
+            if checking_mode == 1:
+                inp = input("Press Enter to start episode: ")
+                if inp == "q":
+                    break
+                else:
+                    pass
+            else:
+                pass 
             print("Prefill episode: ", e)
             state = env.reset()
             done = False

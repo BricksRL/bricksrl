@@ -11,6 +11,15 @@ from torchrl.modules import (
 )
 from torchrl.modules.distributions import TanhDelta, TanhNormal
 
+def get_normalization(normalization):
+    if normalization == "None":
+        return None
+    elif normalization == "LayerNorm":
+        return nn.LayerNorm
+    elif normalization == "BatchNorm":
+        return nn.BatchNorm1d
+    else:
+        raise NotImplementedError(f"Normalization {normalization} not implemented")
 
 def get_critic(
     in_keys=["observation"],
@@ -21,12 +30,13 @@ def get_critic(
     dropout=0.0,
 ):
     """Returns a critic network"""
-
+    normalization = get_normalization(normalization)
     qvalue_net = MLP(
         num_cells=num_cells,
         out_features=out_features,
         activation_class=activation_class,
-        norm_class=None if normalization == "None" else normalization,
+        norm_class=normalization,
+        norm_kwargs={"normalized_shape": num_cells[-1]} if normalization else None,
         dropout=dropout,
     )
 

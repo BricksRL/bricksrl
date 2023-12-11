@@ -7,9 +7,9 @@ import numpy as np
 from environments.base.base_env import BaseEnv
 
 
-class WalkerEnv_v0(BaseEnv):
+class WalkerWallEnv_v0(BaseEnv):
     """
-    A reinforcement learning environment for the robodog to learn to walk.
+    A reinforcement learning environment for the robodog to learn to walk towards its owner.
     
 
     Args:
@@ -34,8 +34,7 @@ class WalkerEnv_v0(BaseEnv):
     def __init__(
         self,
         max_episode_steps: int = 50,
-        max_acc: float = 3000.0,
-        reward_normalization_factor: float = 1000.0,
+        max_distance: float = 2000.0,
         sleep_time: float = 0.0,
         verbose: bool = False,
     ):
@@ -44,10 +43,9 @@ class WalkerEnv_v0(BaseEnv):
         # TODO: we maybe have to decrease this range. Its not needed to have the full range and might be more difficult to learn
         # -50/-40 is the most extended to the back. ~ 100/110 is the most upright position so in a range of that might be better
 
-        state_dim = 7  # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, acc_x)
+        state_dim = 7  # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, dist)
         self.sleep_time = sleep_time
-        self.normalize_factor = reward_normalization_factor
-        self.max_acc = max_acc
+        self.max_distance = max_distance
 
 
         self.max_episode_steps = max_episode_steps
@@ -57,10 +55,10 @@ class WalkerEnv_v0(BaseEnv):
         )
         motor_range = (-179, 179)
         pitch_roll_range = (-50, 50)
-        max_acc_range = (-self.max_acc, self.max_acc)
+        max_dist_range = (0, self.max_distance)
         self.observation_space = gym.spaces.Box(
-            low=np.array([motor_range[0], motor_range[0], motor_range[0], motor_range[0], pitch_roll_range[0], pitch_roll_range[0], max_acc_range[0]]),
-            high=np.array([motor_range[1], motor_range[1], motor_range[1], motor_range[1], pitch_roll_range[1], pitch_roll_range[1], max_acc_range[1]]),
+            low=np.array([motor_range[0], motor_range[0], motor_range[0], motor_range[0], pitch_roll_range[0], pitch_roll_range[0], max_dist_range[0]]),
+            high=np.array([motor_range[1], motor_range[1], motor_range[1], motor_range[1], pitch_roll_range[1], pitch_roll_range[1], max_dist_range[1]]),
         )
 
         super().__init__(action_dim=action_dim, state_dim=state_dim, verbose=verbose)
@@ -105,6 +103,8 @@ class WalkerEnv_v0(BaseEnv):
         time.sleep(self.sleep_time)
         self.observation = self.read_from_hub()
 
+        self.init_distance = self.observation[:, -1]
+
         if self.verbose:
             print("Raw state received: ", self.observation)
         self.dt = time.time()
@@ -134,13 +134,13 @@ class WalkerEnv_v0(BaseEnv):
             done = True
             reward = 0
             return reward, done
-        reward_ctrl = -0.1 * np.square(action).sum()
 
-        # Change in velocity (Δv = a * dt)
-        reward_run = - next_state[:, -1]  * delta_t # - state[:, -1])
-        reward_run = reward_run / self.normalize_factor
-        reward = reward_ctrl + reward_run
-        return reward.item(), done
+        if next_state[:, -1] < state[:, -1]:
+            reward = 1
+        else:
+            reward = -1
+
+        return reward, done
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
         """
@@ -178,9 +178,11 @@ class WalkerEnv_v0(BaseEnv):
         # set next state as current state
         self.observation = self.normalize_state(next_observation)
 
+        final_distance = next_observation[:, -1]
+
         # increment episode step counter
         self.episode_step_iter += 1
         if self.episode_step_iter >= self.max_episode_steps:
             truncated = True
         self.dt = current_time
-        return self.observation.squeeze(), reward, done, truncated, {"step_time": delta_t}
+        return self.observation.squeeze(), reward, done, truncated, {"step_time": delta_t, "initial_distance": self.init_distance, "final_distance": final_distance}
