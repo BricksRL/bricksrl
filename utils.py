@@ -53,15 +53,18 @@ def logout(agent):
     x = input("Do you want to save the replay buffer? (y/n)")
     if x == "y":
         buffer_dict = agent.replay_buffer.state_dict()
+        save_dict.update(buffer_dict)
+    if len(save_dict) > 0:
         save_name = input("Enter the name of the file to save: ")
-        torch.save(buffer_dict, save_name + ".pth")
+        torch.save(save_dict, save_name + ".pth")
 
 
 
 def login(agent):
     x = input("Do you want to load the model? (y/n)")
     if x == "y":
-        agent.load_model("lego-wall-td3")
+        save_name = input("Enter the name of the file to load: ")
+        agent.load_model(save_name)
     else:
         print("Model not loaded!")
     x = input("Do you want to load the replay buffer? (y/n)")

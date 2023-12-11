@@ -26,7 +26,9 @@ def initialize(net, std=0.02):
 
 class SACAgent(BaseAgent):
     def __init__(self, state_space, action_space, agent_config, device="cpu"):
-        super(SACAgent, self).__init__(state_space, action_space, agent_config.name, device)
+        super(SACAgent, self).__init__(
+            state_space, action_space, agent_config.name, device
+        )
 
         # rewrite action spec to bounded tensor spec
         action_space = BoundedTensorSpec(
@@ -39,8 +41,8 @@ class SACAgent(BaseAgent):
             in_keys=["observation"],
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             activation_class=nn.ReLU,
-            normalization=agent_config.normalization,
-            dropout=agent_config.dropout,
+            # normalization=agent_config.normalization,
+            # dropout=agent_config.dropout,
         )
         self.critic = get_critic(
             in_keys=["observation"],
@@ -77,8 +79,11 @@ class SACAgent(BaseAgent):
         self.target_net_updater.init_()
 
         # Define Replay Buffer
-        self.replay_buffer = self.create_replay_buffer(batch_size=agent_config.batch_size,
-            prb=False, buffer_size=100_000, device=device
+        self.replay_buffer = self.create_replay_buffer(
+            batch_size=agent_config.batch_size,
+            prb=agent_config.prb,
+            buffer_size=agent_config.buffer_size,
+            device=device,
         )
 
         # Define Optimizer
@@ -109,11 +114,24 @@ class SACAgent(BaseAgent):
         critic_statedict = self.critic.state_dict()
         return {"actor": act_statedict, "critic": critic_statedict}
 
+    def load_model(self, path):
+        """load model"""
+        try:
+            statedict = torch.load(path)
+            self.actor.load_state_dict(statedict["actor"])
+            self.critic.load_state_dict(statedict["critic"])
+            print("Model loaded")
+        except:
+            raise ValueError("Model not loaded")
+
     def load_replaybuffer(self, path):
         """load replay buffer"""
-        self.replay_buffer.load_state_dict(torch.load(path))
-        print("Replay Buffer loaded")
-        print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
+        try:
+            self.replay_buffer.load_state_dict(torch.load(path))
+            print("Replay Buffer loaded")
+            print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
+        except:
+            raise ValueError("Replay Buffer not loaded")
 
     def create_replay_buffer(
         self,
