@@ -134,7 +134,7 @@ class WalkerEnv_v0(BaseEnv):
             done = True
             reward = 0
             return reward, done
-        reward_ctrl = -0.1 * np.square(action).sum()
+        reward_ctrl = 0 #-0.1 * np.square(action).sum()
 
         # Change in velocity (Δv = a * dt)
         reward_run = - next_state[:, -1]  * delta_t # - state[:, -1])
