@@ -2,7 +2,7 @@
 
 # logging
 run_name: ""
-mode: "online"
+mode: "offline"
 verbose: 0
 checking_mode: 0 # if 1 you have to allow each new episode to start if 0 it will run without stopping
 
@@ -11,5 +11,5 @@ episodes: 1000
 
 defaults:
   - _self_
-  - agent: sac
+  - agent: bc
   - env: walker-v0

@@ -9,7 +9,7 @@ sys.path.insert(0, '/home/sebastian/Documents/lego_robot')
 from agents import get_agent
 from utils import prefill_buffer, logout, login, create_transition_td, tensordict2dict
 from environments import make_env
-import signal
+
 
 @hydra.main(version_base=None, config_path="./conf", config_name="config")
 
@@ -30,6 +30,14 @@ def run(cfg : DictConfig) -> None:
 
     # prefill buffer  
     prefill_buffer(env=env, agent=agent, checking_mode=checking_mode, num_episodes=cfg.agent.prefill_episodes)
+
+    # pretraining
+    if agent.pretrain:
+        print("Start pretraining...")
+        agent.pretrain(wandb, batch_size=cfg.agent.batch_size, num_updates=cfg.agent.num_updates)
+        print("Pretraining finished.")
+        inp = input("Press Enter to start online training: ")
+
 
     batch_size = cfg.agent.batch_size
     num_updates = cfg.agent.num_updates

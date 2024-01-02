@@ -14,7 +14,7 @@ def handle_disconnect(_):
 
 def tensordict2dict(td: td.TensorDict) -> dict:
     """Convert a TensorDict to a dictionary."""
-    return {k: v.item() for k, v in td.items()}
+    return {k: v.item() for k, v in td.items()} if td else {}
 
 
 def create_transition_td(

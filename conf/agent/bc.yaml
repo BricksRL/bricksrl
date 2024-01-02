@@ -1,0 +1,9 @@
+name: bc
+lr: 3e-4
+batch_size: 256
+num_updates: 5000
+prefill_episodes: 0
+
+num_cells: 256
+
+offline_data_path: datasets/walker_v0/walker_gait_250ms.npy 
