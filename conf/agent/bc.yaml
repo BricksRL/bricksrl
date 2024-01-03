@@ -1,7 +1,7 @@
 name: bc
 lr: 3e-4
 batch_size: 256
-num_updates: 5000
+num_updates: 2000
 prefill_episodes: 0
 
 num_cells: 256

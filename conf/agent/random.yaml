@@ -1,0 +1,5 @@
+name: random
+# not used for random agent
+batch_size: 256
+num_updates: 2500
+prefill_episodes: 0
