@@ -137,8 +137,9 @@ class WalkerEnv_v0(BaseEnv):
         reward_ctrl = 0 #-0.1 * np.square(action).sum()
 
         # Change in velocity (Δv = a * dt)
-        reward_run = - next_state[:, -1]  * delta_t # - state[:, -1])
-        reward_run = reward_run / self.normalize_factor
+        # reward_run = - next_state[:, -1]  * delta_t # - state[:, -1])
+        # reward_run = reward_run / self.normalize_factor
+        reward_run = np.where(next_state[:, -1] < 0, 1, -1)
         reward = reward_ctrl + reward_run
         return reward.item(), done
 
