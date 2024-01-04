@@ -11,5 +11,5 @@ episodes: 1000
 
 defaults:
   - _self_
-  - agent: bc
+  - agent: sac
   - env: walker-v0

@@ -152,4 +152,4 @@ class BehavioralCloningAgent(BaseAgent):
 
     def train(self, batch_size=64, num_updates=1):
         """Train the agent"""
-        return None
+        return {}
