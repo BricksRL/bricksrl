@@ -25,14 +25,43 @@ lb_motor = Motor(Port.B, Direction.COUNTERCLOCKWISE)
 rf_motor = Motor(Port.C)
 rb_motor = Motor(Port.A)
 
-#color = ColorSensor(Port.F)
 eyes = UltrasonicSensor(Port.E)
 
-# target angle: 179 is good starting position!
 keyboard = poll()
 keyboard.register(stdin)
 
+def normalize_angle(angle):
+    # Normalize angle to be within -179 to 179 degrees
+    while angle <= -180:
+        angle += 360
+    while angle > 179:
+        angle -= 360
+    return angle
 
+def transform_range(value, old_min, old_max, new_min, new_max):
+    """
+    Transform a value from one range to another.
+
+    Parameters:
+    value (float): The value to transform.
+    old_min (float): The minimum value of the old range.
+    old_max (float): The maximum value of the old range.
+    new_min (float): The minimum value of the new range.
+    new_max (float): The maximum value of the new range.
+
+    Returns:
+    float: The transformed value.
+    """
+    # Compute the scale factor between the old and new ranges
+    scale = (new_max - new_min) / (old_max - old_min)
+    # Apply the transformation
+    return new_min + (value - old_min) * scale
+
+(lf_angle, rf_angle) = (lf_motor.angle(), rf_motor.angle())
+(lb_angle, rb_angle) = (lb_motor.angle(), rb_motor.angle())
+low_angle = -100 # 270
+high_angle = 0
+speed = 600
 while True:
     
     while not keyboard.poll(0):
@@ -43,13 +72,17 @@ while True:
 
     lf_value, lb_value, rf_value, rb_value = ustruct.unpack("!ffff", data)
 
-    # set motor angle. Range is [-180, 179] action outputs are [-1, 1] -> we multiply by 179
-    lf_motor.track_target(target_angle=lf_value*179)
-    lb_motor.track_target(target_angle=lb_value*179)
-    rf_motor.track_target(target_angle=rf_value*179)
-    rb_motor.track_target(target_angle=rb_value*179)
+    # set motor angle. Range is [-180, 179] action outputs are [-1, 1]
+    lb_motor.run_angle(speed=speed, rotation_angle=transform_range(lb_value, -1, 1, low_angle, high_angle), wait=False)
+    lf_motor.run_angle(speed=speed,rotation_angle=transform_range(lf_value, -1, 1, low_angle, high_angle), wait=False)
+    rb_motor.run_angle(speed=speed,rotation_angle=transform_range(rb_value, -1, 1, low_angle, high_angle), wait=False)
+    rf_motor.run_angle(speed=speed,rotation_angle=transform_range(rf_value, -1, 1, low_angle, high_angle), wait=False) 
 
-    wait(50)  # Small delay 
+    a_x = hub.imu.acceleration(Axis.X)
+    # Small delay to let motors arrive target angle
+    wait(250) # 250
+    # measure it before or after the wait? in between? two 200 wait times?
+    
 
     # get current state of the robot
     (lf_angle, rf_angle) = (lf_motor.angle(), rf_motor.angle())
@@ -57,13 +90,13 @@ while True:
     (pitch, roll) = hub.imu.tilt()
     
     dist = eyes.distance()
-    a_x = hub.imu.acceleration(Axis.X)
-
-    # roll & pitch should be <75 and >-75
-    if umath.fabs(pitch) > 75 or umath.fabs(roll) > 75 or dist <= 40:
+    
+    if umath.fabs(pitch) > 90 or umath.fabs(roll) > 120 or dist <= 40:
         hub.display.text(text="Help", on=500, off=50)
-        hub.speaker.beep(frequency=500, duration=100)
 
     # send current state
-    out_msg = ustruct.pack('!fffffff', lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, a_x)
+    # TODO: add current battery supply in mA for wandb logging
+    #print("Battery: ", hub.battery.current())
+    out_msg = ustruct.pack('!fffffff', normalize_angle(lf_angle), normalize_angle(rf_angle), normalize_angle(lb_angle), normalize_angle(rb_angle), pitch, roll, a_x)
     stdout.buffer.write(out_msg)
+

@@ -134,11 +134,38 @@ class WalkerEnv_v0(BaseEnv):
             done = True
             reward = 0
             return reward, done
-        reward_ctrl = -0.1 * np.square(action).sum()
+        reward_ctrl = 0 #-0.1 * np.square(action).sum()
 
         # Change in velocity (Δv = a * dt)
-        reward_run = - next_state[:, -1]  * delta_t # - state[:, -1])
-        reward_run = reward_run / self.normalize_factor
+        # reward_run = - next_state[:, -1]  * delta_t # - state[:, -1])
+        #reward_run = reward_run / self.normalize_factor
+        #reward_run = np.where(next_state[:, -1] < 0, 1, -1)
+
+        # try hard coded reward for gait routine
+        # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, acc_x)
+        (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, acc_x) = next_state.squeeze()
+
+        # we want actions to be negative and high
+        # action is in range [-1, 1] we might need to add scaling factor as max will be -4 and min 4
+        action_reward = - np.sum(action) / 4
+        # actions should ideally be similar like [-0.5, -0.5, -0.5, -0.5]
+        action_std_reward = - np.std(action)
+
+        # we want lf_angle and rb_angle to be synchronized and rf_angle and lb_angle to be synchronized
+        lf_rb_diff_reward = - angular_difference(lf_angle, rb_angle) / 180
+        rf_lb_diff_reward = - angular_difference(rf_angle, lb_angle) / 180
+
+        # we want lf_rb and rf_lb to be 180° apart
+        lf_rf_180_reward = - (180 - angular_difference(lf_angle, rf_angle)) / 180
+
+        print("action_reward", action_reward)
+        print("action_std_reward", action_std_reward)
+        print("lf_rb_diff_reward", lf_rb_diff_reward)
+        print("rf_lb_diff_reward", rf_lb_diff_reward)
+        print("lf_rf_180_reward", lf_rf_180_reward)
+        #
+        reward_run = action_reward + action_std_reward + lf_rb_diff_reward + rf_lb_diff_reward + lf_rf_180_reward
+
         reward = reward_ctrl + reward_run
         return reward.item(), done
 
@@ -184,3 +211,8 @@ class WalkerEnv_v0(BaseEnv):
             truncated = True
         self.dt = current_time
         return self.observation.squeeze(), reward, done, truncated, {"step_time": delta_t}
+
+def angular_difference(angle1, angle2):
+    # Calculate the difference in angles, wrapped between -180 and 180
+    difference = (angle2 - angle1 + 180) % 360 - 180
+    return abs(difference)  # Return the absolute value of the difference

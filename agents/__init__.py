@@ -1,7 +1,9 @@
 from agents.sac import SACAgent
 from agents.td3 import TD3Agent
+from agents.behavior_cloning import BehavioralCloningAgent
+from agents.random import RandomAgent
 
-all_agents = ["td3", "sac"]
+all_agents = ["td3", "sac", "bc", "random"]
 
 
 def get_agent(action_space, state_space, cfg):
@@ -14,6 +16,20 @@ def get_agent(action_space, state_space, cfg):
         )
     elif cfg.agent.name == "sac":
         agent = SACAgent(
+            action_space=action_space,
+            state_space=state_space,
+            agent_config=cfg.agent,
+            device=cfg.device,
+        )
+    elif cfg.agent.name == "bc":
+        agent = BehavioralCloningAgent(
+            action_space=action_space,
+            state_space=state_space,
+            agent_config=cfg.agent,
+            device=cfg.device,
+        )
+    elif cfg.agent.name == "random":
+        agent = RandomAgent(
             action_space=action_space,
             state_space=state_space,
             agent_config=cfg.agent,

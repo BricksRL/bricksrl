@@ -9,10 +9,9 @@ sys.path.insert(0, '/home/sebastian/Documents/lego_robot')
 from agents import get_agent
 from utils import prefill_buffer, logout, login, create_transition_td, tensordict2dict
 from environments import make_env
-import signal
+
 
 @hydra.main(version_base=None, config_path="./conf", config_name="config")
-
 def run(cfg : DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
     verbose = cfg.verbose
@@ -25,11 +24,22 @@ def run(cfg : DictConfig) -> None:
     login(agent)
     
     # initialize wandb
-    wandb.init(project=project_name, config=cfg)
-    wandb.watch(agent.actor, log_freq=1)
+    wandb.init(project=project_name)
+    wandb.config = OmegaConf.to_container(
+        cfg, resolve=True, throw_on_missing=True
+    )
+    wandb.watch(agent.actor, log_freq=1) if agent.actor else None
 
     # prefill buffer  
     prefill_buffer(env=env, agent=agent, checking_mode=checking_mode, num_episodes=cfg.agent.prefill_episodes)
+
+    # pretraining
+    if agent.do_pretrain:
+        print("Start pretraining...")
+        agent.pretrain(wandb, batch_size=cfg.agent.batch_size, num_updates=cfg.agent.num_updates)
+        print("Pretraining finished.")
+        inp = input("Press Enter to start online training: ")
+
 
     batch_size = cfg.agent.batch_size
     num_updates = cfg.agent.num_updates
@@ -43,6 +53,7 @@ def run(cfg : DictConfig) -> None:
             ep_return = 0
             ep_steps = 0
             total_step_times = []
+            agent_actions = []
             if checking_mode == 1:
                 inp = input("Press Enter to start episode: ")
                 if inp == "q":
@@ -77,6 +88,7 @@ def run(cfg : DictConfig) -> None:
                         break
             loss_info = agent.train(batch_size=batch_size,
                         num_updates=num_updates*ep_steps)
+            agent_actions.append(action)
             if quit:
                 break
           
@@ -87,7 +99,9 @@ def run(cfg : DictConfig) -> None:
                         "reward": ep_return,
                         "steps": ep_steps,
                         "total_step_time": np.mean(total_step_times),
-                        "buffer_size": agent.replay_buffer.__len__(),}
+                        "buffer_size": agent.replay_buffer.__len__(),
+                        "action": wandb.Histogram(action),
+                        "action_mean": wandb.Histogram(np.mean(agent_actions, axis=0))}
             log_dict.update(info)
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)

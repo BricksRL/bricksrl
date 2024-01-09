@@ -2,12 +2,12 @@
 
 # logging
 run_name: ""
-mode: "online"
+mode: "offline"
 verbose: 0
 checking_mode: 0 # if 1 you have to allow each new episode to start if 0 it will run without stopping
 
 device: "cpu"
-episodes: 1000
+episodes: 50
 
 defaults:
   - _self_

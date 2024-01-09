@@ -2,7 +2,7 @@ name: sac
 lr: 3e-4
 batch_size: 256
 num_updates: 20
-prefill_episodes: 20
+prefill_episodes: 10
 
 num_cells: 256
 gamma: 0.99
@@ -16,3 +16,4 @@ dropout: 0.01
 
 prb: 0
 buffer_size: 1000000
+pretrain: False

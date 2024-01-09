@@ -26,7 +26,7 @@ def get_critic(
     num_cells=[256, 256],
     out_features=1,
     activation_class=nn.ReLU,
-    normalization=None,
+    normalization="None",
     dropout=0.0,
 ):
     """Returns a critic network"""
@@ -52,16 +52,17 @@ def get_deterministic_actor(
     in_keys=["observation"],
     num_cells=[256, 256],
     activation_class=nn.ReLU,
-    normalization=None,
+    normalization="None",
     dropout=0.0,
 ):
     """Returns a deterministic actor network like it is used in DDPG and TD3"""
-
+    normalization = get_normalization(normalization)
     actor_net = MLP(
         num_cells=num_cells,
         out_features=action_spec.shape[-1],
         activation_class=activation_class,
-        norm_class=None if normalization == "None" else normalization,
+        norm_class=normalization,
+        norm_kwargs={"normalized_shape": num_cells[-1]} if normalization else None,
         dropout=dropout,
     )
 
@@ -95,17 +96,18 @@ def get_stochastic_actor(
     action_spec,
     in_keys=["observation"],
     num_cells=[256, 256],
-    normalization=None,
+    normalization="None",
     dropout=0.0,
     activation_class=nn.ReLU,
 ):
     """Returns a stochastic actor network like it is used in SAC"""
-
+    normalization = get_normalization(normalization)
     actor_net = MLP(
         num_cells=num_cells,
         out_features=2 * action_spec.shape[-1],
         activation_class=activation_class,
-        norm_class=None if normalization == "None" else normalization,
+        norm_class=normalization,
+        norm_kwargs={"normalized_shape": num_cells[-1]} if normalization else None,
         dropout=dropout,
     )
 

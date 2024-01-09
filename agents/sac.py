@@ -41,8 +41,6 @@ class SACAgent(BaseAgent):
             in_keys=["observation"],
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             activation_class=nn.ReLU,
-            # normalization=agent_config.normalization,
-            # dropout=agent_config.dropout,
         )
         self.critic = get_critic(
             in_keys=["observation"],
@@ -107,6 +105,7 @@ class SACAgent(BaseAgent):
         # general stats
         self.collected_transitions = 0
         self.episodes = 0
+        self.do_pretrain = agent_config.pretrain
 
     def get_agent_statedict(self):
         """Save agent"""
@@ -171,7 +170,6 @@ class SACAgent(BaseAgent):
     @torch.no_grad()
     def get_action(self, state):
         """Get action from actor network"""
-
         state = torch.from_numpy(state).float().to(self.device)[None, :]
         input_td = td.TensorDict({"observation": state}, batch_size=1)
         # set exploration mode?
@@ -183,8 +181,21 @@ class SACAgent(BaseAgent):
         self.replay_buffer.extend(transition)
         self.collected_transitions += 1
 
+    def pretrain(self, wandb, batch_size=64, num_updates=1):
+        """Pretrain the agent with simple behavioral cloning"""
+        # TODO: implement pretrain for testing        
+        # for i in range(num_updates):
+        #     batch = self.replay_buffer.sample(batch_size)
+        #     pred, _ = self.actor(batch["observations"].float())
+        #     loss = torch.mean((pred - batch["actions"]) ** 2)
+        #     self.optimizer.zero_grad()
+        #     loss.backward()
+        #     self.optimizer.step()
+        #     wandb.log({"pretrain/loss": loss.item()})
+
     def train(self, batch_size=64, num_updates=1):
         """Train the agent"""
+        self.actor.train()
         for i in range(num_updates):
             # Sample a batch from the replay buffer
             batch = self.replay_buffer.sample(batch_size)
@@ -214,4 +225,5 @@ class SACAgent(BaseAgent):
                     batch["indices"],
                     loss["critic_loss"].detach().cpu().numpy(),
                 )
+        self.actor.eval()
         return loss
