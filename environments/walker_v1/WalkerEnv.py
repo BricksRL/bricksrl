@@ -7,15 +7,16 @@ import numpy as np
 from environments.base.base_env import BaseEnv
 
 
-class WalkerEnv_v0(BaseEnv):
+class WalkerEnv_v1(BaseEnv):
     """
     A reinforcement learning environment for the robodog to learn to walk.
-
-    Specific to the walker_v0 environment is, that the reward function is hard coded to learn a gait routine.
-    In contrast to the walker_v1 environment, the reward function is not based on the acceleration of the robot.
+    
 
     Args:
         max_episode_steps (int): The maximum number of steps per episode. Defaults to 10.
+        max_acc (float): The maximum acceleration of the robot. Defaults to 3000.0.
+        reward_normalization_factor (float): The factor used to normalize the reward. Defaults to 1000.0.
+        reward_clip (bool): Whether to clip the reward to [-1, 1]. Defaults to False.
         sleep_time (float): The time to wait between sending actions and receiving the next state. Defaults to 0.0.
         verbose (bool): Whether to print additional information. Defaults to False.
 
@@ -34,14 +35,21 @@ class WalkerEnv_v0(BaseEnv):
     def __init__(
         self,
         max_episode_steps: int = 50,
+        max_acc: float = 3000.0,
+        reward_normalization_factor: float = 1000.0,
+        reward_clip: bool = False,
         sleep_time: float = 0.0,
         verbose: bool = False,
     ):
-        action_dim = 4  # (lf_value, lb_value, rf_value, rb_value)
-        # angles are in range [-180, 179]
+        action_dim = 4 # (lf_value, lb_value, rf_value, rb_value)
+        # angles are in range [-180, 179] 
+
         state_dim = 7  # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, acc_x)
         self.sleep_time = sleep_time
-        self.max_acc = 3000
+        self.normalize_factor = reward_normalization_factor
+        self.max_acc = max_acc
+        self.reward_clip = reward_clip
+
 
         self.max_episode_steps = max_episode_steps
 
@@ -52,28 +60,8 @@ class WalkerEnv_v0(BaseEnv):
         pitch_roll_range = (-50, 50)
         max_acc_range = (-self.max_acc, self.max_acc)
         self.observation_space = gym.spaces.Box(
-            low=np.array(
-                [
-                    motor_range[0],
-                    motor_range[0],
-                    motor_range[0],
-                    motor_range[0],
-                    pitch_roll_range[0],
-                    pitch_roll_range[0],
-                    max_acc_range[0],
-                ]
-            ),
-            high=np.array(
-                [
-                    motor_range[1],
-                    motor_range[1],
-                    motor_range[1],
-                    motor_range[1],
-                    pitch_roll_range[1],
-                    pitch_roll_range[1],
-                    max_acc_range[1],
-                ]
-            ),
+            low=np.array([motor_range[0], motor_range[0], motor_range[0], motor_range[0], pitch_roll_range[0], pitch_roll_range[0], max_acc_range[0]]),
+            high=np.array([motor_range[1], motor_range[1], motor_range[1], motor_range[1], pitch_roll_range[1], pitch_roll_range[1], max_acc_range[1]]),
         )
 
         super().__init__(action_dim=action_dim, state_dim=state_dim, verbose=verbose)
@@ -101,9 +89,7 @@ class WalkerEnv_v0(BaseEnv):
             np.ndarray: The normalized and clipped state.
         """
         state = np.clip(state, self.observation_space.low, self.observation_space.high)
-        state = (state - self.observation_space.low) / (
-            self.observation_space.high - self.observation_space.low
-        )
+        state = (state - self.observation_space.low) / (self.observation_space.high - self.observation_space.low)
         return state
 
     def reset(self) -> np.ndarray:
@@ -115,7 +101,7 @@ class WalkerEnv_v0(BaseEnv):
         """
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
-        action = np.zeros(self.action_dim) + 1  # to bring robot in starting position!
+        action = np.zeros(self.action_dim) + 1 # to bring robot in starting position!
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
         self.observation = self.read_from_hub()
@@ -126,11 +112,7 @@ class WalkerEnv_v0(BaseEnv):
         return self.normalize_state(self.observation.squeeze())
 
     def reward(
-        self,
-        state: np.ndarray,
-        action: np.ndarray,
-        next_state: np.ndarray,
-        delta_t: float,
+        self, state: np.ndarray, action: np.ndarray, next_state: np.ndarray, delta_t: float
     ) -> Tuple[float, bool]:
         """Reward function of walker.
 
@@ -154,46 +136,13 @@ class WalkerEnv_v0(BaseEnv):
             reward = 0
             return reward, done
 
-        (
-            lf_angle,
-            rf_angle,
-            lb_angle,
-            rb_angle,
-            pitch,
-            roll,
-            acc_x,
-        ) = next_state.squeeze()
 
-        # we want actions to be negative and high
-        # action is in range [-1, 1] over 4 dims -> sum is in range [-4, 4] -> divide by 4 to get in range [-1, 1]
-        action_reward = -np.sum(action) / 4
-        # actions should ideally be similar something like [-0.75, -0.75, -0.75, -0.75]
-        action_std_reward = -np.std(action)
-
-        # we want lf_angle and rb_angle to be synchronized and rf_angle and lb_angle to be synchronized
-        # divide by 180 to get in range [-1, 0]
-        lf_rb_diff_reward = -angular_difference(lf_angle, rb_angle) / 180
-        rf_lb_diff_reward = -angular_difference(rf_angle, lb_angle) / 180
-
-        # we want lf_rb and rf_lb to be 180° apart
-        # divide by 180 to get in range [-1, 0]
-        lf_rf_180_reward = -(180 - angular_difference(lf_angle, rf_angle)) / 180
-
-        if self.verbose:
-            # TODO: maybe we want add those values as an info dict to the env step return
-            print("action_reward", action_reward)
-            print("action_std_reward", action_std_reward)
-            print("lf_rb_diff_reward", lf_rb_diff_reward)
-            print("rf_lb_diff_reward", rf_lb_diff_reward)
-            print("lf_rf_180_reward", lf_rf_180_reward)
-
-        reward = (
-            action_reward
-            + action_std_reward
-            + lf_rb_diff_reward
-            + rf_lb_diff_reward
-            + lf_rf_180_reward
-        )
+        if self.reward_clip:
+            reward = np.where(next_state[:, -1] < 0, 1, -1)
+        else:
+            # Change in velocity (Δv = a * dt)
+            reward = - next_state[:, -1]  * delta_t
+            reward = reward / self.normalize_factor
 
         return reward.item(), done
 
@@ -215,17 +164,14 @@ class WalkerEnv_v0(BaseEnv):
         time.sleep(
             self.sleep_time
         )  # we need to wait some time for sensors to read and to
-
+        
         # receive the next state
         next_observation = self.read_from_hub()
         current_time = time.time()
         delta_t = current_time - self.dt
         # calc reward and done
         reward, done = self.reward(
-            state=self.observation,
-            action=action,
-            next_state=next_observation,
-            delta_t=delta_t,
+            state=self.observation, action=action, next_state=next_observation, delta_t=delta_t
         )
         if self.verbose:
             print("State", self.observation)
@@ -241,16 +187,4 @@ class WalkerEnv_v0(BaseEnv):
         if self.episode_step_iter >= self.max_episode_steps:
             truncated = True
         self.dt = current_time
-        return (
-            self.observation.squeeze(),
-            reward,
-            done,
-            truncated,
-            {"step_time": delta_t},
-        )
-
-
-def angular_difference(angle1, angle2):
-    # Calculate the difference in angles, wrapped between -180 and 180
-    difference = (angle2 - angle1 + 180) % 360 - 180
-    return abs(difference)  # Return the absolute value of the difference
+        return self.observation.squeeze(), reward, done, truncated, {"step_time": delta_t}
