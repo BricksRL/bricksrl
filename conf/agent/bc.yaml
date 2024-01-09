@@ -4,6 +4,10 @@ batch_size: 256
 num_updates: 2000
 prefill_episodes: 0
 
-num_cells: 256
 
-offline_data_path: datasets/walker_v0/walker_gait_250ms.npy 
+policy_type: deterministic # stochastic or deterministic
+num_cells: 256
+dropout: 0.01
+normalization: LayerNorm
+
+offline_data_path: datasets/walker_v0/walker_gait_250ms_50epochs.npy 

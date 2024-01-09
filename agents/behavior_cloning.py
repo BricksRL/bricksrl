@@ -6,10 +6,11 @@ from torchrl.data import (
     BoundedTensorSpec,
     TensorDictReplayBuffer,
 )
+
 from torchrl.data.replay_buffers.storages import LazyMemmapStorage
 
 from agents.base import BaseAgent
-from agents.networks import get_deterministic_actor
+from agents.networks import get_deterministic_actor, get_stochastic_actor
 
 
 def initialize(net, std=0.02):
@@ -33,13 +34,30 @@ class BehavioralCloningAgent(BaseAgent):
             maximum=torch.from_numpy(action_space.high).float(),
             shape=action_space.shape,
         )
-        self.actor = get_deterministic_actor(
-            action_space,
-            in_keys=["observation"],
-            num_cells=[agent_config.num_cells, agent_config.num_cells],
-            activation_class=nn.ReLU,
 
-        )
+        if agent_config.policy_type == "deterministic":
+            self.actor = get_deterministic_actor(
+                action_space,
+                in_keys=["observation"],
+                num_cells=[agent_config.num_cells, agent_config.num_cells],
+                activation_class=nn.ReLU,
+                normalization=agent_config.normalization,
+                dropout=agent_config.dropout,
+
+            )
+            self.pretrain = self.pretrain_deter
+        elif agent_config.policy_type == "stochastic":
+            self.actor = get_stochastic_actor(
+                action_space,
+                in_keys=["observation"],
+                num_cells=[agent_config.num_cells, agent_config.num_cells],
+                activation_class=nn.ReLU,
+                normalization=agent_config.normalization,
+                dropout=agent_config.dropout,
+            )
+            self.pretrain = self.pretrain_stoch
+        else:
+            raise ValueError("policy_type not recognized, choose deterministic or stochastic")
 
         # initialize networks
         self.init_nets([self.actor])
@@ -136,8 +154,23 @@ class BehavioralCloningAgent(BaseAgent):
 
         # TODO: for bc we dont want to add to replay buffer
         pass
+
+    def pretrain_stoch(self, wandb, batch_size=64, num_updates=1):
+        """Pretrain the agent with simple behavioral cloning"""
         
-    def pretrain(self, wandb, batch_size=64, num_updates=1):
+        for i in range(num_updates):
+            batch = self.replay_buffer.sample(batch_size)
+            input_td = td.TensorDict({"observation": batch["observations"].float()}, batch_size=(256))
+            dist = self.actor.get_dist(input_td)
+            loss = -dist.log_prob(batch["actions"]).mean()
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+            wandb.log({"pretrain/loss": loss.item()})
+
+        self.actor.eval()
+
+    def pretrain_deter(self, wandb, batch_size=64, num_updates=1):
         """Pretrain the agent with simple behavioral cloning"""
         
         for i in range(num_updates):
@@ -148,6 +181,8 @@ class BehavioralCloningAgent(BaseAgent):
             loss.backward()
             self.optimizer.step()
             wandb.log({"pretrain/loss": loss.item()})
+
+        self.actor.eval()
 
 
     def train(self, batch_size=64, num_updates=1):
