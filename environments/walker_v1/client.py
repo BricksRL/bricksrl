@@ -59,9 +59,9 @@ def transform_range(value, old_min, old_max, new_min, new_max):
 
 (lf_angle, rf_angle) = (lf_motor.angle(), rf_motor.angle())
 (lb_angle, rb_angle) = (lb_motor.angle(), rb_motor.angle())
-low_angle = -270 # 270
+low_angle = -180 # 270
 high_angle = 0
-speed = 800
+speed = 600
 while True:
     
     while not keyboard.poll(0):
