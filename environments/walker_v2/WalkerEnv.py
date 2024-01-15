@@ -144,7 +144,7 @@ class WalkerEnv_v2(BaseEnv):
 
         done = False
         # pitch and roll need to stay in range [-75, 75] outside done = True
-        pitch, roll = next_state[:, -3], next_state[:, -2]
+        pitch, roll = next_state[:, -4], next_state[:, -3]
         if np.abs(pitch) > 100 or np.abs(roll) > 100:
             done = True
             reward = 0

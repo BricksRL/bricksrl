@@ -1,7 +1,7 @@
 name: bc
 lr: 3e-4
 batch_size: 256
-num_updates: 2000
+num_updates: 300
 prefill_episodes: 0
 
 

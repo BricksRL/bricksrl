@@ -59,9 +59,9 @@ def transform_range(value, old_min, old_max, new_min, new_max):
 
 (lf_angle, rf_angle) = (lf_motor.angle(), rf_motor.angle())
 (lb_angle, rb_angle) = (lb_motor.angle(), rb_motor.angle())
-low_angle = -270 # 270
+low_angle = -100 # 270
 high_angle = 0
-speed = 800
+speed = 600
 while True:
     
     while not keyboard.poll(0):
@@ -97,6 +97,6 @@ while True:
     # send current state
     # TODO: add current battery supply in mA for wandb logging
     #print("Battery: ", hub.battery.current())
-    out_msg = ustruct.pack('!fffffff', normalize_angle(lf_angle), normalize_angle(rf_angle), normalize_angle(lb_angle), normalize_angle(rb_angle), pitch, roll, a_x, dist)
+    out_msg = ustruct.pack('!ffffffff', normalize_angle(lf_angle), normalize_angle(rf_angle), normalize_angle(lb_angle), normalize_angle(rb_angle), pitch, roll, a_x, dist)
     stdout.buffer.write(out_msg)
 
