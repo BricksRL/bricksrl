@@ -7,9 +7,10 @@ verbose: 0
 checking_mode: 0 # if 1 you have to allow each new episode to start if 0 it will run without stopping
 
 device: "cpu"
-episodes: 50
+episodes: 100
 
 defaults:
   - _self_
-  - agent: sac
-  - env: walker-v0
+  # random, bc, sac, td3
+  - agent: sac 
+  - env: walker-v1
