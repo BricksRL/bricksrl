@@ -143,7 +143,6 @@ class WalkerEnv_v1(BaseEnv):
             # Change in velocity (Δv = a * dt)
             reward = - next_state[:, -1]  * delta_t
             reward = reward / self.normalize_factor
-
         return reward.item(), done
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
