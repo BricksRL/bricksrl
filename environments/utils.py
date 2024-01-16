@@ -6,6 +6,7 @@ from environments import (
     WalkerEnv_v1,
     WalkerEnv_v2,
     WalkerWallEnv_v0,
+    RoboArmEnv_v0
 )
 
 
@@ -54,6 +55,12 @@ def make(name="RunAway", env_conf=None):
         return WalkerWallEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             max_distance=env_conf.max_distance,
+            verbose=env_conf.verbose,
+            sleep_time=env_conf.sleep_time,
+        )
+    elif name == "RoboArm-v0":
+        return RoboArmEnv_v0(
+            max_episode_steps=env_conf.max_episode_steps,
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
         )

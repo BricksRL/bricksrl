@@ -99,10 +99,10 @@ class PybricksHub:
         if data[0] == 0x01:  # "write stdout" event (0x01)
             payload = data[1:]
             # print("Received:", payload)
-            if len(payload) != self.exception_out_data and self.payload_buffer is None:
+            if len(payload) != len(self.exception_out_data) and self.payload_buffer is None: #changed it to len(self.exception_out_data)
                 self.payload_buffer = payload
             elif (
-                len(payload) != self.exception_out_data
+                len(payload) != len(self.exception_out_data) #changed it to len(self.exception_out_data)
                 and self.payload_buffer is not None
             ):
                 self.payload_buffer += payload
