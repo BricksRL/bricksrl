@@ -12,6 +12,7 @@ from torchrl.modules import AdditiveGaussianWrapper
 from torchrl.objectives import SoftUpdate
 from torchrl.objectives.td3 import TD3Loss
 
+from torchrl.envs.utils import ExplorationType, set_exploration_type
 from agents.base import BaseAgent
 from agents.networks import get_critic, get_deterministic_actor
 
@@ -42,8 +43,6 @@ class TD3Agent(BaseAgent):
             in_keys=["observation"],
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             activation_class=nn.ReLU,
-            # normalization=agent_config.normalization,
-            # dropout=agent_config.dropout,
         )
         self.critic = get_critic(
             in_keys=["observation"],
@@ -53,29 +52,27 @@ class TD3Agent(BaseAgent):
             normalization=agent_config.normalization,
             dropout=agent_config.dropout,
         )
+        self.model = nn.ModuleList([self.actor, self.critic]).to(device)
         # initialize networks
-        self.init_nets([self.actor, self.critic])
+        self.init_nets(self.model)
 
         self.actor_explore = AdditiveGaussianWrapper(
-            self.actor,
+            self.model[0],
             sigma_init=1,
             sigma_end=1,
             mean=0,
             std=0.01,
         ).to(device)
 
-        # set initial network weights
-        # use a small std to start with small action values at the beginning
-        # initialize(self.actor, std=0.02)
-
         # define loss function
         self.loss_module = TD3Loss(
-            actor_network=self.actor,
-            qvalue_network=self.critic,
+            actor_network=self.model[0],
+            qvalue_network=self.model[1],
             action_spec=action_space,
             num_qvalue_nets=2,
             gamma=agent_config.gamma,
             loss_function=agent_config.loss_function,
+            separate_losses=False,
         )
         # Define Target Network Updater
         self.target_net_updater = SoftUpdate(
@@ -178,8 +175,8 @@ class TD3Agent(BaseAgent):
 
         state = torch.from_numpy(state).float().to(self.device)[None, :]
         input_td = td.TensorDict({"observation": state}, batch_size=1)
-
-        out_td = self.actor(input_td).squeeze(0)
+        with set_exploration_type(ExplorationType.MODE), torch.no_grad():
+            out_td = self.actor_explore(input_td).squeeze(0)
         self.actor_explore.step(1)
         return out_td["action"].cpu().numpy()
 
@@ -191,7 +188,7 @@ class TD3Agent(BaseAgent):
     def train(self, batch_size=64, num_updates=1):
         """Train the agent"""
         log_data = {}
-        for i in range(num_updates):
+        for _ in range(num_updates):
             self.total_updates += 1
             # Sample a batch from the replay buffer
             sampled_tensordict = self.replay_buffer.sample()
@@ -201,26 +198,23 @@ class TD3Agent(BaseAgent):
                 )
             else:
                 sampled_tensordict = sampled_tensordict.clone()
-            # out = self.loss_module(sampled_tensordict)
-            # q_loss = out["loss_qvalue"]
-            # actor_loss = out["loss_actor"]
             # Update Critic Network
-            q_loss, *_ = self.loss_module.value_loss(sampled_tensordict)
+            q_loss, _ = self.loss_module.value_loss(sampled_tensordict)
             self.optimizer_critic.zero_grad()
             q_loss.backward()
             self.optimizer_critic.step()
-            log_data.update({"critic_loss": q_loss.item()})
+            log_data.update({"critic_loss": q_loss})
 
             # Update Actor Network
             if self.total_updates % 2 == 0:
-                actor_loss, *_ = self.loss_module.actor_loss(sampled_tensordict)
+                actor_loss, _ = self.loss_module.actor_loss(sampled_tensordict)
                 self.optimizer_actor.zero_grad()
                 actor_loss.backward()
                 self.optimizer_actor.step()
 
                 # Update Target Networks
                 self.target_net_updater.step()
-                log_data.update({"actor_loss": actor_loss.item()})
+                log_data.update({"actor_loss": actor_loss})
 
             # Update Prioritized Replay Buffer
             if isinstance(self.replay_buffer, TensorDictPrioritizedReplayBuffer):

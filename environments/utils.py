@@ -2,6 +2,7 @@ from environments import (
     DoNothingEnv,
     RunAwayEnv_v0,
     RunAwayEnv_v1,
+    SpinningEnv_v1,
     WalkerEnv_v0,
     WalkerEnv_v1,
     WalkerEnv_v2,
@@ -22,6 +23,12 @@ def make(name="RunAway", env_conf=None):
             max_episode_steps=env_conf.max_episode_steps,
             max_distance=env_conf.max_distance,
             min_distance=env_conf.min_distance,
+            verbose=env_conf.verbose,
+        )
+    elif name == "Spinning-v1":
+        return SpinningEnv_v1(
+            max_episode_steps=env_conf.max_episode_steps,
+            sleep_time=env_conf.sleep_time,
             verbose=env_conf.verbose,
         )
     elif name == "Walker-v0":
