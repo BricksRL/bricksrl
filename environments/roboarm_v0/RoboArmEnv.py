@@ -43,10 +43,10 @@ class RoboArmEnv_v0(BaseEnv):
             #"GM": (-230, -148),
             "HM": (-60, 140),
             #"LM": (-190, -10),
-            "RM": (-180, 180),
+            "RM": (-900, 900),
         }
         self.motor_ranges = motor_ranges
-        self.goal_thresholds = np.array([10, 10])
+        self.goal_thresholds = np.array([20, 20])
         # Observation 4 motors (GM, HM, LM, RM) + goal positions (GGM, GHM, GLM, GRM)
         self.observation_space = gym.spaces.Box(
             low=np.array(
@@ -140,7 +140,6 @@ class RoboArmEnv_v0(BaseEnv):
             print("Raw state received: ", self.observation)
             print("Goal state: ", self.goal_state)
         return self.normalize_state(np.concatenate([self.observation.squeeze(), self.goal_state]))
-        #return self.normalize_state(self.observation.squeeze())
 
     def reward(
         self,

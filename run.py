@@ -81,11 +81,11 @@ def run(cfg : DictConfig) -> None:
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)
                 
-                if done:
-                    inpt = input("Please reset the robot to the starting position and press Enter to continue or q to quit:")
-                    if inpt == "q":
-                        quit = True
-                        break
+                #if done:
+                    #inpt = input("Please reset the robot to the starting position and press Enter to continue or q to quit:")
+                    #if inpt == "q":
+                    #    quit = True
+                #        break
             loss_info = agent.train(batch_size=batch_size,
                         num_updates=num_updates*ep_steps)
             agent_actions.append(action)
@@ -101,6 +101,7 @@ def run(cfg : DictConfig) -> None:
                         "total_step_time": np.mean(total_step_times),
                         "buffer_size": agent.replay_buffer.__len__(),
                         "action": wandb.Histogram(action),
+                        "done": done,
                         "action_mean": wandb.Histogram(np.mean(agent_actions, axis=0))}
             log_dict.update(info)
             log_dict.update(tensordict2dict(loss_info))
