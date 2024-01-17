@@ -6,6 +6,8 @@ from torchrl.modules import (
     AdditiveGaussianWrapper,
     MLP,
     ProbabilisticActor,
+    SafeSequential,
+    TanhModule,
     SafeModule,
     ValueOperator,
 )
@@ -66,12 +68,6 @@ def get_deterministic_actor(
         dropout=dropout,
     )
 
-    dist_class = TanhDelta
-    dist_kwargs = {
-        "min": action_spec.space.minimum,
-        "max": action_spec.space.maximum,
-    }
-
     in_keys_actor = in_keys
     actor_module = SafeModule(
         actor_net,
@@ -80,15 +76,15 @@ def get_deterministic_actor(
             "param",
         ],
     )
-    actor = ProbabilisticActor(
-        spec=action_spec,
-        in_keys=["param"],
-        module=actor_module,
-        distribution_class=dist_class,
-        distribution_kwargs=dist_kwargs,
-        default_interaction_mode="random",
-        return_log_prob=False,
+    actor = SafeSequential(
+        actor_module,
+        TanhModule(
+            in_keys=["param"],
+            out_keys=["action"],
+            spec=action_spec,
+        ),
     )
+
     return actor
 
 
