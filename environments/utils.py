@@ -1,4 +1,5 @@
 from environments import (
+    BalanceEnv_v0,
     DoNothingEnv,
     RunAwayEnv_v0,
     RunAwayEnv_v1,
@@ -27,6 +28,12 @@ def make(name="RunAway", env_conf=None):
         )
     elif name == "Spinning-v1":
         return SpinningEnv_v1(
+            max_episode_steps=env_conf.max_episode_steps,
+            sleep_time=env_conf.sleep_time,
+            verbose=env_conf.verbose,
+        )
+    elif name == "Balance-v0":
+        return BalanceEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             sleep_time=env_conf.sleep_time,
             verbose=env_conf.verbose,

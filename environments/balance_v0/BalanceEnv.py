@@ -7,10 +7,9 @@ import numpy as np
 from environments.base.base_env import BaseEnv
 
 
-class SpinningEnv_v1(BaseEnv):
+class BalanceEnv_v0(BaseEnv):
     """
-    SpinningEnv_v1 is a custom gym environment for a spinning robot.
-    The robot has to learn to spin in a circle around its own axis given a random goal direction (left or right, 0 or 1).
+    BalanceEnv_v0 is a custom gym environment for the 2wheeler balancing robot.
 
     Args:
         max_episode_steps (int): The maximum number of steps per episode. Defaults to 50.
@@ -30,16 +29,15 @@ class SpinningEnv_v1(BaseEnv):
     def __init__(
         self,
         max_episode_steps: int = 50,
-        sleep_time: float = 0.2,
+        sleep_time: float = 0.0,
         verbose: bool = False,
     ):
-        action_dim = 2  # to control the wheel motors independently
-        state_dim = 5  # 5 sensors (left,right,pitch,roll, rotation_velocity) + 1 direction (left or right)
+        action_dim = 4  # to control the wheel motors and the motor speed
+        state_dim = 4  # 4 sensors (left,right,roll, rotation_velocity) + 1 direction (left or right)
 
         motor_angles = (0, 360)
-        pitch_angles = (-90, 90)
         roll_angles = (-90, 90)
-        rotation_velocity = (-100, 100) # adapt to real values
+        rotation_velocity = (-250, 250) # adapt to real values
 
         self.sleep_time = sleep_time
 
@@ -54,20 +52,16 @@ class SpinningEnv_v1(BaseEnv):
                 [
                     motor_angles[0],
                     motor_angles[0],
-                    pitch_angles[0],
                     roll_angles[0],
                     rotation_velocity[0],
-                    0,
                 ]
             ),
             high=np.array(
                 [
                     motor_angles[1],
                     motor_angles[1],
-                    pitch_angles[1],
                     roll_angles[1],
                     rotation_velocity[1],
-                    1,
                 ]
             ),
         )
@@ -114,10 +108,7 @@ class SpinningEnv_v1(BaseEnv):
         action = np.zeros(self.action_dim)
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
-
-        state = self.read_from_hub()
-        self.direction = np.random.randint(0, 2)  # (0,1) left or right
-        self.observation = self.normalize_state(np.concatenate((state, np.array([[self.direction]])), axis=1))
+        self.observation = self.normalize_state(self.read_from_hub())
 
         return self.observation.squeeze()
 
@@ -130,12 +121,13 @@ class SpinningEnv_v1(BaseEnv):
         # TODO: maybe add reward for low motor usage (energy efficiency) so that the robot relaxes when max distance is reached
         done = False
         velocity = next_state[:, -1]
+        roll = next_state[:, -2]
 
-        if self.direction == 0:
-            reward = velocity
-        else:
-            reward = -velocity
+        roll_reward = - np.abs(roll)
 
+        velocity_reward = - np.abs(velocity)/100 # devide by 10 to put more focus on roll reward
+
+        reward = roll_reward + velocity_reward
         return reward.item(), done
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, dict]:
@@ -167,7 +159,7 @@ class SpinningEnv_v1(BaseEnv):
             print("New distance", next_observation[:, -1])
             print("Reward", reward)
         # set next state as current state
-        self.observation = self.normalize_state(np.concatenate((next_observation, np.array([[self.direction]])), axis=1))
+        self.observation = self.normalize_state(next_observation)
 
         # increment episode step counter
         self.episode_step_iter += 1
