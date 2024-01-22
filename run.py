@@ -84,8 +84,8 @@ def run(cfg : DictConfig) -> None:
                 if done:
                     inpt = input("Please reset the robot to the starting position and press Enter to continue or q to quit:")
                     if inpt == "q":
-                       quit = True
-                       break
+                        quit = True
+                        break
             loss_info = agent.train(batch_size=batch_size,
                         num_updates=num_updates*ep_steps)
             agent_actions.append(action)

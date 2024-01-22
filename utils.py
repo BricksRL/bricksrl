@@ -113,5 +113,5 @@ def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
                 if done:
                     inpt = input("Please reset the robot to the starting position and press Enter to continue or q to quit:")
                     if inpt == "q":
-                       break
+                        break
         print("Prefill done! Buffer size: ", agent.replay_buffer.__len__())
