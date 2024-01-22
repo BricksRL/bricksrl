@@ -101,6 +101,7 @@ def run(cfg : DictConfig) -> None:
                         "total_step_time": np.mean(total_step_times),
                         "buffer_size": agent.replay_buffer.__len__(),
                         "action": wandb.Histogram(action),
+                        "done": done,
                         "action_mean": wandb.Histogram(np.mean(agent_actions, axis=0))}
             log_dict.update(info)
             log_dict.update(tensordict2dict(loss_info))

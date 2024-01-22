@@ -13,4 +13,4 @@ defaults:
   - _self_
   # random, bc, sac, td3
   - agent: sac 
-  - env: walker-v1
+  - env: roboarm-v0
