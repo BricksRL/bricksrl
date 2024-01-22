@@ -219,5 +219,5 @@ class RoboArmEnv_v0(BaseEnv):
             reward,
             done,
             truncated,
-            {"Raw goal state": self.goal_state},
+            {"desired_state": self.goal_state, "achieved_state": self.observation.squeeze()},
         )
