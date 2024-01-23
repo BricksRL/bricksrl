@@ -133,7 +133,6 @@ class RunAwayEnv_v1(BaseEnv):
         get away from the wall as fast as possible.
 
         """
-        # TODO: maybe add reward for low motor usage (energy efficiency) so that the robot relaxes when max distance is reached
         done = False
 
         if (
