@@ -19,7 +19,6 @@ class RunAwayEnv_v1(BaseEnv):
 
     Args:
         max_episode_steps (int): The maximum number of steps per episode. Defaults to 10.
-        max_distance (float): The maximum distance to the wall. Defaults to 1000.0.
         min_distance (float): The minimum distance to the wall. Defaults to 40.
         sleep_time (float): The time to wait between sending actions and receiving the next state. Defaults to 0.2.
         verbose (bool): Whether to print verbose information during the environment's execution. Defaults to False.
@@ -39,28 +38,44 @@ class RunAwayEnv_v1(BaseEnv):
     def __init__(
         self,
         max_episode_steps: int = 10,
-        max_distance: float = 1000.0,
         min_distance: float = 40,
         sleep_time: float = 0.2,
         verbose: bool = False,
     ):
         action_dim = 2 # to control the wheel motors independently
-        state_dim = 5  # 4 sensors (left,right,pitch,roll) + 1 distance to the wall
-        self.sleep_time = sleep_time
-        self.normalize_factor = 1000.0
-        self.max_distance = max_distance
-        self.min_distance = min_distance / self.normalize_factor
+        state_dim = 5  # 4 sensors (left,right,pitch,roll, distance to the wall)
+        motor_angles = (0, 360)
+        roll_angles = (-90, 90)
+        pitch_angles = (-90, 90)
+        distance = (0, 2000)
 
+        self.sleep_time = sleep_time
         self.max_episode_steps = max_episode_steps
+        self.min_distance = min_distance
 
         self.action_space = gym.spaces.Box(
             low=-np.ones(action_dim), high=np.ones(action_dim), shape=(action_dim,)
         )
 
         self.observation_space = gym.spaces.Box(
-            low=np.zeros(state_dim),
-            high=np.ones(state_dim) * self.max_distance,
-            shape=(state_dim,),
+            low=np.array(
+                [
+                    motor_angles[0],
+                    motor_angles[0],
+                    roll_angles[0],
+                    pitch_angles[0],
+                    distance[0],
+                ]
+            ),
+            high=np.array(
+                [
+                    motor_angles[1],
+                    motor_angles[1],
+                    roll_angles[1],
+                    pitch_angles[1],
+                    distance[1],
+                ]
+            ),
         )
         self.verbose = verbose
         super().__init__(action_dim=action_dim, state_dim=state_dim, verbose=verbose)
@@ -87,8 +102,10 @@ class RunAwayEnv_v1(BaseEnv):
         Returns:
             np.ndarray: The normalized and clipped state.
         """
-        state = np.clip(state, 0, self.max_distance)
-        state = state / self.normalize_factor
+        state = np.clip(state, self.observation_space.low, self.observation_space.high)
+        state = (state - self.observation_space.low) / (
+            self.observation_space.high - self.observation_space.low
+        )
         return state
 
     def reset(self) -> np.ndarray:
@@ -103,9 +120,9 @@ class RunAwayEnv_v1(BaseEnv):
         action = np.zeros(self.action_dim)
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
-        self.observation = self.normalize_state(self.read_from_hub())
+        self.observation = self.read_from_hub()
 
-        return self.observation.squeeze()
+        return self.normalize_state(self.observation).squeeze()
 
     def reward(
         self, state: np.ndarray, action: np.ndarray, next_state: np.ndarray
@@ -152,7 +169,7 @@ class RunAwayEnv_v1(BaseEnv):
             self.sleep_time
         )  # we need to wait some time for sensors to read and to
         # receive the next state
-        next_observation = self.normalize_state(self.read_from_hub())
+        next_observation = self.read_from_hub()
 
         # calc reward and done
         reward, done = self.reward(
@@ -171,4 +188,4 @@ class RunAwayEnv_v1(BaseEnv):
         if self.episode_step_iter >= self.max_episode_steps:
             truncated = True
 
-        return self.observation.squeeze(), reward, done, truncated, {}
+        return self.normalize_state(self.observation).squeeze(), reward, done, truncated, {"distance": next_observation[:, -1]}
