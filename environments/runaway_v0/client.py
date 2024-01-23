@@ -11,6 +11,36 @@ from pybricks.robotics import DriveBase
 from usys import stdin, stdout
 from uselect import poll
 import ustruct
+from micropython import kbd_intr
+
+kbd_intr(-1)
+
+def normalize_angle(angle):
+    # Normalize angle to be within 0 and 360
+    while angle <= 0:
+        angle += 360
+    while angle > 360:
+        angle -= 360
+    return angle
+def transform_range(value, old_min, old_max, new_min, new_max):
+    """
+    Transform a value from one range to another.
+
+    Parameters:
+    value (float): The value to transform.
+    old_min (float): The minimum value of the old range.
+    old_max (float): The maximum value of the old range.
+    new_min (float): The minimum value of the new range.
+    new_max (float): The maximum value of the new range.
+
+    Returns:
+    float: The transformed value.
+    """
+    # Compute the scale factor between the old and new ranges
+    scale = (new_max - new_min) / (old_max - old_min)
+    # Apply the transformation
+    return new_min + (value - old_min) * scale
+
 
 hub = InventorHub()
 
@@ -33,14 +63,9 @@ while True:
         wait(1)
 
     action_value = ustruct.unpack("!f", stdin.buffer.read(4))[0]
-    action = action_value * 100
-    if type(action) == float:
-        pass
-    else:
-        action = 0.0
-    drive_base.straight(action, wait=True)
+    action = transform_range(action_value, -1, 1, -100, 100)
 
-    wait(200)
+    drive_base.straight(action, wait=True)
 
     # get current state of the robot
     (left, right) = (left_motor.angle(), right_motor.angle())
@@ -48,5 +73,5 @@ while True:
     dist = sensor.distance()
 
     # send current state
-    out_msg = ustruct.pack('!fffff',left, right, pitch, roll, dist)
+    out_msg = ustruct.pack('!fffff', normalize_angle(left), normalize_angle(right), pitch, roll, dist)
     stdout.buffer.write(out_msg)
