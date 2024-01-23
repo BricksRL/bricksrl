@@ -41,7 +41,7 @@ class RunAwayEnv_v0(BaseEnv):
         sleep_time: float = 0.2,
         verbose: bool = False,
     ):
-        action_dim = 1 # to control the wheel motors together
+        action_dim = 1  # to control the wheel motors together
         state_dim = 5  # 4 sensors (left,right,pitch,roll, distance)
         self.sleep_time = sleep_time
         self.min_distance = min_distance
@@ -145,7 +145,8 @@ class RunAwayEnv_v0(BaseEnv):
             reward = 1.0
         else:
             reward = 0.0
-
+        if next_state[:, -1] > 2000:
+            done = True
         return reward, done
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, dict]:
@@ -186,4 +187,10 @@ class RunAwayEnv_v0(BaseEnv):
         if self.episode_step_iter >= self.max_episode_steps:
             truncated = True
 
-        return self.normalize_state(self.observation).squeeze(), reward, done, truncated, {"distance": next_observation[:, -1]}
+        return (
+            self.normalize_state(self.observation).squeeze(),
+            reward,
+            done,
+            truncated,
+            {"distance": next_observation[:, -1]},
+        )
