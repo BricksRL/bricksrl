@@ -23,6 +23,7 @@ def create_transition_td(
     reward: np.array,
     next_observation: np.array,
     done: np.array,
+    truncated: np.array,
     batch_size: int = 1,
 ):
     """Create a TensorDict from a transition tuple."""
@@ -31,13 +32,19 @@ def create_transition_td(
     reward_t = torch.from_numpy(reward).float()[None, :]
     next_obs_t = torch.from_numpy(next_observation).float()[None, :]
     done_t = torch.from_numpy(done).bool()[None, :]
+    truncated_t = torch.from_numpy(truncated).bool()[None, :]
 
     return td.TensorDict(
         {
             "observation": obs_t,
             "action": action_t,
             "reward": reward_t,
-            "next": {"observation": next_obs_t, "reward": reward_t, "done": done_t},
+            "next": {
+                "observation": next_obs_t,
+                "reward": reward_t,
+                "done": done_t,
+                "truncated": truncated_t,
+            },
         },
         batch_size=batch_size,
     )
@@ -59,7 +66,6 @@ def logout(agent):
         torch.save(save_dict, save_name + ".pth")
 
 
-
 def login(agent):
     x = input("Do you want to load the model? (y/n)")
     if x == "y":
@@ -78,12 +84,12 @@ def login(agent):
 def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
     """
     Prefills the agent's replay buffer with experiences by running the environment for a specified number of episodes.
-    
+
     Args:
     - env: gym.Env object representing the environment
     - agent: Agent object with an add_experience method to add experiences to the replay buffer
     - num_episodes: int, number of episodes to run the environment for
-    
+
     Returns: None
     """
     if agent.name in ["sac", "td3"]:
@@ -96,7 +102,7 @@ def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
                 else:
                     pass
             else:
-                pass 
+                pass
             print("Prefill episode: ", e)
             state = env.reset()
             done = False
@@ -106,12 +112,19 @@ def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
                 print("Random action: ", action)
                 next_state, reward, done, truncated, info = env.step(action)
                 transition = create_transition_td(
-                    state, action, np.array([reward]), next_state, np.array([done])
+                    observation=state,
+                    action=action,
+                    reward=np.array([reward]),
+                    next_observation=next_state,
+                    truncated=np.array([truncated]),
+                    done=np.array([done]),
                 )
-                agent.add_experience(transition)
+                agent.add_experience(transition, info)
                 state = next_state
-                if done:
-                    inpt = input("Please reset the robot to the starting position and press Enter to continue or q to quit:")
-                    if inpt == "q":
-                        break
+                # if done:
+                #     inpt = input(
+                #         "Please reset the robot to the starting position and press Enter to continue or q to quit:"
+                #     )
+                #     if inpt == "q":
+                #         break
         print("Prefill done! Buffer size: ", agent.replay_buffer.__len__())

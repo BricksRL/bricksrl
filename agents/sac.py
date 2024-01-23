@@ -13,6 +13,7 @@ from torchrl.objectives.sac import SACLoss
 
 from agents.base import BaseAgent
 from agents.networks import get_critic, get_stochastic_actor
+from agents.utils import HERSampling
 
 
 def initialize(net, std=0.02):
@@ -83,6 +84,13 @@ class SACAgent(BaseAgent):
             buffer_size=agent_config.buffer_size,
             device=device,
         )
+        if agent_config.use_her_augmentation:
+            self.use_her = True
+            self.her_augmentations = HERSampling(
+                agent_config.her_generation_type,
+                agent_config.goal_thresholds,
+                agent_config.samples,
+            )
 
         # Define Optimizer
         critic_params = list(
@@ -176,14 +184,19 @@ class SACAgent(BaseAgent):
         out_td = self.actor(input_td).squeeze(0)
         return out_td["action"].cpu().numpy()
 
-    def add_experience(self, transition: td.TensorDict):
+    def add_experience(self, transition: td.TensorDict, info):
         """Add experience to replay buffer"""
         self.replay_buffer.extend(transition)
         self.collected_transitions += 1
+        if self.use_her:
+            assert info
+            augmentation = self.her_augmentations.add_transition(td=transition.clone(), info=info)
+            if augmentation is not None:
+                self.replay_buffer.extend(augmentation)
 
     def pretrain(self, wandb, batch_size=64, num_updates=1):
         """Pretrain the agent with simple behavioral cloning"""
-        # TODO: implement pretrain for testing        
+        # TODO: implement pretrain for testing
         # for i in range(num_updates):
         #     batch = self.replay_buffer.sample(batch_size)
         #     pred, _ = self.actor(batch["observations"].float())

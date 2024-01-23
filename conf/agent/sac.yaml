@@ -17,3 +17,8 @@ dropout: 0.0
 prb: 0
 buffer_size: 1000000
 pretrain: False
+
+use_her_augmentation: True
+her_generation_type: future
+goal_thresholds: 20
+samples: 4

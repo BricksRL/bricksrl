@@ -8,7 +8,18 @@ from environments.base.base_env import BaseEnv
 
 
 class RoboArmEnv_v0(BaseEnv):
-    """ """
+    """ 
+    RoboArmEnv_v0 is an environment for controlling a robotic arm.
+    The arm has four motors: Grab_motor, high_motor, low_motor, and rotation_motor.
+    The goal of the environment is to manipulate the arm to reach specific goal positions for each motor.
+    The state of the environment consists of the current positions of the four motors and the goal positions.
+    The action space allows for controlling the four motors by specifying the desired motor positions.
+
+    Args:
+        max_episode_steps (int): Maximum number of steps per episode. Defaults to 50.
+        sleep_time (float): Time to sleep between steps. Defaults to 0.0.
+        verbose (bool): Whether to print debug information. Defaults to False.
+    """
 
     def __init__(
         self,
