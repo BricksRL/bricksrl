@@ -42,8 +42,8 @@ class RunAwayEnv_v1(BaseEnv):
         sleep_time: float = 0.2,
         verbose: bool = False,
     ):
-        action_dim = 2  # to control the wheel motors independently
-        state_dim = 5  # 4 sensors (left,right,pitch,roll, distance to the wall)
+        action_dim = 2  # control the wheel motors independently
+        state_dim = 5  # 5 sensors (left motor angle, right motor angle, pitch, roll, distance)
         motor_angles = (0, 360)
         roll_angles = (-90, 90)
         pitch_angles = (-90, 90)
@@ -97,10 +97,10 @@ class RunAwayEnv_v1(BaseEnv):
         Normalize and clip the state to be compatible with the agent.
 
         Args:
-            state (np.ndarray): The state to be normalized and clipped.
+            state (np.ndarray): The state to be normalized.
 
         Returns:
-            np.ndarray: The normalized and clipped state.
+            np.ndarray: The normalized state.
         """
         state = np.clip(state, self.observation_space.low, self.observation_space.high)
         state = (state - self.observation_space.low) / (
