@@ -98,17 +98,23 @@ class HERSampling:
         cat_new_goals = torch.cat(new_goals).reshape(b, t, self.samples, -1)
         cat_new_goals = cat_new_goals.transpose(1, 2).flatten(0, 1).squeeze()
         achieved_state = splitted_achieved_goals.repeat_interleave(self.samples, dim=0)
+
         augmentation_obs = torch.cat([achieved_state, cat_new_goals], dim=-1).float()
-        next_obs_repeated = sampled_td.get("next")["observation"].repeat_interleave(
+        # repeat and then do cat(obs[obssize_withoutgoal:], new goals)
+
+        obs_repeated = sampled_td.get("observation").repeat_interleave(
             self.samples, dim=0
         )
+        goal_feat_size = cat_new_goals.shape[-1]
+        obs_new_goals = torch.cat([obs_repeated[:, :-goal_feat_size], cat_new_goals], dim=-1)
+
         truncated_repeated = sampled_td.get("next")["truncated"].repeat_interleave(
             self.samples, dim=0
         )
 
         augmentation_td = TensorDict(
             {
-                "observation": augmentation_obs,
+                "observation": obs_new_goals,
                 "action": sampled_td.get("action").repeat_interleave(
                     self.samples, dim=0
                 ),
@@ -116,7 +122,7 @@ class HERSampling:
                 #"desired_state": cat_new_goals,
                 "reward": cat_rewards,
                 "next": {
-                    "observation": next_obs_repeated,
+                    "observation": augmentation_obs,
                     "truncated": truncated_repeated,
                     "done": cat_rewards.bool(),
                     "reward": cat_rewards,
