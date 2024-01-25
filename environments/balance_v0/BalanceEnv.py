@@ -33,7 +33,7 @@ class BalanceEnv_v0(BaseEnv):
         verbose: bool = False,
     ):
         action_dim = 4  # to control the wheel motors and the motor speed
-        state_dim = 4  # 4 sensors (left,right,roll, rotation_velocity) + 1 direction (left or right)
+        state_dim = 4  # 4 sensors (left, right, roll, rotation_velocity)
 
         motor_angles = (0, 360)
         roll_angles = (-90, 90)
@@ -85,10 +85,10 @@ class BalanceEnv_v0(BaseEnv):
         Normalize and clip the state to be compatible with the agent.
 
         Args:
-            state (np.ndarray): The state to be normalized and clipped.
+            state (np.ndarray): The state to be normalized.
 
         Returns:
-            np.ndarray: The normalized and clipped state.
+            np.ndarray: The normalized state.
         """
         state = np.clip(state, self.observation_space.low, self.observation_space.high)
         state = (state - self.observation_space.low) / (
@@ -125,9 +125,9 @@ class BalanceEnv_v0(BaseEnv):
 
         roll_reward = - np.abs(roll)
 
-        velocity_reward = - np.abs(velocity)/100 # devide by 10 to put more focus on roll reward
+        # velocity_reward = - np.abs(velocity)/1000 # devide by 10 to put more focus on roll reward
 
-        reward = roll_reward + velocity_reward
+        reward = roll_reward  #+ velocity_reward
         return reward.item(), done
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, dict]:
