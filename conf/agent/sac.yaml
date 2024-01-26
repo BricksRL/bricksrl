@@ -18,7 +18,8 @@ prb: 0
 buffer_size: 1000000
 pretrain: False
 
-use_her_augmentation: True
+use_her_augmentation: False
 her_generation_type: future
+reward_signal: dense
 goal_thresholds: 20
-samples: 4
+samples: 1

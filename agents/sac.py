@@ -84,12 +84,15 @@ class SACAgent(BaseAgent):
             buffer_size=agent_config.buffer_size,
             device=device,
         )
+        self.use_her = False
         if agent_config.use_her_augmentation:
             self.use_her = True
             self.her_augmentations = HERSampling(
-                agent_config.her_generation_type,
-                agent_config.goal_thresholds,
-                agent_config.samples,
+                observation_space=state_space,
+                generation_type=agent_config.her_generation_type,
+                goal_thresholds=agent_config.goal_thresholds,
+                samples=agent_config.samples,
+                reward_signal=agent_config.reward_signal,
             )
 
         # Define Optimizer
