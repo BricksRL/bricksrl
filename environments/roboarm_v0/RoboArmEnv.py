@@ -15,6 +15,7 @@ class RoboArmEnv_v0(BaseEnv):
         max_episode_steps: int = 50,
         sleep_time: float = 0.0,
         verbose: bool = False,
+        reward_signal: str = "dense",
     ):
         action_dim = 2  # (Grab_motor_action, high_motor_action, low_motor_action, rotation_motor_action)
         # angles are in range [-180, 179]
@@ -22,7 +23,8 @@ class RoboArmEnv_v0(BaseEnv):
         state_dim = 2  # (GM, HM, LM, RM, GGM, GHM, GLM, GRM)
         self.sleep_time = sleep_time
 
-
+        assert reward_signal in ["dense", "sparse"], "Reward signal must be dense or sparse."
+        self.reward_signal = reward_signal
         self.max_episode_steps = max_episode_steps
 
         self.action_space = gym.spaces.Box(
@@ -162,14 +164,22 @@ class RoboArmEnv_v0(BaseEnv):
         """
 
         done = False
-        errors = np.abs(next_state - self.goal_state)
-        if np.all(errors <= self.goal_thresholds):
-            reward = 1
-            done = True
+        if self.reward_signal == "dense":
+            error = np.sum(np.abs(next_state - self.goal_state))
+            reward = - error / 1000
+            if error < np.mean(self.goal_thresholds):
+                done = True
+        elif self.reward_signal == "sparse":
+            errors = np.abs(next_state - self.goal_state)
+            if np.all(errors <= self.goal_thresholds):
+                reward = 1
+                done = True
 
+            else:
+                reward = 0
         else:
-            reward = 0
-
+            raise ValueError("Reward signal must be dense or sparse.")
+        
         return reward, done
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:

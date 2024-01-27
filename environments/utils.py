@@ -75,6 +75,7 @@ def make(name="RunAway", env_conf=None):
             max_episode_steps=env_conf.max_episode_steps,
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
+            reward_signal=env_conf.reward_signal,
         )
     elif name == "DoNothing":
         return DoNothingEnv(
