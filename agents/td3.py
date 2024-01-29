@@ -61,7 +61,7 @@ class TD3Agent(BaseAgent):
             sigma_init=1,
             sigma_end=1,
             mean=0,
-            std=0.01,
+            std=agent_config.exploration_noise,
         ).to(device)
 
         # define loss function
@@ -175,7 +175,7 @@ class TD3Agent(BaseAgent):
 
         state = torch.from_numpy(state).float().to(self.device)[None, :]
         input_td = td.TensorDict({"observation": state}, batch_size=1)
-        with set_exploration_type(ExplorationType.MODE), torch.no_grad():
+        with set_exploration_type(ExplorationType.RANDOM), torch.no_grad():
             out_td = self.actor_explore(input_td).squeeze(0)
         self.actor_explore.step(1)
         return out_td["action"].cpu().numpy()
