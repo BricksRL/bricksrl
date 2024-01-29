@@ -12,5 +12,5 @@ episodes: 100
 defaults:
   - _self_
   # random, bc, sac, td3
-  - agent: sac 
+  - agent: td3
   - env: roboarm-v0
