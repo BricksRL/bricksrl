@@ -8,6 +8,7 @@ num_cells: 256
 gamma: 0.99
 soft_update_eps: 0.995
 loss_function: smooth_l1
+exploration_noise: 0.01
 
 normalization: None
 dropout: 0.0

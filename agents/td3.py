@@ -61,7 +61,7 @@ class TD3Agent(BaseAgent):
             sigma_init=1,
             sigma_end=1,
             mean=0,
-            std=0.01,
+            std=agent_config.exploration_noise,
         ).to(device)
 
         # define loss function
