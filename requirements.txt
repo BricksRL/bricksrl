@@ -1,0 +1,5 @@
+pybricksdev==1.0.0a46
+tensordict==0.2.1
+torchrl==0.2.1
+hydra-core==1.3.2
+wandb==0.16.1
