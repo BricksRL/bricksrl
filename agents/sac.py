@@ -8,6 +8,7 @@ from torchrl.data import (
     TensorDictReplayBuffer,
 )
 from torchrl.data.replay_buffers.storages import LazyMemmapStorage, LazyTensorStorage
+from torchrl.envs.utils import ExplorationType, set_exploration_type
 from torchrl.objectives import SoftUpdate
 from torchrl.objectives.sac import SACLoss
 
@@ -172,8 +173,8 @@ class SACAgent(BaseAgent):
         """Get action from actor network"""
         state = torch.from_numpy(state).float().to(self.device)[None, :]
         input_td = td.TensorDict({"observation": state}, batch_size=1)
-        # set exploration mode?
-        out_td = self.actor(input_td).squeeze(0)
+        with set_exploration_type(ExplorationType.RANDOM):
+            out_td = self.actor(input_td).squeeze(0)
         return out_td["action"].cpu().numpy()
 
     def add_experience(self, transition: td.TensorDict):
@@ -183,7 +184,7 @@ class SACAgent(BaseAgent):
 
     def pretrain(self, wandb, batch_size=64, num_updates=1):
         """Pretrain the agent with simple behavioral cloning"""
-        # TODO: implement pretrain for testing        
+        # TODO: implement pretrain for testing
         # for i in range(num_updates):
         #     batch = self.replay_buffer.sample(batch_size)
         #     pred, _ = self.actor(batch["observations"].float())
