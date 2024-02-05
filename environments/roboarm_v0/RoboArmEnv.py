@@ -148,29 +148,48 @@ class RoboArmEnv_v0(BaseEnv):
         state: np.ndarray,
         action: np.ndarray,
         next_state: np.ndarray,
-    ) -> Tuple[float, bool]:
-        """Reward function of walker.
+    ) -> Tuple[float, bool, float]:
+        """
+        Reward function of RoboArm.
 
-        Goal: Increase forward velocity, estimated from acceleration.
+        The reward is given by the negative distance between the next state and the goal state.
 
         Args:
             state (np.ndarray): The current state.
             action (np.ndarray): The action taken.
             next_state (np.ndarray): The next state.
-            delta_t (float): The time step duration.
 
         Returns:
-            Tuple[float, bool]: The reward received and a boolean indicating whether the episode is done.
+            Tuple[float, bool, float]: The reward received, a boolean indicating whether the episode is done,
+            and the error between the goal state and the next state.
         """
 
         done = False
+        # TODO:
+        # we could give a cost per step so that the agent needs to get to the goal as fast as possible
+        #reward = -1
+
         if self.reward_signal == "dense":
-            error = np.sum(np.abs(next_state - self.goal_state))
-            reward = - error / 1000
-            if error < np.mean(self.goal_thresholds):
+            error = np.linalg.norm(self.goal_state - next_state)
+            #print("LinalgError: ", error)
+            error = ((self.goal_state - next_state) ** 2).mean()
+            #print("mseError: ", error)
+
+            norm_goal_state = (self.goal_state - self.observation_space.low[:-self.state_dim]) / (
+                self.observation_space.high[:-self.state_dim] - self.observation_space.low[:-self.state_dim]
+            )
+            norm_next_state = (next_state - self.observation_space.low[:-self.state_dim]) / (
+                self.observation_space.high[:-self.state_dim] - self.observation_space.low[:-self.state_dim]
+            )
+            norm_error = np.linalg.norm(norm_goal_state - norm_next_state)
+            #print("normError: ", norm_error)
+
+            #reward = - error / 10000
+            reward = - norm_error
+            if norm_error < np.mean(0.07): # self.goal_thresholds
                 done = True
         elif self.reward_signal == "sparse":
-            errors = np.abs(next_state - self.goal_state)
+            errors = np.linalg.norm(self.goal_state - next_state)
             if np.all(errors <= self.goal_thresholds):
                 reward = 1
                 done = True
@@ -180,7 +199,7 @@ class RoboArmEnv_v0(BaseEnv):
         else:
             raise ValueError("Reward signal must be dense or sparse.")
         
-        return reward, done
+        return reward, done, norm_error
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
         """
@@ -205,7 +224,7 @@ class RoboArmEnv_v0(BaseEnv):
         next_observation = self.read_from_hub()
         current_time = time.time()
         # calc reward and done
-        reward, done = self.reward(
+        reward, done, error = self.reward(
             state=self.observation,
             action=action,
             next_state=next_observation,
@@ -229,5 +248,5 @@ class RoboArmEnv_v0(BaseEnv):
             reward,
             done,
             truncated,
-            {"desired_state": self.goal_state, "achieved_state": self.observation.squeeze()},
+            {"desired_state": self.goal_state, "achieved_state": self.observation.squeeze(), "error": error},
         )

@@ -82,7 +82,7 @@ while True:
 
     # Read action values for the motors
     data = stdin.buffer.read(8)  # Reading 4 bytes (1 floats)
-    rotation_action, high_action  = ustruct.unpack("!ff", data) # grab_action, high_action, low_action
+    high_action, rotation_action   = ustruct.unpack("!ff", data) # grab_action, high_action, low_action
     
     # transform action range for motors
     #grab_action = transform_range(grab_action, -1, 1, low_action_range, high_action_range)
