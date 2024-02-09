@@ -7,7 +7,7 @@ import numpy as np
 from environments.base.base_env import BaseEnv
 
 
-class WalkerEnv_v0(BaseEnv):
+class WalkerEnv_v01(BaseEnv):
     """
     A reinforcement learning environment for the robodog to learn to walk.
 

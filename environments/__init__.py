@@ -5,6 +5,7 @@ from environments.spinning_v1.SpinningEnv import SpinningEnv_v1
 from environments.balance_v0.BalanceEnv import BalanceEnv_v0
 
 from environments.walker_v0.WalkerEnv import WalkerEnv_v0
+from environments.walker_v0_1.WalkerEnv import WalkerEnv_v01
 from environments.walker_v1.WalkerEnv import WalkerEnv_v1
 from environments.walker_v2.WalkerEnv import WalkerEnv_v2
 from environments.walkerwall_v0.WalkerWall import WalkerWallEnv_v0
