@@ -7,10 +7,10 @@ verbose: 0
 checking_mode: 0 # if 1 you have to allow each new episode to start if 0 it will run without stopping
 
 device: "cpu"
-episodes: 100
+episodes: 50
 
 defaults:
   - _self_
   # random, bc, sac, td3
-  - agent: sac 
-  - env: roboarm-v0
+  - agent: td3 
+  - env: walker-v0

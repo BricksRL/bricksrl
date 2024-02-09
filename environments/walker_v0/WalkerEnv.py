@@ -166,9 +166,10 @@ class WalkerEnv_v0(BaseEnv):
 
         # we want actions to be negative and high
         # action is in range [-1, 1] over 4 dims -> sum is in range [-4, 4] -> divide by 4 to get in range [-1, 1]
-        action_reward = -np.sum(action) / 4
+        action_reward = -np.sum(action) / 4 / 10
+        # Take this off we dont want them to be similar otherwise we cant adapt for noise in the system
         # actions should ideally be similar something like [-0.75, -0.75, -0.75, -0.75]
-        action_std_reward = -np.std(action)
+        # action_std_reward = -np.std(action)
 
         # we want lf_angle and rb_angle to be synchronized and rf_angle and lb_angle to be synchronized
         # divide by 180 to get in range [-1, 0]
@@ -178,21 +179,23 @@ class WalkerEnv_v0(BaseEnv):
         # we want lf_rb and rf_lb to be 180° apart
         # divide by 180 to get in range [-1, 0]
         lf_rf_180_reward = -(180 - angular_difference(lf_angle, rf_angle)) / 180
+        lb_rb_180_reward = -(180 - angular_difference(lb_angle, rb_angle)) / 180
 
         if self.verbose:
             # TODO: maybe we want add those values as an info dict to the env step return
             print("action_reward", action_reward)
-            print("action_std_reward", action_std_reward)
+            # print("action_std_reward", action_std_reward)
             print("lf_rb_diff_reward", lf_rb_diff_reward)
             print("rf_lb_diff_reward", rf_lb_diff_reward)
             print("lf_rf_180_reward", lf_rf_180_reward)
 
         reward = (
             action_reward
-            + action_std_reward
+            # + action_std_reward
             + lf_rb_diff_reward
             + rf_lb_diff_reward
             + lf_rf_180_reward
+            + lb_rb_180_reward
         )
 
         return reward.item(), done
