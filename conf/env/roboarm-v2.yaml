@@ -1,0 +1,13 @@
+name: "RoboArm-v2"
+max_episode_steps: 100
+# env specific params
+verbose: 0
+# env wrapper
+frame_stack: 1
+action_filter: 1
+sleep_time: 0.0
+reward_signal: sparse
+camera_idx: 2
+img_dim: [64, 64]
+color_range_low: [46, 141, 116]
+color_range_high: [179, 240, 255]
