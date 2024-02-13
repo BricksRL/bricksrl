@@ -8,7 +8,8 @@ from environments import (
     WalkerEnv_v1,
     WalkerEnv_v2,
     WalkerWallEnv_v0,
-    RoboArmEnv_v0
+    RoboArmEnv_v0,
+    RoboArmEnv_v2,
 )
 
 
@@ -76,6 +77,17 @@ def make(name="RunAway", env_conf=None):
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
             reward_signal=env_conf.reward_signal,
+        )
+    elif name == "RoboArm-v2":
+        return RoboArmEnv_v2(
+            max_episode_steps=env_conf.max_episode_steps,
+            sleep_time=env_conf.sleep_time,
+            verbose=env_conf.verbose,
+            reward_signal=env_conf.reward_signal,
+            camera_idx=env_conf.camera_idx,
+            img_dim=env_conf.img_dim,
+            color_range_low=env_conf.color_range_low,
+            color_range_high=env_conf.color_range_high,
         )
     elif name == "DoNothing":
         return DoNothingEnv(
