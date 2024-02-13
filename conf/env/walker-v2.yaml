@@ -1,0 +1,14 @@
+name: "Walker-v2"
+max_episode_steps: 100
+# env specific params
+max_acceleration: 3000.
+max_distance: 2000.
+reward_normalization_factor: 1000.
+reward_clip_acc: False
+use_acceleration_reward: True
+verbose: 0
+# env wrapper
+frame_stack: 1
+action_filter: 1
+sleep_time: 0.0
+

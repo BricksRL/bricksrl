@@ -1,0 +1,9 @@
+name: "RunAway-v1"
+max_episode_steps: 20
+# env specific params
+min_distance: 40.
+verbose: 0
+# env wrapper
+frame_stack: 1
+action_filter: 1.0
+
