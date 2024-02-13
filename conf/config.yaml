@@ -12,5 +12,5 @@ episodes: 50
 defaults:
   - _self_
   # random, bc, sac, td3
-  - agent: td3 
-  - env: walker-v0
+  - agent: drq
+  - env: walker-v01
