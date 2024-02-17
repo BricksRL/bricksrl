@@ -5,7 +5,8 @@ import gym
 import numpy as np
 
 from environments.base.base_env import BaseEnv
-
+from tensordict import TensorDict, TensorDictBase
+from torchrl.data.tensor_specs import BoundedTensorSpec, TensorSpec
 
 class BalanceEnv_v0(BaseEnv):
     """
@@ -25,6 +26,12 @@ class BalanceEnv_v0(BaseEnv):
         normalize_state(state: np.ndarray) -> np.ndarray: Normalizes and clips the state to be compatible with the agent.
         reset() -> np.ndarray: Resets the environment and returns the initial state.
     """
+    action_dim = 4  # to control the wheel motors and the motor speed
+    state_dim = 4  # 4 sensors (left, right, roll, rotation_velocity)
+
+    motor_angles = (0, 360)
+    roll_angles = (-90, 90)
+    rotation_velocity = (-250, 250) # adapt to real values
 
     def __init__(
         self,
@@ -32,41 +39,35 @@ class BalanceEnv_v0(BaseEnv):
         sleep_time: float = 0.0,
         verbose: bool = False,
     ):
-        action_dim = 4  # to control the wheel motors and the motor speed
-        state_dim = 4  # 4 sensors (left, right, roll, rotation_velocity)
-
-        motor_angles = (0, 360)
-        roll_angles = (-90, 90)
-        rotation_velocity = (-250, 250) # adapt to real values
 
         self.sleep_time = sleep_time
 
         self.max_episode_steps = max_episode_steps
 
-        self.action_space = gym.spaces.Box(
-            low=-np.ones(action_dim), high=np.ones(action_dim), shape=(action_dim,)
+        self.action_spec = BoundedTensorSpec(
+            low=-np.ones(self.action_dim), high=np.ones(self.action_dim), shape=(self.action_dim,)
         )
 
-        self.observation_space = gym.spaces.Box(
+        self.observation_spec = BoundedTensorSpec(
             low=np.array(
                 [
-                    motor_angles[0],
-                    motor_angles[0],
-                    roll_angles[0],
-                    rotation_velocity[0],
+                    self.motor_angles[0],
+                    self.motor_angles[0],
+                    self.roll_angles[0],
+                    self.rotation_velocity[0],
                 ]
             ),
             high=np.array(
                 [
-                    motor_angles[1],
-                    motor_angles[1],
-                    roll_angles[1],
-                    rotation_velocity[1],
+                    self.motor_angles[1],
+                    self.motor_angles[1],
+                    self.roll_angles[1],
+                    self.rotation_velocity[1],
                 ]
             ),
         )
         self.verbose = verbose
-        super().__init__(action_dim=action_dim, state_dim=state_dim, verbose=verbose)
+        super().__init__(action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose)
 
     def sample_random_action(self) -> np.ndarray:
         """
@@ -96,7 +97,7 @@ class BalanceEnv_v0(BaseEnv):
         )
         return state
 
-    def reset(self) -> np.ndarray:
+    def reset(self) -> TensorDictBase:
         """
         Reset the environment and return the initial state.
 
@@ -108,11 +109,12 @@ class BalanceEnv_v0(BaseEnv):
         action = np.zeros(self.action_dim)
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
-        self.observation = self.normalize_state(self.read_from_hub())
+        observation = self.normalize_state(self.read_from_hub())
+        self.episode_return = 0 # reset episode return
+        return TensorDict({"state": observation.squeeze(),
+                           "episode_return": self.episode_return}, batch_size=[])
 
-        return self.observation.squeeze()
-
-    def reward(self, next_state: np.ndarray) -> Tuple[float, bool]:
+    def reward(self, tensordict: TensorDictBase) -> TensorDictBase:
         """Reward function of Spinning environment.
         If the self.direction is 0, the robot is spinning left, otherwise right.
         We want to maximise in those cases the angular velocity (last element of the state vector).
@@ -130,7 +132,7 @@ class BalanceEnv_v0(BaseEnv):
         reward = roll_reward  #+ velocity_reward
         return reward.item(), done
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, dict]:
+    def step(self, tensordict: TensorDictBase) -> TensorDictBase:
         """
         Perform the given action and return the next state, reward, and done status.
 

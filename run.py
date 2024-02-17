@@ -47,13 +47,13 @@ def run(cfg : DictConfig) -> None:
     quit = False
     try:
         for e in range(cfg.episodes):
-            state = env.reset()        
-            done = False
-            truncated = False
+            td = env.reset()        
+            done = td.get("done", False)
+            truncated = td.get("truncated", False)
             ep_return = 0
             ep_steps = 0
             total_step_times = []
-            agent_actions = []
+            # agent_actions = []
             if checking_mode == 1:
                 inp = input("Press Enter to start episode: ")
                 if inp == "q":
@@ -67,20 +67,13 @@ def run(cfg : DictConfig) -> None:
             while not done and not truncated:
                 ep_steps += 1
                 step_start_time = time.time()
-                action = agent.get_action(state)
-                if verbose == 1:
-                    print("New step")
-                    print("State: ", state)
-                    print("Action: ", action)
-                next_state, reward, done, truncated, info = env.step(action)
-                transition = create_transition_td(state, action, np.array([reward]), next_state, np.array([done]))
-                agent.add_experience(transition)
-                state = next_state
-                ep_return += reward
+                td = agent.get_action(td)
+                td = env.step(td)
 
+                agent.add_experience(td)
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)
-                
+                done = td.get("done", False)                
                 if done:
                     inpt = input("Please reset the robot to the starting position and press Enter to continue or q to quit:")
                     if inpt == "q":
@@ -88,7 +81,7 @@ def run(cfg : DictConfig) -> None:
                         break
             loss_info = agent.train(batch_size=batch_size,
                         num_updates=num_updates*ep_steps)
-            agent_actions.append(action)
+            #agent_actions.append(action)
             if quit:
                 break
           
@@ -100,10 +93,10 @@ def run(cfg : DictConfig) -> None:
                         "steps": ep_steps,
                         "total_step_time": np.mean(total_step_times),
                         "buffer_size": agent.replay_buffer.__len__(),
-                        "action": wandb.Histogram(action),
-                        "done": done,
-                        "action_mean": wandb.Histogram(np.mean(agent_actions, axis=0))}
-            log_dict.update(info)
+                        #"action": wandb.Histogram(action),
+                        "done": done,}
+                        # "action_mean": wandb.Histogram(np.mean(agent_actions, axis=0))}
+            # log_dict.update(info)
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)
             
