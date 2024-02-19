@@ -19,6 +19,12 @@ from environments.wrapper import (
     StartControlWrapper,
     TorchEnvWrapper,
 )
+from torchrl.envs import (
+    TransformedEnv,
+    Compose,
+    RewardSum,
+    DoubleToFloat,
+    CatFrames,)
 
 
 def make_env(config):
@@ -32,17 +38,20 @@ def make_env(config):
         A tuple containing the new environment, its action space, and its state space.
     """
     env = make(name=config.env.name, env_conf=config.env)
+    obs_key = env.observation_key
 
+    transforms = []
     if config.env.frame_stack > 1:
-        env = StackObservationsWrapper(env, stack_size=config.env.frame_stack)
+        transforms.append(CatFrames(N=config.env.frame_stack, in_keys=[obs_key], out_key=obs_key))
     if config.env.action_filter < 1:
-        env = ActionFilterWrapper(
-            env, current_action_influence=config.env.action_filter
-        )
+        raise NotImplementedError("ActionFilterWrapper not implemented yet")
+        # TODO: add this to torchrl
+        # env = ActionFilterWrapper(
+        #     env, current_action_influence=config.env.action_filter
+        # )
+    env = TransformedEnv(env, Compose(*transforms))
 
-    # env = FrameSkipWrapper(env, frame_skip=4)
+    action_spec = env.action_spec
+    state_spec = env.observation_spec
 
-    action_space = env.action_space
-    state_space = env.observation_space
-
-    return env, action_space, state_space
+    return env, action_spec, state_spec
