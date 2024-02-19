@@ -2,11 +2,14 @@ import struct
 import sys
 
 import numpy as np
+
+import torch
 from environments.base.PybricksHubClass import PybricksHub
-from gym import Env
+from tensordict import TensorDict, TensorDictBase
+from torchrl.envs import EnvBase
 
 
-class BaseEnv(Env):
+class BaseEnv(EnvBase):
     """
     The base class for all reinforcement learning environments used with the Lego robots.
 
@@ -20,7 +23,7 @@ class BaseEnv(Env):
         action_dim: int,
         state_dim: int,
         verbose: bool = False,
-    ):  
+    ):
         self.verbose = verbose
         self.action_dim = action_dim
         self.state_dim = state_dim
@@ -38,6 +41,7 @@ class BaseEnv(Env):
         )
         self.hub.connect()
         print("Connected to hub.")
+        super().__init__(batch_size=torch.Size([1]))
 
     def send_to_hub(self, action: np.array) -> None:
         """
@@ -88,6 +92,19 @@ class BaseEnv(Env):
         ), f"State has shape {state.shape[0]} and does not match state dimension: {self.state_dim}."
         return state
 
+    def sample_random_action(self, tensordict: TensorDictBase) -> TensorDictBase:
+        """
+        Sample a random action from the action space.
+
+        Returns:
+            TensorDictBase: A dictionary containing the sampled action.
+        """
+        if tensordict is not None:
+            tensordict.set("action", self.action_spec.rand())
+            return tensordict
+        else:
+            return TensorDict({"action": self.action_spec.rand()}, [])
+
     def close(self) -> None:
         self.hub.close()
 
@@ -101,12 +118,5 @@ class BaseEnv(Env):
     ):
         raise NotImplementedError
 
-    def _reward(
-        self,
-    ):
-        raise NotImplementedError
-
-    def render(
-        self,
-    ):
-        raise NotImplementedError
+    def _set_seed(self, seed: int):
+        return super()._set_seed(seed)
