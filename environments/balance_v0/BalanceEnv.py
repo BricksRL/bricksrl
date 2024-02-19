@@ -78,7 +78,6 @@ class BalanceEnv_v0(BaseEnv):
 
         self.observation_spec = CompositeSpec(shape=(1,))
         self.observation_spec.set(self.observation_key, observation_spec)
-        self.verbose = verbose
         super().__init__(
             action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
         )
@@ -91,7 +90,7 @@ class BalanceEnv_v0(BaseEnv):
             state (np.ndarray): The state to be normalized.
 
         Returns:
-            np.ndarray: The normalized state.
+            torch.Tensor: The normalized state.
         """
         state = (
             torch.from_numpy(state)
@@ -107,11 +106,14 @@ class BalanceEnv_v0(BaseEnv):
         Reset the environment and return the initial state.
 
         Returns:
-            np.ndarray: The initial state of the environment.
+            TensorDictBase: The initial state of the environment.
         """
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
-        action = np.zeros(self.action_dim)
+        if tensordict is not None:
+            action = tensordict.get("action").numpy().squeeze()
+        else:
+            action = np.zeros(self.action_dim)
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
         observation = self.read_from_hub()
