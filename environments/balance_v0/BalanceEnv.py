@@ -7,7 +7,7 @@ import torch
 
 from environments.base.base_env import BaseEnv
 from tensordict import TensorDict, TensorDictBase
-from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec, TensorSpec
+from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec
 
 
 class BalanceEnv_v0(BaseEnv):
@@ -36,6 +36,7 @@ class BalanceEnv_v0(BaseEnv):
     roll_angles = (-90, 90)
     rotation_velocity = (-250, 250)  # adapt to real values
     observation_key = "observation_vector"
+
     def __init__(
         self,
         max_episode_steps: int = 50,
@@ -75,8 +76,7 @@ class BalanceEnv_v0(BaseEnv):
             ),
         )
 
-        self.observation_spec = CompositeSpec(shape=(1,)
-        )
+        self.observation_spec = CompositeSpec(shape=(1,))
         self.observation_spec.set(self.observation_key, observation_spec)
         self.verbose = verbose
         super().__init__(
@@ -85,7 +85,7 @@ class BalanceEnv_v0(BaseEnv):
 
     def normalize_state(self, state: np.ndarray) -> torch.Tensor:
         """
-        Normalize and clip the state to be compatible with the agent.
+        Normalize the state to be processed by the agent.
 
         Args:
             state (np.ndarray): The state to be normalized.
@@ -93,8 +93,12 @@ class BalanceEnv_v0(BaseEnv):
         Returns:
             np.ndarray: The normalized state.
         """
-        state = (torch.from_numpy(state) - self.observation_spec["observation_vector"].space.low) / (
-            self.observation_spec["observation_vector"].space.high - self.observation_spec["observation_vector"].space.low
+        state = (
+            torch.from_numpy(state)
+            - self.observation_spec["observation_vector"].space.low
+        ) / (
+            self.observation_spec["observation_vector"].space.high
+            - self.observation_spec["observation_vector"].space.low
         )
         return state
 
@@ -141,9 +145,7 @@ class BalanceEnv_v0(BaseEnv):
         return tensordict
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
-        """
-
-        """
+        """ """
         # Send action to hub to receive next state
         self.send_to_hub(tensordict.get("action").numpy().squeeze())
         time.sleep(
