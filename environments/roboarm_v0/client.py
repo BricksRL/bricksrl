@@ -19,14 +19,17 @@ hub = InventorHub()
 # Grab Motor range (130, 179) left side closed (-148, -45)
 grab_motor_range = (-148, -45)
 grab_motor = Motor(Port.E)
+grab_motor.run_target(speed=400, target_angle=-95) # start roughly in the middle
 # High Motor range (-150, 30)
-high_motor_range = (-150, 30)
+high_motor_range = (-150, 10)
 high_motor = Motor(Port.A)
+high_motor.run_target(speed=400, target_angle=-70)
 
 # Low motor range (0, 120)
 low_motor_range = (0, 120)
 low_motor = Motor(Port.D)
 low_motor.control.limits(500, 1000, 900)
+low_motor.run_target(speed=400, target_angle=60)
 
 # Rotation motor range (-360, 360) 
 # observe as its basically ~ 180
@@ -85,7 +88,7 @@ while True:
         wait(1)
 
     # Read action values for the motors
-    data = stdin.buffer.read(16)  # Reading 4 bytes (1 floats)
+    data = stdin.buffer.read(16)  # Reading 4 bytes (4 floats)
     rotation_action, low_action, high_action, grab_action  = ustruct.unpack("!ffff", data)
     
     # transform action range for motors
@@ -109,7 +112,6 @@ while True:
     rotation_motor.run_angle(speed=500, rotation_angle=rotation_action, wait=False)
 
     wait(200)
-    #angles = get_current_motor_angles()
 
     rotation_angle = rotation_motor.angle()
     high_angle = high_motor.angle()
@@ -117,6 +119,6 @@ while True:
     low_angle = low_motor.angle()
 
     # GM HM LM RM
-    out_msg = ustruct.pack("!ffff", grab_angle, low_angle, normalize_angle(high_angle), normalize_angle(rotation_angle, low_angle=-900, high_angle=900, original_one_round=1800))  # angles["GM"], angles["HM"], normalize_angle(angles["LM"]), angles["RM"]
+    out_msg = ustruct.pack("!ffff", grab_angle, low_angle, normalize_angle(high_angle), normalize_angle(rotation_angle, low_angle=-900, high_angle=900, original_one_round=1800))
     stdout.buffer.write(out_msg)
 
