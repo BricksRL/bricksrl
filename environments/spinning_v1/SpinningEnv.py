@@ -35,6 +35,7 @@ class SpinningEnv_v1(BaseEnv):
     pitch_angles = (-90, 90)
     roll_angles = (-90, 90)
     rotation_velocity = (-100, 100)  # adapt to real values
+    observation_key = "observation_vector"
 
     def __init__(
         self,
@@ -43,7 +44,7 @@ class SpinningEnv_v1(BaseEnv):
         verbose: bool = False,
     ):
         self.sleep_time = sleep_time
-
+        self._batch_size = torch.Size([1])
         self.max_episode_steps = max_episode_steps
 
         self.action_spec = BoundedTensorSpec(
@@ -55,22 +56,26 @@ class SpinningEnv_v1(BaseEnv):
         observation_spec = BoundedTensorSpec(
             low=torch.tensor(
                 [
-                    self.motor_angles[0],
-                    self.motor_angles[0],
-                    self.pitch_angles[0],
-                    self.roll_angles[0],
-                    self.rotation_velocity[0],
-                    0,
+                    [
+                        self.motor_angles[0],
+                        self.motor_angles[0],
+                        self.pitch_angles[0],
+                        self.roll_angles[0],
+                        self.rotation_velocity[0],
+                        0,
+                    ]
                 ]
             ),
             high=torch.tensor(
                 [
-                    self.motor_angles[1],
-                    self.motor_angles[1],
-                    self.pitch_angles[1],
-                    self.roll_angles[1],
-                    self.rotation_velocity[1],
-                    1,
+                    [
+                        self.motor_angles[1],
+                        self.motor_angles[1],
+                        self.pitch_angles[1],
+                        self.roll_angles[1],
+                        self.rotation_velocity[1],
+                        1,
+                    ]
                 ]
             ),
         )
@@ -92,10 +97,10 @@ class SpinningEnv_v1(BaseEnv):
         """
         state = (
             torch.from_numpy(state)
-            - self.observation_spec["observation_vector"].space.low
+            - self.observation_spec[self.observation_key].space.low
         ) / (
-            self.observation_spec["observation_vector"].space.high
-            - self.observation_spec["observation_vector"].space.low
+            self.observation_spec[self.observation_key].space.high
+            - self.observation_spec[self.observation_key].space.low
         )
         return state
 
@@ -134,16 +139,15 @@ class SpinningEnv_v1(BaseEnv):
         We want to maximise in those cases the angular velocity (last element of the state vector).
         If the robot is spinning in the wrong direction, we want to minimize the angular velocity.
         """
-        # TODO: maybe add reward for low motor usage (energy efficiency) so that the robot relaxes when max distance is reached
         done = False
-        velocity = tensordict.get(("next", self.observation_key))[:, -1]
+        velocity = tensordict.get((self.observation_key))[:, -2]
 
         if self.direction == 0:
             reward = velocity
         else:
             reward = -velocity
-        tensordict.set("reward", torch.tensor(reward))
-        tensordict.set("done", torch.tensor([done]))
+        tensordict.set("reward", reward.clone().detach().float())
+        tensordict.set("done", torch.tensor([done]).bool())
         return tensordict
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
@@ -159,7 +163,7 @@ class SpinningEnv_v1(BaseEnv):
         # calc reward and done
         next_tensordict = TensorDict(
             {
-                self.observation_key: self.normalize_state(next_observation).float(),
+                self.observation_key: self.normalize_state(np.concatenate((next_observation, np.array([[self.direction]])), axis=1)).float(),
             },
             batch_size=[1],
         )
@@ -168,9 +172,6 @@ class SpinningEnv_v1(BaseEnv):
         # increment episode step counter
         self.episode_step_iter += 1
         if self.episode_step_iter >= self.max_episode_steps:
-            next_tensordict.set("done", torch.tensor([True]))
+            next_tensordict.set("done", torch.tensor([True]).bool())
             # To not act
-            action = np.zeros(self.action_dim)
-            self.send_to_hub(action)
-            # do we need truncated?
         return next_tensordict

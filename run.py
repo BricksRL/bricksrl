@@ -73,7 +73,8 @@ def run(cfg : DictConfig) -> None:
                 agent.add_experience(td)
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)
-                done = td.get(("next", "done"), False)                
+                done = td.get(("next", "done"), False)   
+                ep_return += td.get(("next","reward"), 0)             
                 if done:
                     # inpt = input("Please reset the robot to the starting position and press Enter to continue or q to quit:")
                     # if inpt == "q":
