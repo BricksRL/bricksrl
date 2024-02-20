@@ -216,17 +216,7 @@ class WalkerEnv_v0(BaseEnv):
         return reward.item(), done
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
-        """
-        Perform the given action and return the next state, reward, done status, and truncation status.
-
-        Args:
-            action (np.ndarray): The action to perform.
-
-        Returns:
-            Tuple[np.ndarray, float, bool, bool, dict]: A tuple containing the next state, the reward
-            received for performing the action, a boolean indicating whether the episode is done,
-            a boolean indicating whether the episode is truncated, and an empty dictionary.
-        """
+        """ """
         # Send action to hub to receive next state
         action = tensordict.get("action").numpy().squeeze()
         self.send_to_hub(action)

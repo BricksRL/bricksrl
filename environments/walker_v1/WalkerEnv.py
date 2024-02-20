@@ -68,26 +68,30 @@ class WalkerEnv_v1(BaseEnv):
         max_acc_range = (-self.max_acc, self.max_acc)
         observation_spec = BoundedTensorSpec(
             low=torch.tensor(
-                [[
-                    self.motor_range[0],
-                    self.motor_range[0],
-                    self.motor_range[0],
-                    self.motor_range[0],
-                    self.pitch_roll_range[0],
-                    self.pitch_roll_range[0],
-                    max_acc_range[0],
-                ]]
+                [
+                    [
+                        self.motor_range[0],
+                        self.motor_range[0],
+                        self.motor_range[0],
+                        self.motor_range[0],
+                        self.pitch_roll_range[0],
+                        self.pitch_roll_range[0],
+                        max_acc_range[0],
+                    ]
+                ]
             ),
             high=torch.tensor(
-                [[
-                    self.motor_range[1],
-                    self.motor_range[1],
-                    self.motor_range[1],
-                    self.motor_range[1],
-                    self.pitch_roll_range[1],
-                    self.pitch_roll_range[1],
-                    max_acc_range[1],
-                ]]
+                [
+                    [
+                        self.motor_range[1],
+                        self.motor_range[1],
+                        self.motor_range[1],
+                        self.motor_range[1],
+                        self.pitch_roll_range[1],
+                        self.pitch_roll_range[1],
+                        max_acc_range[1],
+                    ]
+                ]
             ),
         )
         self.observation_spec = CompositeSpec(shape=(1,))
@@ -178,17 +182,7 @@ class WalkerEnv_v1(BaseEnv):
         return reward.item(), done
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
-        """
-        Perform the given action and return the next state, reward, done status, and truncation status.
-
-        Args:
-            action (np.ndarray): The action to perform.
-
-        Returns:
-            Tuple[np.ndarray, float, bool, bool, dict]: A tuple containing the next state, the reward
-            received for performing the action, a boolean indicating whether the episode is done,
-            a boolean indicating whether the episode is truncated, and an empty dictionary.
-        """
+        """ """
         # Send action to hub to receive next state
         action = tensordict.get("action").numpy().squeeze()
         self.send_to_hub(action)
