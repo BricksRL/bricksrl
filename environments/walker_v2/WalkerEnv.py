@@ -32,16 +32,6 @@ class WalkerEnv_v2(BaseEnv):
         sleep_time (float): The time to wait between sending actions and receiving the next state. Defaults to 0.0.
         verbose (bool): Whether to print additional information. Defaults to False.
 
-    Attributes:
-        action_space (gym.spaces.Box): The continuous action space in the range [-1, 1].
-        observation_space (gym.spaces.Box): The state space consisting of 4 sensor readings and the distance to the wall.
-
-    Methods:
-        sample_random_action(): Samples a random action from the action space.
-        normalize_state(state: np.ndarray) -> np.ndarray: Normalizes and clips the state to be compatible with the agent.
-        reset() -> np.ndarray: Resets the environment and returns the initial state.
-        reward(state: np.ndarray, action: np.ndarray, next_state: np.ndarray) -> Tuple[float, bool]: Calculates the reward based on the change in distance to the wall.
-        step(action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]: Performs the given action and returns the next state, reward, done status, and truncation status.
     """
 
     action_dim = 4  # (lf_value, lb_value, rf_value, rb_value)
