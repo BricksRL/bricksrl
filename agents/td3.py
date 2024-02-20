@@ -18,6 +18,7 @@ from torchrl.objectives.td3 import TD3Loss
 from agents.base import BaseAgent
 from agents.networks import get_critic, get_deterministic_actor
 
+from tensordict import TensorDictBase
 
 def initialize(net, std=0.02):
     for p, n in net.named_parameters():
@@ -34,20 +35,14 @@ class TD3Agent(BaseAgent):
             state_space, action_space, agent_config.name, device
         )
 
-        # rewrite action spec to bounded tensor spec
-        action_space = BoundedTensorSpec(
-            minimum=torch.from_numpy(action_space.low).float(),
-            maximum=torch.from_numpy(action_space.high).float(),
-            shape=action_space.shape,
-        )
         self.actor = get_deterministic_actor(
             action_space,
-            in_keys=["observation"],
+            in_keys=self.observation_keys,
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             activation_class=nn.ReLU,
         )
         self.critic = get_critic(
-            in_keys=["observation"],
+            in_keys=self.observation_keys,
             out_features=1,
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             activation_class=nn.ReLU,
@@ -172,15 +167,14 @@ class TD3Agent(BaseAgent):
         return replay_buffer
 
     @torch.no_grad()
-    def get_action(self, state):
+    def get_action(self, td: TensorDictBase) -> TensorDictBase:
         """Get action from actor network"""
 
-        state = torch.from_numpy(state).float().to(self.device)[None, :]
-        input_td = td.TensorDict({"observation": state}, batch_size=1)
         with set_exploration_type(ExplorationType.RANDOM):
-            out_td = self.actor_explore(input_td).squeeze(0)
+            out_td = self.actor_explore(td)
         self.actor_explore.step(1)
-        return out_td["action"].cpu().numpy()
+        out_td.pop("param")
+        return out_td
 
     def add_experience(self, transition: td.TensorDict):
         """Add experience to replay buffer"""

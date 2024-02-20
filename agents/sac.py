@@ -16,7 +16,7 @@ from torchrl.objectives.sac import SACLoss
 from agents.base import BaseAgent
 from agents.networks import get_critic, get_stochastic_actor
 from typing import Tuple
-from tensordict import TensorDict, TensorDictBase
+from tensordict import TensorDictBase
 
 
 class SACAgent(BaseAgent):
