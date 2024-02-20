@@ -15,15 +15,8 @@ from torchrl.objectives.sac import SACLoss
 
 from agents.base import BaseAgent
 from agents.networks import get_critic, get_stochastic_actor
-
-
-def initialize(net, std=0.02):
-    for p, n in net.named_parameters():
-        if "weight" in p:
-            # nn.init.xavier_uniform_(n)
-            nn.init.normal_(n, mean=0, std=std)
-        elif "bias" in p:
-            nn.init.zeros_(n)
+from typing import Tuple
+from tensordict import TensorDictBase
 
 
 class SACAgent(BaseAgent):
@@ -31,21 +24,15 @@ class SACAgent(BaseAgent):
         super(SACAgent, self).__init__(
             state_space, action_space, agent_config.name, device
         )
-
-        # rewrite action spec to bounded tensor spec
-        action_space = BoundedTensorSpec(
-            minimum=torch.from_numpy(action_space.low).float(),
-            maximum=torch.from_numpy(action_space.high).float(),
-            shape=action_space.shape,
-        )
+        
         self.actor = get_stochastic_actor(
             action_space,
-            in_keys=["observation"],
+            in_keys=self.observation_keys,
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             activation_class=nn.ReLU,
         )
         self.critic = get_critic(
-            in_keys=["observation"],
+            in_keys=self.observation_keys,
             out_features=1,
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             activation_class=nn.ReLU,
@@ -170,13 +157,13 @@ class SACAgent(BaseAgent):
         return replay_buffer
 
     @torch.no_grad()
-    def get_action(self, state):
+    def get_action(self, td: TensorDictBase) -> TensorDictBase:
         """Get action from actor network"""
-        state = torch.from_numpy(state).float().to(self.device)[None, :]
-        input_td = td.TensorDict({"observation": state}, batch_size=1)
         with set_exploration_type(ExplorationType.RANDOM):
-            out_td = self.actor(input_td).squeeze(0)
-        return out_td["action"].cpu().numpy()
+            out_td = self.actor(td)
+            out_td.pop("scale")
+            out_td.pop("loc")
+        return out_td
 
     def add_experience(self, transition: td.TensorDict):
         """Add experience to replay buffer"""

@@ -98,20 +98,18 @@ def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
             else:
                 pass 
             print("Prefill episode: ", e)
-            state = env.reset()
-            done = False
-            truncated = False
+
+            td = env.reset()
+            done = td.get("done", False)
+            truncated = td.get("truncated", False)
             while not done and not truncated:
-                action = np.random.uniform(-1, 1, size=agent.action_space.shape[0])
-                print("Random action: ", action)
-                next_state, reward, done, truncated, info = env.step(action)
-                transition = create_transition_td(
-                    state, action, np.array([reward]), next_state, np.array([done])
-                )
-                agent.add_experience(transition)
-                state = next_state
-                if done:
-                    inpt = input("Please reset the robot to the starting position and press Enter to continue or q to quit:")
-                    if inpt == "q":
-                        break
+                td = env.sample_random_action(td)
+                td = env.step(td)
+                agent.add_experience(td)
+                done = td.get(("next", "done"))
+                # print(done)
+                # if done:
+                #     inpt = input("Please reset the robot to the starting position and press Enter to continue or q to quit:")
+                #     if inpt == "q":
+                #         break
         print("Prefill done! Buffer size: ", agent.replay_buffer.__len__())

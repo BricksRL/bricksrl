@@ -6,7 +6,6 @@ import numpy as np
 import torch
 from gym import Env
 
-
 class BaseWrapper(gym.Wrapper):
     def __init__(self, env):
         super.__init__(env)
