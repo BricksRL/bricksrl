@@ -45,6 +45,8 @@ class RunAwayEnv_v1(BaseEnv):
     roll_angles = (-90, 90)
     pitch_angles = (-90, 90)
     distance = (0, 2000)
+    observation_key = "observation_vector"
+    original_vec_observation_key = "original_vec_observation"
 
     def __init__(
         self,
@@ -56,6 +58,7 @@ class RunAwayEnv_v1(BaseEnv):
         self.sleep_time = sleep_time
         self.max_episode_steps = max_episode_steps
         self.min_distance = min_distance
+        self._batch_size = torch.Size([1])
 
         self.action_spec = BoundedTensorSpec(
             low=-torch.ones((1, self.action_dim)),
@@ -105,10 +108,10 @@ class RunAwayEnv_v1(BaseEnv):
         """
         state = (
             torch.from_numpy(state)
-            - self.observation_spec["observation_vector"].space.low
+            - self.observation_spec[self.observation_key].space.low
         ) / (
-            self.observation_spec["observation_vector"].space.high
-            - self.observation_spec["observation_vector"].space.low
+            self.observation_spec[self.observation_key].space.high
+            - self.observation_spec[self.observation_key].space.low
         )
         return state
 
@@ -122,18 +125,24 @@ class RunAwayEnv_v1(BaseEnv):
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
         if tensordict is not None:
-            action = tensordict.get("action").numpy().squeeze()
+            action = tensordict.get("action").numpy().squeeze(0)
         else:
             action = np.zeros(self.action_dim)
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
-        self.observation = self.read_from_hub()
+        observation = self.read_from_hub()
+        norm_observation = self.normalize_state(observation)
+        return TensorDict(
+            {
+                self.observation_key: norm_observation.float(),
+                self.original_vec_observation_key: torch.from_numpy(
+                    observation
+                ).float(),  # for reward calc
+            },
+            batch_size=[1],
+        )
 
-        return self.normalize_state(self.observation).squeeze()
-
-    def reward(
-        self, state: np.ndarray, action: np.ndarray, next_state: np.ndarray
-    ) -> Tuple[float, bool]:
+    def reward(self, state: np.ndarray, next_state: np.ndarray) -> Tuple[float, bool]:
         """Reward function of RunAwayEnv.
 
         Goal: Increase distance measured by ultrasonic sensor aka.
@@ -145,7 +154,7 @@ class RunAwayEnv_v1(BaseEnv):
         if (
             next_state[:, -1] <= self.min_distance
         ):  # too close to the wall break episode
-            reward = -10
+            reward = -10.0
             done = True
         elif next_state[:, -1] < state[:, -1]:
             reward = -1.0
@@ -170,7 +179,7 @@ class RunAwayEnv_v1(BaseEnv):
             and an empty dictionary.
         """
         # Send action to hub to receive next state
-        self.send_to_hub(tensordict.get("action").numpy().squeeze())
+        self.send_to_hub(tensordict.get("action").numpy().squeeze(0))
         time.sleep(
             self.sleep_time
         )  # we need to wait some time for sensors to read and to
@@ -179,23 +188,22 @@ class RunAwayEnv_v1(BaseEnv):
         next_tensordict = TensorDict(
             {
                 self.observation_key: self.normalize_state(next_observation).float(),
+                self.original_vec_observation_key: torch.from_numpy(
+                    next_observation
+                ).float(),  # for reward calc
             },
             batch_size=[1],
         )
         # calc reward and done
         reward, done = self.reward(
-            state=tensordict.get(self.observation_key),
-            next_state=next_tensordict.get(self.observation_key),
+            state=tensordict.get(self.original_vec_observation_key),
+            next_state=next_tensordict.get(self.original_vec_observation_key),
         )
-        next_tensordict.set("reward", torch.tensor(reward))
-        next_tensordict.set("done", torch.tensor([done]))
+        next_tensordict.set("reward", torch.tensor([reward]).float())
+        next_tensordict.set("done", torch.tensor([done]).bool())
 
         # increment episode step counter
         self.episode_step_iter += 1
         if self.episode_step_iter >= self.max_episode_steps:
-            next_tensordict.set("done", torch.tensor([True]))
-            # To not act
-            action = np.zeros(self.action_dim)
-            self.send_to_hub(action)
-            # do we need truncated?
+            next_tensordict.set("done", torch.tensor([True]).bool())
         return next_tensordict
