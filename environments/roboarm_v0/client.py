@@ -16,13 +16,17 @@ kbd_intr(-1)
 hub = InventorHub()
 
 # Initialize the drive base.
-# Grab Motor range (130, 179) left side closed (-180, -44)
+# Grab Motor range (130, 179) left side closed (-148, -45)
+grab_motor_range = (-148, -45)
 grab_motor = Motor(Port.E)
-# High Motor range (-60, 140)
+# High Motor range (-150, 30)
+high_motor_range = (-150, 30)
 high_motor = Motor(Port.A)
 
-# Low motor range (-190, -10)
+# Low motor range (0, 120)
+low_motor_range = (0, 120)
 low_motor = Motor(Port.D)
+low_motor.control.limits(500, 1000, 900)
 
 # Rotation motor range (-360, 360) 
 # observe as its basically ~ 180
@@ -81,36 +85,38 @@ while True:
         wait(1)
 
     # Read action values for the motors
-    data = stdin.buffer.read(8)  # Reading 4 bytes (1 floats)
-    rotation_action, high_action  = ustruct.unpack("!ff", data) # grab_action, high_action, low_action
+    data = stdin.buffer.read(16)  # Reading 4 bytes (1 floats)
+    rotation_action, low_action, high_action, grab_action  = ustruct.unpack("!ffff", data)
     
     # transform action range for motors
-    #grab_action = transform_range(grab_action, -1, 1, low_action_range, high_action_range)
+    grab_action = transform_range(grab_action, -1, 1, -25, 25)
     high_action = transform_range(high_action, -1, 1, -60, 60)
-    # low_action = transform_range(low_action, -1, 1, low_action_range, high_action_range)
+    low_action = transform_range(low_action, -1, 1, -50, 50)
     rotation_action = transform_range(rotation_action, -1, 1, -180, 180)
 
     angles = get_current_motor_angles()
 
-    #if not (angles["GM"] + grab_action > -45) and not (angles["GM"] + grab_action < -180):
-    #    grab_motor.run_angle(speed=motor_speed, rotation_angle=grab_action, wait=False)
+    if not (angles["GM"] + grab_action > max(grab_motor_range)) and not (angles["GM"] + grab_action < min(grab_motor_range)):
+       grab_motor.run_angle(speed=250, rotation_angle=grab_action, wait=False)
 
-    if not (angles["HM"] + high_action > 100) and not(angles["HM"] + high_action < -60):
+    if not (angles["HM"] + high_action > max(high_motor_range)) and not(angles["HM"] + high_action < min(high_motor_range)):
         high_motor.run_angle(speed=500, rotation_angle=high_action, wait=False)
 
-    #if not (angles["LM"] + low_action > -10) and not (angles["LM"] + low_action < -190):
-    #    low_motor.run_angle(speed=motor_speed, rotation_angle=low_action, wait=False)
+    if not (angles["LM"] + low_action > max(low_motor_range)) and not (angles["LM"] + low_action < min(low_motor_range)):
+       low_motor.run_angle(speed=300, rotation_angle=low_action, wait=False)
 
     #if not (angles["RM"] + rotation_action > 180) or not (angles["RM"] + rotation_action < -180):
     rotation_motor.run_angle(speed=500, rotation_angle=rotation_action, wait=False)
 
-    wait(400)
+    wait(200)
     #angles = get_current_motor_angles()
 
     rotation_angle = rotation_motor.angle()
     high_angle = high_motor.angle()
+    grab_angle = grab_motor.angle()
+    low_angle = low_motor.angle()
 
     # GM HM LM RM
-    out_msg = ustruct.pack("!ff", normalize_angle(high_angle), normalize_angle(rotation_angle, low_angle=-900, high_angle=900, original_one_round=1800))  # angles["GM"], angles["HM"], normalize_angle(angles["LM"]), angles["RM"]
+    out_msg = ustruct.pack("!ffff", grab_angle, low_angle, normalize_angle(high_angle), normalize_angle(rotation_angle, low_angle=-900, high_angle=900, original_one_round=1800))  # angles["GM"], angles["HM"], normalize_angle(angles["LM"]), angles["RM"]
     stdout.buffer.write(out_msg)
 
