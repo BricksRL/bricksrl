@@ -1,12 +1,13 @@
 import time
 from typing import Tuple
 
-import torch
 import numpy as np
-from tensordict import TensorDict, TensorDictBase
-from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec
+
+import torch
 
 from environments.base.base_env import BaseEnv
+from tensordict import TensorDict, TensorDictBase
+from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec
 
 
 class WalkerEnv_v0(BaseEnv):
@@ -32,6 +33,7 @@ class WalkerEnv_v0(BaseEnv):
         reward(state: np.ndarray, action: np.ndarray, next_state: np.ndarray) -> Tuple[float, bool]: Calculates the reward based on the change in distance to the wall.
         step(action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]: Performs the given action and returns the next state, reward, done status, and truncation status.
     """
+
     action_dim = 4  # (lf_value, lb_value, rf_value, rb_value)
     # angles are in range [-180, 179]
     state_dim = 7  # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, acc_x)
@@ -47,7 +49,6 @@ class WalkerEnv_v0(BaseEnv):
         sleep_time: float = 0.0,
         verbose: bool = False,
     ):
-
         self.sleep_time = sleep_time
         self.max_acc = 3000
         self._batch_size = torch.Size([1])
@@ -62,32 +63,38 @@ class WalkerEnv_v0(BaseEnv):
         max_acc_range = (-self.max_acc, self.max_acc)
         observation_spec = BoundedTensorSpec(
             low=torch.tensor(
-                [[
-                    self.motor_range[0],
-                    self.motor_range[0],
-                    self.motor_range[0],
-                    self.motor_range[0],
-                    self.pitch_roll_range[0],
-                    self.pitch_roll_range[0],
-                    max_acc_range[0],
-                ]]
+                [
+                    [
+                        self.motor_range[0],
+                        self.motor_range[0],
+                        self.motor_range[0],
+                        self.motor_range[0],
+                        self.pitch_roll_range[0],
+                        self.pitch_roll_range[0],
+                        max_acc_range[0],
+                    ]
+                ]
             ),
             high=torch.tensor(
-                [[
-                    self.motor_range[1],
-                    self.motor_range[1],
-                    self.motor_range[1],
-                    self.motor_range[1],
-                    self.pitch_roll_range[1],
-                    self.pitch_roll_range[1],
-                    max_acc_range[1],
-                ]]
+                [
+                    [
+                        self.motor_range[1],
+                        self.motor_range[1],
+                        self.motor_range[1],
+                        self.motor_range[1],
+                        self.pitch_roll_range[1],
+                        self.pitch_roll_range[1],
+                        max_acc_range[1],
+                    ]
+                ]
             ),
         )
 
         self.observation_spec = CompositeSpec(shape=(1,))
         self.observation_spec.set(self.observation_key, observation_spec)
-        super().__init__(action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose)
+        super().__init__(
+            action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
+        )
 
     def normalize_state(self, state: np.ndarray) -> torch.Tensor:
         """
@@ -113,7 +120,7 @@ class WalkerEnv_v0(BaseEnv):
         Reset the environment and return the initial state.
 
         Returns:
-            np.ndarray: The initial state of the environment.
+            TensorDictBase: The initial state of the environment.
         """
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
@@ -130,7 +137,9 @@ class WalkerEnv_v0(BaseEnv):
         return TensorDict(
             {
                 self.observation_key: norm_observation.float(),
-                self.original_vec_observation_key: torch.from_numpy(observation).float(),
+                self.original_vec_observation_key: torch.from_numpy(
+                    observation
+                ).float(),
             },
             batch_size=[1],
         )
