@@ -10,6 +10,7 @@ from environments.walker_v2.WalkerEnv import WalkerEnv_v2
 from environments.walkerwall_v0.WalkerWall import WalkerWallEnv_v0
 
 from environments.roboarm_v0.RoboArmEnv import RoboArmEnv_v0
+from environments.roboarm_mixed_v0.RoboArmMixedEnv import RoboArmMixedEnv_v0
 from environments.utils import make
 
 from environments.wrapper import (
