@@ -30,25 +30,14 @@ def initialize(net, std=0.02):
 
 
 class TD3Agent(BaseAgent):
-    def __init__(self, state_space, action_space, agent_config, device="cpu"):
+    def __init__(self, state_space, action_spec, agent_config, device="cpu"):
         super(TD3Agent, self).__init__(
-            state_space, action_space, agent_config.name, device
+            state_space, action_spec, agent_config.name, device
         )
 
-        self.actor = get_deterministic_actor(
-            action_space,
-            in_keys=self.observation_keys,
-            num_cells=[agent_config.num_cells, agent_config.num_cells],
-            activation_class=nn.ReLU,
-        )
-        self.critic = get_critic(
-            in_keys=self.observation_keys,
-            out_features=1,
-            num_cells=[agent_config.num_cells, agent_config.num_cells],
-            activation_class=nn.ReLU,
-            normalization=agent_config.normalization,
-            dropout=agent_config.dropout,
-        )
+        self.actor = get_deterministic_actor(self.observation_keys, action_spec, agent_config)
+        self.critic = get_critic(self.observation_keys, agent_config)
+
         self.model = nn.ModuleList([self.actor, self.critic]).to(device)
         # initialize networks
         self.init_nets(self.model)
@@ -65,7 +54,7 @@ class TD3Agent(BaseAgent):
         self.loss_module = TD3Loss(
             actor_network=self.model[0],
             qvalue_network=self.model[1],
-            action_spec=action_space,
+            action_spec=action_spec,
             num_qvalue_nets=2,
             gamma=agent_config.gamma,
             loss_function=agent_config.loss_function,

@@ -10,6 +10,7 @@ from environments.walker_v2.WalkerEnv import WalkerEnv_v2
 from environments.walkerwall_v0.WalkerWall import WalkerWallEnv_v0
 
 from environments.roboarm_v0.RoboArmEnv import RoboArmEnv_v0
+from environments.roboarm_mixed_v0.RoboArmMixedEnv import RoboArmMixedEnv_v0
 from environments.utils import make
 
 from environments.wrapper import (
@@ -24,7 +25,8 @@ from torchrl.envs import (
     Compose,
     RewardSum,
     DoubleToFloat,
-    CatFrames,)
+    CatFrames,
+    ToTensorImage)
 
 
 def make_env(config):
@@ -38,17 +40,20 @@ def make_env(config):
         A tuple containing the new environment, its action space, and its state space.
     """
     env = make(name=config.env.name, env_conf=config.env)
-    obs_key = env.observation_key
+    observation_keys = [key for key in env.observation_spec.keys()]
 
     transforms = []
     if config.env.frame_stack > 1:
-        transforms.append(CatFrames(N=config.env.frame_stack, in_keys=[obs_key], out_key=obs_key))
+        transforms.append(CatFrames(N=config.env.frame_stack, in_keys=observation_keys, out_key=observation_keys))
     if config.env.action_filter < 1:
         raise NotImplementedError("ActionFilterWrapper not implemented yet")
         # TODO: add this to torchrl
         # env = ActionFilterWrapper(
         #     env, current_action_influence=config.env.action_filter
         # )
+    if "image_observation" in observation_keys:
+        transforms.append(ToTensorImage(in_keys=["image_observation"], from_int=True))
+    
     env = TransformedEnv(env, Compose(*transforms))
 
     action_spec = env.action_spec
