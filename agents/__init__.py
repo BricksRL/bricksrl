@@ -6,17 +6,17 @@ from agents.random import RandomAgent
 all_agents = ["td3", "sac", "bc", "random"]
 
 
-def get_agent(action_space, state_space, cfg):
+def get_agent(action_spec, state_space, cfg):
     if cfg.agent.name == "td3":
         agent = TD3Agent(
-            action_space=action_space,
+            action_spec=action_spec,
             state_space=state_space,
             agent_config=cfg.agent,
             device=cfg.device,
         )
     elif cfg.agent.name == "sac":
         agent = SACAgent(
-            action_space=action_space,
+            action_spec=action_spec,
             state_space=state_space,
             agent_config=cfg.agent,
             device=cfg.device,

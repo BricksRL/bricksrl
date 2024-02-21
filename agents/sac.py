@@ -20,25 +20,13 @@ from tensordict import TensorDictBase
 
 
 class SACAgent(BaseAgent):
-    def __init__(self, state_space, action_space, agent_config, device="cpu"):
+    def __init__(self, state_space, action_spec, agent_config, device="cpu"):
         super(SACAgent, self).__init__(
-            state_space, action_space, agent_config.name, device
+            state_space, action_spec, agent_config.name, device
         )
         
-        self.actor = get_stochastic_actor(
-            action_space,
-            in_keys=self.observation_keys,
-            num_cells=[agent_config.num_cells, agent_config.num_cells],
-            activation_class=nn.ReLU,
-        )
-        self.critic = get_critic(
-            in_keys=self.observation_keys,
-            out_features=1,
-            num_cells=[agent_config.num_cells, agent_config.num_cells],
-            activation_class=nn.ReLU,
-            normalization=agent_config.normalization,
-            dropout=agent_config.dropout,
-        )
+        self.actor = get_stochastic_actor(self.observation_keys, action_spec, agent_config)
+        self.critic = get_critic(self.observation_keys, agent_config)
 
         # initialize networks
         self.init_nets([self.actor, self.critic])
@@ -163,6 +151,8 @@ class SACAgent(BaseAgent):
             out_td = self.actor(td)
             out_td.pop("scale")
             out_td.pop("loc")
+            out_td.pop("params")
+
         return out_td
 
     def add_experience(self, transition: td.TensorDict):
