@@ -16,7 +16,7 @@ def random_center_position(frame):
     center_y = random.randint(0, height)
     return center_x, center_y
 
-class RoboArmEnv_v0(BaseEnv):
+class RoboArmMixedEnv_v0(BaseEnv):
     """ """
 
     action_dim = 3  # (high_motor_action, low_motor_action, rotation_motor_action)
@@ -28,7 +28,7 @@ class RoboArmEnv_v0(BaseEnv):
         "LM": (0, 120),
         "RM": (-900, 900),
     }
-
+    goal_color=(0, 0, 255) # red
     vec_observation_key = "vec_observation"
     image_observation_key = "image_observation"
     original_image_key = "original_image"
@@ -85,11 +85,12 @@ class RoboArmEnv_v0(BaseEnv):
         ret, frame = self.camera.read()
         if not ret:
             raise ValueError("Camera not available.")
+        frame = cv2.resize(frame, (64, 64))
         shape = frame.shape
         # img_dtype = frame.dtype
         image_observation_spec = BoundedTensorSpec(
-            low=torch.zeros(shape, dtype=torch.uint8),
-            high=torch.ones(shape, dtype=torch.uint8) * 255,
+            low=torch.zeros((1,)+shape, dtype=torch.uint8),
+            high=torch.ones((1,)+shape, dtype=torch.uint8) * 255,
         )
 
         self.observation_spec = CompositeSpec(shape=(1,))
@@ -132,9 +133,9 @@ class RoboArmEnv_v0(BaseEnv):
             # Optional: Draw green contours for visualization
             cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
 
-    def _draw_goal_circle(self, frame, center_x, center_y, color=(0, 0, 255)):
+    def _draw_goal_circle(self, frame):
         # Draw the circle on the frame
-        cv2.circle(frame, (self.center_x, self.center_y), self.radius, color, -1)  # Red color
+        cv2.circle(frame, (self.center_x, self.center_y), self.goal_radius, self.goal_color, -1)  # Red color
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
         """
@@ -152,20 +153,20 @@ class RoboArmEnv_v0(BaseEnv):
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
         observation = self.read_from_hub()
-        norm_obs = self.normalize_state(observation, self.observation_key)
+        norm_obs = self.normalize_state(observation, self.vec_observation_key)
 
         ret, frame = self.camera.read()
         # get random goal location
         self.center_x, self.center_y = random_center_position(frame)
-        self._draw_goal_circle(frame, self.center_x, self.center_y)
+        self._draw_goal_circle(frame)
         self._draw_contours(frame, self._get_contours(frame))
         resized_frame = cv2.resize(frame, (64, 64))
 
         return TensorDict(
             {
-                self.observation_key: norm_obs.float(),
-                self.image_observation_key: torch.from_numpy(resized_frame).float(),
-                self.original_image_key: torch.from_numpy(frame).float(),
+                self.vec_observation_key: norm_obs.float(),
+                self.image_observation_key: torch.from_numpy(resized_frame)[None, :].float(),
+                self.original_image_key: torch.from_numpy(frame)[None, :].float(),
             },
             batch_size=[1],
         )
@@ -224,7 +225,7 @@ class RoboArmEnv_v0(BaseEnv):
 
         # get next frame
         ret, frame = self.camera.read()
-        self._draw_goal_circle(frame, self.center_x, self.center_y)
+        self._draw_goal_circle(frame)
         contours = self._get_contours(frame)
         self._draw_contours(frame, contours=contours)
 
@@ -238,11 +239,11 @@ class RoboArmEnv_v0(BaseEnv):
         resized_frame = cv2.resize(frame, (64, 64))
         next_tensordict = TensorDict(
             {
-                self.observation_key: self.normalize_state(
-                    next_observation, self.observation_key
+                self.vec_observation_key: self.normalize_state(
+                    next_observation, self.vec_observation_key
                 ).float(),
-                self.image_observation_key: torch.from_numpy(resized_frame).float(),
-                self.original_image_key: torch.from_numpy(frame).float(),
+                self.image_observation_key: torch.from_numpy(resized_frame)[None, :].float(),
+                self.original_image_key: torch.from_numpy(frame)[None, :].float(),
                 "reward": torch.tensor([reward]).float(),
                 "done": torch.tensor([done]).bool(),
             },
