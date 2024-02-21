@@ -24,7 +24,7 @@ class RoboArmEnv_v0(BaseEnv):
         "RM": (-900, 900),
     }
 
-    observation_key = "current_state"
+    observation_key = "vec_observation"
     goal_observation_key = "goal_state"
     original_observation_key = "original_state"
     original_goal_observation_key = "original_goal_state"
