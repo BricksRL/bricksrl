@@ -2,6 +2,8 @@ import numpy as np
 import tensordict as td
 import torch
 
+from moviepy.editor import concatenate_videoclips, ImageClip
+
 
 def data2numpy(data: list):
     """Convert a list of bytes to a numpy array."""
@@ -59,7 +61,6 @@ def logout(agent):
         torch.save(save_dict, save_name + ".pth")
 
 
-
 def login(agent):
     x = input("Do you want to load the model? (y/n)")
     if x == "y":
@@ -78,12 +79,12 @@ def login(agent):
 def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
     """
     Prefills the agent's replay buffer with experiences by running the environment for a specified number of episodes.
-    
+
     Args:
     - env: gym.Env object representing the environment
     - agent: Agent object with an add_experience method to add experiences to the replay buffer
     - num_episodes: int, number of episodes to run the environment for
-    
+
     Returns: None
     """
     if agent.name in ["sac", "td3"]:
@@ -96,7 +97,7 @@ def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
                 else:
                     pass
             else:
-                pass 
+                pass
             print("Prefill episode: ", e)
 
             td = env.reset()
@@ -113,3 +114,23 @@ def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
                 #     if inpt == "q":
                 #         break
         print("Prefill done! Buffer size: ", agent.replay_buffer.__len__())
+
+
+def convert_bgr_to_rgb(bgr_image):
+    return bgr_image[:, :, ::-1]  # Reverses the third dimension (color channels)
+
+
+def create_video_from_images(images, video_name, fps=20):
+    # Convert each NumPy array image to an ImageClip
+    clips = [ImageClip(convert_bgr_to_rgb(np_img.squeeze(0))) for np_img in images]
+
+    # Set the duration of each clip to match the desired FPS
+    # Note: This assumes all images should be displayed for an equal amount of time.
+    for clip in clips:
+        clip.duration = 1 / fps
+
+    # Concatenate the ImageClips into a single video
+    final_clip = concatenate_videoclips(clips, method="compose")
+
+    # Write the result to a video file
+    final_clip.write_videofile(video_name, fps=fps)

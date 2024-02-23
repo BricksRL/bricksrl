@@ -109,6 +109,17 @@ class SACAgent(BaseAgent):
         except:
             raise ValueError("Replay Buffer not loaded")
 
+    def td_preprocessing(self, td: TensorDictBase) -> TensorDictBase:
+        # TODO not ideal to have this here
+        td.pop("scale")
+        td.pop("loc")
+        td.pop("params")
+        if "vector_obs_embedding" in td.keys():
+            td.pop("vector_obs_embedding")
+        if "image_embedding" in td.keys():
+            td.pop("image_embedding")
+
+
     def create_replay_buffer(
         self,
         batch_size=256,
@@ -149,10 +160,7 @@ class SACAgent(BaseAgent):
         """Get action from actor network"""
         with set_exploration_type(ExplorationType.RANDOM):
             out_td = self.actor(td)
-            out_td.pop("scale")
-            out_td.pop("loc")
-            out_td.pop("params")
-
+        self.td_preprocessing(out_td)
         return out_td
 
     def add_experience(self, transition: td.TensorDict):

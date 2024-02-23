@@ -155,6 +155,16 @@ class TD3Agent(BaseAgent):
             )
         return replay_buffer
 
+    def td_preprocessing(self, td: TensorDictBase) -> TensorDictBase:
+        # TODO not ideal to have this here
+        td.pop("param")
+        if "vector_obs_embedding" in td.keys():
+            td.pop("vector_obs_embedding")
+        if "image_embedding" in td.keys():
+            td.pop("image_embedding")
+
+
+
     @torch.no_grad()
     def get_action(self, td: TensorDictBase) -> TensorDictBase:
         """Get action from actor network"""
@@ -162,7 +172,7 @@ class TD3Agent(BaseAgent):
         with set_exploration_type(ExplorationType.RANDOM):
             out_td = self.actor_explore(td)
         self.actor_explore.step(1)
-        out_td.pop("param")
+        self.td_preprocessing(out_td)
         return out_td
 
     def add_experience(self, transition: td.TensorDict):
