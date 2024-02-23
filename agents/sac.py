@@ -110,6 +110,7 @@ class SACAgent(BaseAgent):
             raise ValueError("Replay Buffer not loaded")
 
     def td_preprocessing(self, td: TensorDictBase) -> TensorDictBase:
+        # TODO not ideal to have this here
         td.pop("scale")
         td.pop("loc")
         td.pop("params")
