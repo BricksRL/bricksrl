@@ -1,10 +1,8 @@
 # Base Config to run all examples
 
-# logging
 run_name: ""
 mode: "offline"
 verbose: 0
-checking_mode: 0 # if 1 you have to allow each new episode to start if 0 it will run without stopping
 
 device: "cpu"
 episodes: 50
@@ -12,5 +10,5 @@ episodes: 50
 defaults:
   - _self_
   # random, bc, sac, td3
-  - agent: td3 
-  - env: walker-v0
+  - agent: sac 
+  - env: runaway-v0
