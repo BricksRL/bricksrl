@@ -1,4 +1,4 @@
-name: "Walker-v1"
+name: "walker-v1"
 max_episode_steps: 100
 # env specific params
 max_acceleration: 3000.

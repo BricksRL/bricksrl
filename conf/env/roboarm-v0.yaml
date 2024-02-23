@@ -1,4 +1,4 @@
-name: "RoboArm-v0"
+name: "roboarm-v0"
 max_episode_steps: 100
 # env specific params
 verbose: 0
