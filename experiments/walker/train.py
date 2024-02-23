@@ -19,7 +19,7 @@ from src.utils import login, logout, prefill_buffer, setup_check, tensordict2dic
 
 
 @hydra.main(
-    version_base=None, config_path=project_root + "./conf", config_name="config"
+    version_base=None, config_path=project_root + "/conf", config_name="config"
 )
 def run(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
