@@ -115,21 +115,6 @@ def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
         print("Prefill done! Buffer size: ", agent.replay_buffer.__len__())
 
 
-# import cv2
-# import numpy as np
-
-# def create_video_from_images(images, video_name, fps=20):
-#     # Assume the first image is representative of the rest (same dimensions and channels)
-#     _, height, width, layers = images[0].shape
-
-#     # Define the codec and create VideoWriter object
-#     video = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'X264'), fps, (width, height))
-
-#     for image in images:
-#         video.write(image.squeeze(0))
-
-#     video.release()
-
 def convert_bgr_to_rgb(bgr_image):
     return bgr_image[:, :, ::-1]  # Reverses the third dimension (color channels)
 
