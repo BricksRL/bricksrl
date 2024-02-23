@@ -115,20 +115,37 @@ def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
         print("Prefill done! Buffer size: ", agent.replay_buffer.__len__())
 
 
-import cv2
-import numpy as np
+# import cv2
+# import numpy as np
+
+# def create_video_from_images(images, video_name, fps=20):
+#     # Assume the first image is representative of the rest (same dimensions and channels)
+#     _, height, width, layers = images[0].shape
+
+#     # Define the codec and create VideoWriter object
+#     video = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'X264'), fps, (width, height))
+
+#     for image in images:
+#         video.write(image.squeeze(0))
+
+#     video.release()
+
+def convert_bgr_to_rgb(bgr_image):
+    return bgr_image[:, :, ::-1]  # Reverses the third dimension (color channels)
+
+from moviepy.editor import ImageClip, concatenate_videoclips
 
 def create_video_from_images(images, video_name, fps=20):
-    # Assume the first image is representative of the rest (same dimensions and channels)
-    height, width, layers = images[0].shape
+    # Convert each NumPy array image to an ImageClip
+    clips = [ImageClip(convert_bgr_to_rgb(np_img.squeeze(0))) for np_img in images]
+    
+    # Set the duration of each clip to match the desired FPS
+    # Note: This assumes all images should be displayed for an equal amount of time.
+    for clip in clips:
+        clip.duration = 1 / fps
 
-    # Define the codec and create VideoWriter object
-    video = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+    # Concatenate the ImageClips into a single video
+    final_clip = concatenate_videoclips(clips, method="compose")
 
-    for image in images:
-        # Convert image to BGR if it's not already (cv2 expects BGR format)
-        if image.shape[2] == 4:  # Check if image has an alpha channel
-            image = cv2.cvtColor(image, cv2.COLOR_RGBA2BGR)
-        video.write(image)
-
-    video.release()
+    # Write the result to a video file
+    final_clip.write_videofile(video_name, fps=fps)

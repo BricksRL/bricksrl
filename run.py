@@ -71,7 +71,7 @@ def run(cfg : DictConfig) -> None:
                 step_start_time = time.time()
                 td = agent.get_action(td)
                 td = env.step(td)
-                image_caputres.append(td.get("original_image").numpy())
+                image_caputres.append(td.get(("next", "original_image")).numpy())
                 agent.add_experience(td)
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)
@@ -102,9 +102,9 @@ def run(cfg : DictConfig) -> None:
             # log_dict.update(info)
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)
-            video_name = "episode_{}".format(e)
-            create_video_from_images(image_caputres, video_name)
-            wandb.log({"video": wandb.Video(video_name, fps=20, format="mp4")})
+            video_name = "episode_{}.mp4".format(e)
+            create_video_from_images(image_caputres, video_name, fps=15)
+            wandb.log({"video": wandb.Video(video_name, fps=15, format="mp4")})
 
     except KeyboardInterrupt:
         print("Training interrupted by user.")

@@ -166,7 +166,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
             {
                 self.vec_observation_key: norm_obs.float(),
                 self.image_observation_key: torch.from_numpy(resized_frame)[None, :].float(),
-                self.original_image_key: torch.from_numpy(frame)[None, :].float(),
+                self.original_image_key: torch.from_numpy(frame)[None, :].to(torch.uint8),
             },
             batch_size=[1],
         )
@@ -181,27 +181,17 @@ class RoboArmMixedEnv_v0(BaseEnv):
         frame: np.ndarray,
         contours: list,
     ) -> Tuple[float, bool]:
-        """Reward function of walker.
-
-        Goal: Increase forward velocity, estimated from acceleration.
-
-        Args:
-            state (np.ndarray): The current state.
-            action (np.ndarray): The action taken.
-            next_state (np.ndarray): The next state.
-            delta_t (float): The time step duration.
-
-        Returns:
-            Tuple[float, bool]: The reward received and a boolean indicating whether the episode is done.
         """
-
+        """
+        # TODO Albert said we can make it a moving average so in the case we dont detect contours we can still give a reward
+        # Maybe a better idea would be to give previous reward if we dont detect contours!
         done = False
         reward = .0
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
             done, distance = self._is_overlapping_and_distance(self.center_x, self.center_y, self.goal_radius, x + w/2, y + h/2, max(w, h)/2)
             if self.reward_signal == "dense":
-                reward = distance
+                reward = - distance
                 break
             elif self.reward_signal == "sparse":
                 if done:
@@ -243,7 +233,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
                     next_observation, self.vec_observation_key
                 ).float(),
                 self.image_observation_key: torch.from_numpy(resized_frame)[None, :].float(),
-                self.original_image_key: torch.from_numpy(frame)[None, :].float(),
+                self.original_image_key: torch.from_numpy(frame)[None, :].to(torch.uint8),
                 "reward": torch.tensor([reward]).float(),
                 "done": torch.tensor([done]).bool(),
             },
