@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, '/home/sebastian/Documents/lego_robot')
 
 from agents import get_agent
-from utils import prefill_buffer, logout, login, tensordict2dict
+from utils import prefill_buffer, logout, login, tensordict2dict, create_video_from_images
 from environments import make_env
 
 
@@ -54,6 +54,8 @@ def run(cfg : DictConfig) -> None:
             ep_steps = 0
             total_step_times = []
             # agent_actions = []
+            image_caputres = []
+            image_caputres.append(td.get("original_image").numpy())
             if checking_mode == 1:
                 inp = input("Press Enter to start episode: ")
                 if inp == "q":
@@ -69,7 +71,7 @@ def run(cfg : DictConfig) -> None:
                 step_start_time = time.time()
                 td = agent.get_action(td)
                 td = env.step(td)
-
+                image_caputres.append(td.get("original_image").numpy())
                 agent.add_experience(td)
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)
@@ -100,7 +102,10 @@ def run(cfg : DictConfig) -> None:
             # log_dict.update(info)
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)
-            
+            video_name = "episode_{}".format(e)
+            create_video_from_images(image_caputres, video_name)
+            wandb.log({"video": wandb.Video(video_name, fps=20, format="mp4")})
+
     except KeyboardInterrupt:
         print("Training interrupted by user.")
     

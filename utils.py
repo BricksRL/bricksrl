@@ -113,3 +113,22 @@ def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
                 #     if inpt == "q":
                 #         break
         print("Prefill done! Buffer size: ", agent.replay_buffer.__len__())
+
+
+import cv2
+import numpy as np
+
+def create_video_from_images(images, video_name, fps=20):
+    # Assume the first image is representative of the rest (same dimensions and channels)
+    height, width, layers = images[0].shape
+
+    # Define the codec and create VideoWriter object
+    video = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+
+    for image in images:
+        # Convert image to BGR if it's not already (cv2 expects BGR format)
+        if image.shape[2] == 4:  # Check if image has an alpha channel
+            image = cv2.cvtColor(image, cv2.COLOR_RGBA2BGR)
+        video.write(image)
+
+    video.release()

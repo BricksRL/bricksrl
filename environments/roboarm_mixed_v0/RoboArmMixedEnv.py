@@ -171,7 +171,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
             batch_size=[1],
         )
 
-    def _is_overlapping_and_distance(x1, y1, r1, x2, y2, r2):
+    def _is_overlapping_and_distance(self, x1, y1, r1, x2, y2, r2):
         # Calculate the distance between the two centers
         distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
         return distance < (r1 + r2), distance
@@ -199,7 +199,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
         reward = .0
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
-            done, distance = self._is_overlapping_and_distance(self.center_x, self.center_y, x + w/2, y + h/2)
+            done, distance = self._is_overlapping_and_distance(self.center_x, self.center_y, self.goal_radius, x + w/2, y + h/2, max(w, h)/2)
             if self.reward_signal == "dense":
                 reward = distance
                 break
