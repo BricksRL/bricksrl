@@ -1,4 +1,4 @@
-name: "RunAway-v0"
+name: "runaway-v0"
 max_episode_steps: 20
 # env specific params
 min_distance: 40.

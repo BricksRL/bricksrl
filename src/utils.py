@@ -1,8 +1,28 @@
+from typing import List
+
 import numpy as np
 import tensordict as td
 import torch
-
+from environments import ALL_2WHEELER_ENVS, ALL_ROBOARM_ENVS, ALL_WALKER_ENVS
 from moviepy.editor import concatenate_videoclips, ImageClip
+from omegaconf import DictConfig
+from tensordict import TensorDictBase
+from tqdm import tqdm
+
+
+def setup_check(robot: str, config: DictConfig):
+    if robot == "2wheeler":
+        assert (
+            config.env.name in ALL_2WHEELER_ENVS
+        ), f"You are trying to run a 2wheeler experiment but are using the env {config.env.name}, select one of {ALL_2WHEELER_ENVS}"
+    elif robot == "walker":
+        assert (
+            config.env.name in ALL_WALKER_ENVS
+        ), f"You are trying to run a walker experiment but are using the env {config.env.name}, select one of {ALL_WALKER_ENVS}"
+    elif robot == "roboarm":
+        assert (
+            config.env.name in ALL_ROBOARM_ENVS
+        ), f"You are trying to run a roboarm experiment but are using the env {config.env.name}, select one of {ALL_ROBOARM_ENVS}"
 
 
 def data2numpy(data: list):
@@ -14,7 +34,7 @@ def handle_disconnect(_):
     print("Hub was disconnected.")
 
 
-def tensordict2dict(td: td.TensorDict) -> dict:
+def tensordict2dict(td: TensorDictBase) -> dict:
     """Convert a TensorDict to a dictionary."""
     return {k: v.item() for k, v in td.items()}
 
@@ -76,7 +96,7 @@ def login(agent):
         print("Buffer not loaded!")
 
 
-def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
+def prefill_buffer(env, agent, num_episodes=10, stop_on_done=False):
     """
     Prefills the agent's replay buffer with experiences by running the environment for a specified number of episodes.
 
@@ -89,38 +109,34 @@ def prefill_buffer(env, agent, checking_mode=0, num_episodes=10):
     """
     if agent.name in ["sac", "td3"]:
         inpt = input("Press Enter to start prefilling episode: ")
-        for e in range(num_episodes):
-            if checking_mode == 1:
-                inp = input("Press Enter to start episode: ")
-                if inp == "q":
-                    break
-                else:
-                    pass
-            else:
-                pass
+        for e in tqdm(range(num_episodes), desc="Prefilling buffer"):
             print("Prefill episode: ", e)
 
             td = env.reset()
-            done = td.get("done", False)
-            truncated = td.get("truncated", False)
+            done = False
+            truncated = False
             while not done and not truncated:
                 td = env.sample_random_action(td)
                 td = env.step(td)
                 agent.add_experience(td)
                 done = td.get(("next", "done"))
-                # print(done)
-                # if done:
-                #     inpt = input("Please reset the robot to the starting position and press Enter to continue or q to quit:")
-                #     if inpt == "q":
-                #         break
+
+                if done and stop_on_done:
+                    inpt = input(
+                        "Please reset the robot to the starting position and press Enter to continue or q to quit:"
+                    )
+                    if inpt == "q":
+                        break
         print("Prefill done! Buffer size: ", agent.replay_buffer.__len__())
 
 
-def convert_bgr_to_rgb(bgr_image):
+def convert_bgr_to_rgb(bgr_image: np.array) -> np.array:
     return bgr_image[:, :, ::-1]  # Reverses the third dimension (color channels)
 
 
-def create_video_from_images(images, video_name, fps=20):
+def create_video_from_images(
+    images: List[np.array], video_name: str = "episode_1", fps: int = 20
+):
     # Convert each NumPy array image to an ImageClip
     clips = [ImageClip(convert_bgr_to_rgb(np_img.squeeze(0))) for np_img in images]
 

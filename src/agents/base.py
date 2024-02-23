@@ -27,13 +27,13 @@ class BaseAgent:
 
     def __init__(
         self,
-        observation_spec: TensorSpec,
+        state_spec: TensorSpec,
         action_spec: TensorSpec,
         agent_name: str,
         device: str = "cpu",
     ):
         self.name = agent_name
-        self.observation_spec = observation_spec
+        self.observation_spec = state_spec
         self.action_spec = action_spec
         self.device = device
         self.observation_keys = [key for key in self.observation_spec.keys()]

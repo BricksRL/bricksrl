@@ -1,4 +1,4 @@
-name: "Walker-v01"
+name: "walker-v01"
 max_episode_steps: 100
 # env specific params
 verbose: 0

@@ -28,6 +28,11 @@ from torchrl.envs import (
     CatFrames,
     ToTensorImage)
 
+VIDEO_LOGGING_ENVS = ["roboar_mixed-v0"]
+ALL_2WHEELER_ENVS = ["Spinning-v1", "runaway-v0", "runaway-v1", "balance-v0"]
+ALL_WALKER_ENVS = ["walker-v0", "walker-v1", "walker-v2", "WalkerWall-v0"]
+ALL_ROBOARM_ENVS = ["roboarm-v0", "roboarm_mixed-v0"]
+ALL_ENVS = ALL_2WHEELER_ENVS + ALL_WALKER_ENVS + ALL_ROBOARM_ENVS
 
 def make_env(config):
     """

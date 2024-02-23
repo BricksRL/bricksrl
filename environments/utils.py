@@ -14,37 +14,37 @@ from environments import (
 
 
 def make(name="RunAway", env_conf=None):
-    if name == "RunAway-v0":
+    if name == "runaway-v0":
         return RunAwayEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             min_distance=env_conf.min_distance,
             verbose=env_conf.verbose,
         )
-    elif name == "RunAway-v1":
+    elif name == "runaway-v1":
         return RunAwayEnv_v1(
             max_episode_steps=env_conf.max_episode_steps,
             min_distance=env_conf.min_distance,
             verbose=env_conf.verbose,
         )
-    elif name == "Spinning-v1":
+    elif name == "spinning-v1":
         return SpinningEnv_v1(
             max_episode_steps=env_conf.max_episode_steps,
             sleep_time=env_conf.sleep_time,
             verbose=env_conf.verbose,
         )
-    elif name == "Balance-v0":
+    elif name == "balance-v0":
         return BalanceEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             sleep_time=env_conf.sleep_time,
             verbose=env_conf.verbose,
         )
-    elif name == "Walker-v0":
+    elif name == "walker-v0":
         return WalkerEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
         )
-    elif name == "Walker-v1":
+    elif name == "walker-v1":
         return WalkerEnv_v1(
             max_episode_steps=env_conf.max_episode_steps,
             max_acc=env_conf.max_acceleration,
@@ -53,7 +53,7 @@ def make(name="RunAway", env_conf=None):
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
         )
-    elif name == "Walker-v2":
+    elif name == "walker-v2":
         return WalkerEnv_v2(
             max_episode_steps=env_conf.max_episode_steps,
             max_acc=env_conf.max_acceleration,
@@ -64,21 +64,21 @@ def make(name="RunAway", env_conf=None):
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
         )
-    elif name == "WalkerWall-v0":
+    elif name == "walkerwall-v0":
         return WalkerWallEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             max_distance=env_conf.max_distance,
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
         )
-    elif name == "RoboArm-v0":
+    elif name == "roboarm-v0":
         return RoboArmEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
             reward_signal=env_conf.reward_signal,
         )
-    elif name == "RoboArmMixed-v0":
+    elif name == "roboarm_mixed-v0":
         return RoboArmMixedEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             sleep_time=env_conf.sleep_time,

@@ -1,4 +1,4 @@
-name: "Spinning-v1"
+name: "spinning-v1"
 max_episode_steps: 50
 verbose: 0
 # env wrapper

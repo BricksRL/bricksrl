@@ -1,4 +1,4 @@
-name: "Balance-v0"
+name: "balance-v0"
 max_episode_steps: 150
 verbose: 0
 # env wrapper
