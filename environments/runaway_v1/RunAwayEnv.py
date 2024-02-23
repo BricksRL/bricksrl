@@ -45,7 +45,7 @@ class RunAwayEnv_v1(BaseEnv):
     roll_angles = (-90, 90)
     pitch_angles = (-90, 90)
     distance = (0, 2000)
-    observation_key = "observation_vector"
+    observation_key = "vec_observation"
     original_vec_observation_key = "original_vec_observation"
 
     def __init__(

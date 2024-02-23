@@ -30,7 +30,7 @@ class WalkerEnv_v0(BaseEnv):
     max_acc = 3000
     motor_range = (-179, 179)
     pitch_roll_range = (-50, 50)
-    observation_key = "observation_vector"
+    observation_key = "vec_observation"
     original_vec_observation_key = "original_vec_observation"
 
     def __init__(

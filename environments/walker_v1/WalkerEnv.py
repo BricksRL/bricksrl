@@ -30,7 +30,7 @@ class WalkerEnv_v1(BaseEnv):
     state_dim = 7  # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, acc_x)
     motor_range = (-179, 179)
     pitch_roll_range = (-50, 50)
-    observation_key = "observation_vector"
+    observation_key = "vec_observation"
     original_vec_observation_key = "original_vec_observation"
 
     def __init__(

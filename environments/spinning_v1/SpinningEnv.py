@@ -35,7 +35,7 @@ class SpinningEnv_v1(BaseEnv):
     pitch_angles = (-90, 90)
     roll_angles = (-90, 90)
     rotation_velocity = (-100, 100)  # adapt to real values
-    observation_key = "observation_vector"
+    observation_key = "vec_observation"
 
     def __init__(
         self,
