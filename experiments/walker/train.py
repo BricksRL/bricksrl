@@ -70,7 +70,7 @@ def run(cfg: DictConfig) -> None:
                 done = td.get(("next", "done"), False)
                 ep_return += td.get(("next", "reward"), 0)
                 if env_name in VIDEO_LOGGING_ENVS:
-                    image_caputres = [td.get("original_image").numpy()]
+                    image_caputres.append(td.get(("next", "original_image")).numpy())
                 if done:
                     break
             loss_info = agent.train(
