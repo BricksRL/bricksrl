@@ -1,0 +1,11 @@
+name: "roboarm_mixed-v0"
+max_episode_steps: 100
+# env specific params
+verbose: 0
+# env wrapper
+frame_stack: 1
+action_filter: 1
+sleep_time: 0.0
+reward_signal: dense
+camera_id: 2
+goal_radius: 50
