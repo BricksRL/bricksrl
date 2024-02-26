@@ -32,6 +32,7 @@ class WalkerMixedEnv_v0(BaseEnv):
         verbose: bool = False,
         camera_id: int = 0,
         image_path: str = "environments/walker_mixed_v0/img/robodog.jpg",
+        auto_obj_detection: bool = False,
         tracker_type: str = "KCF",
     ):
         self.sleep_time = sleep_time
@@ -39,6 +40,7 @@ class WalkerMixedEnv_v0(BaseEnv):
         self._batch_size = torch.Size([1])
         self.max_episode_steps = max_episode_steps
         self.tracker_type = tracker_type
+        self.auto_obj_detection = auto_obj_detection
         self.camera = cv2.VideoCapture(int(camera_id))
         # Initialize ORB detector
         self.orb = cv2.ORB_create()
@@ -140,7 +142,19 @@ class WalkerMixedEnv_v0(BaseEnv):
             print(f"Failed to load image: {image_path}")
             return None, None, None
 
-    def init_tracker(
+    def init_tracker_drawing(self, ):
+        ret, frame = self.camera.read()
+        if not ret:
+            raise Exception("Failed to read frame from video source.")
+        # Function to initialize the tracker with a user-selected bounding box
+        bbox = cv2.selectROI("Object Detection", frame, False)
+        cv2.destroyAllWindows()
+        self.tracker_initialized = True
+        self.tracker.init(frame, bbox)
+        self.initial_center_y = bbox[1] + bbox[3] / 2
+        return frame
+
+    def init_tracker_with_example_image(
         self,
     ):
         while not self.tracker_initialized:
@@ -182,6 +196,13 @@ class WalkerMixedEnv_v0(BaseEnv):
                     continue
             else:
                 cv2.imshow("Object Detection", frame)
+        return frame
+
+    def init_tracker(self):
+        if self.auto_obj_detection:
+            frame = self.init_tracker_with_example_image()
+        else:
+            frame = self.init_tracker_drawing()
         return frame
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
@@ -296,7 +317,7 @@ class WalkerMixedEnv_v0(BaseEnv):
                 2,
             )
             cv2.imshow("Tracking", frame)
-            cv2.waitKey(1)  # Briefly wait for the display to refresh
+            cv2.waitKey(1)
 
 
         else:
