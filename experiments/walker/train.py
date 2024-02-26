@@ -13,9 +13,9 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from environments import make_env
+from environments import make_env, VIDEO_LOGGING_ENVS
 from src.agents import get_agent
-from src.utils import login, logout, prefill_buffer, setup_check, tensordict2dict
+from src.utils import login, logout, prefill_buffer, setup_check, tensordict2dict, create_video_from_images
 
 
 @hydra.main(
@@ -42,6 +42,7 @@ def run(cfg: DictConfig) -> None:
 
     batch_size = cfg.agent.batch_size
     num_updates = cfg.agent.num_updates
+    env_name = cfg.env.name
     train_episodes = cfg.episodes
     print("Start training...")
     quit = False
@@ -54,6 +55,8 @@ def run(cfg: DictConfig) -> None:
             ep_steps = 0
             total_step_times = []
             agent_actions = []
+            if env_name in VIDEO_LOGGING_ENVS:
+                image_caputres = [td.get("original_image").numpy()]
 
             print("Start new data collection...", flush=True)
             while not done and not truncated:
@@ -66,6 +69,8 @@ def run(cfg: DictConfig) -> None:
                 total_step_times.append(total_agent_step_time)
                 done = td.get(("next", "done"), False)
                 ep_return += td.get(("next", "reward"), 0)
+                if env_name in VIDEO_LOGGING_ENVS:
+                    image_caputres = [td.get("original_image").numpy()]
                 if done:
                     break
             loss_info = agent.train(
@@ -89,6 +94,10 @@ def run(cfg: DictConfig) -> None:
             }
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)
+            if env_name in VIDEO_LOGGING_ENVS:
+                video_name = "episode_{}.mp4".format(e)
+                create_video_from_images(image_caputres, video_name, fps=5)
+                wandb.log({"video": wandb.Video(video_name, fps=5, format="mp4")})
 
     except KeyboardInterrupt:
         print("Training interrupted by user.")

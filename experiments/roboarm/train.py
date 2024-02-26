@@ -64,8 +64,8 @@ def run(cfg: DictConfig) -> None:
             ep_return = 0
             ep_steps = 0
             total_step_times = []
-            image_caputres = []
-            image_caputres.append(td.get("original_image").numpy())
+            if env_name in VIDEO_LOGGING_ENVS:
+                image_caputres = [td.get("original_image").numpy()]
 
             print("Start new data collection...", flush=True)
             while not done and not truncated:
@@ -73,7 +73,8 @@ def run(cfg: DictConfig) -> None:
                 step_start_time = time.time()
                 td = agent.get_action(td)
                 td = env.step(td)
-                image_caputres.append(td.get(("next", "original_image")).numpy())
+                if env_name in VIDEO_LOGGING_ENVS:
+                    image_caputres.append(td.get(("next", "original_image")).numpy())
                 agent.add_experience(td)
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)
