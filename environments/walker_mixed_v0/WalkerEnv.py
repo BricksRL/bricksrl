@@ -142,16 +142,26 @@ class WalkerMixedEnv_v0(BaseEnv):
             print(f"Failed to load image: {image_path}")
             return None, None, None
 
-    def init_tracker_drawing(self, ):
-        ret, frame = self.camera.read()
-        if not ret:
-            raise Exception("Failed to read frame from video source.")
-        # Function to initialize the tracker with a user-selected bounding box
-        bbox = cv2.selectROI("Object Detection", frame, False)
-        cv2.destroyAllWindows()
-        self.tracker_initialized = True
-        self.tracker.init(frame, bbox)
-        self.initial_center_y = bbox[1] + bbox[3] / 2
+    def init_tracker_drawing(
+        self,
+    ):
+
+        while not self.tracker_initialized:
+            ret, frame = self.camera.read()
+            if not ret:
+                raise Exception("Failed to read frame from video source.")
+            print("\rPress 'y' to select the object to track.", end="", flush=True)
+            cv2.imshow("Object Detection", frame)
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord("y"):
+                # Function to initialize the tracker with a user-selected bounding box
+                bbox = cv2.selectROI("Object Detection", frame, False)
+                cv2.destroyAllWindows()
+                self.tracker_initialized = True
+                self.tracker.init(frame, bbox)
+                self.initial_center_y = bbox[1] + bbox[3] / 2
+            else:
+                continue
         return frame
 
     def init_tracker_with_example_image(
@@ -179,7 +189,8 @@ class WalkerMixedEnv_v0(BaseEnv):
 
                 # Prompt user for input within the OpenCV window
                 print(
-                    "\rPress 'y' if the object is correct, 'n' to continue searching.", end="",
+                    "\rPress 'y' if the object is correct, 'n' to continue searching.",
+                    end="",
                     flush=True,
                 )
                 # while not user_response:
@@ -290,9 +301,8 @@ class WalkerMixedEnv_v0(BaseEnv):
             center = (int((p1[0] + p2[0]) / 2), int((p1[1] + p2[1]) / 2))
             self.walking_path.append(center)
             upward_distance = self.initial_center_y - center[1]
-            # TODO: could be also just +1 if positive and -1 if negative 
-            reward = upward_distance - self.current_upward_distance 
-            #copy_frame = frame.copy()
+            # TODO: could be also just +1 if positive and -1 if negative
+            reward = upward_distance - self.current_upward_distance
             self.current_upward_distance = upward_distance
             for i in range(1, len(self.walking_path)):
                 if self.walking_path[i - 1] is None or self.walking_path[i] is None:
@@ -318,7 +328,6 @@ class WalkerMixedEnv_v0(BaseEnv):
             )
             cv2.imshow("Tracking", frame)
             cv2.waitKey(1)
-
 
         else:
             reward = 0  # No reward if tracking fails
@@ -355,8 +364,9 @@ def angular_difference(angle1, angle2):
     difference = (angle2 - angle1 + 180) % 360 - 180
     return abs(difference)  # Return the absolute value of the difference
 
-def get_tracker(type='KCF'):
-    if type == 'KCF':
+
+def get_tracker(type="KCF"):
+    if type == "KCF":
         return cv2.TrackerKCF_create()
     elif type == "BOOSTING":
         return cv2.legacy.TrackerBoosting_create()
@@ -371,4 +381,6 @@ def get_tracker(type='KCF'):
     elif type == "CSRT":
         return cv2.legacy.TrackerCSRT_create()
     else:
-        print("Invalid tracker type! Please use one of the following: KCF, BOOSTING, MIL, TLD, MEDIANFLOW, MOSSE, CSRT")
+        print(
+            "Invalid tracker type! Please use one of the following: KCF, BOOSTING, MIL, TLD, MEDIANFLOW, MOSSE, CSRT"
+        )

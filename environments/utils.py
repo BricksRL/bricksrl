@@ -80,6 +80,7 @@ def make(name="RunAway", env_conf=None):
             camera_id=env_conf.camera_id,
             image_path=env_conf.image_path,
             tracker_type=env_conf.tracker_type,
+            auto_obj_detection=env_conf.auto_obj_detection,
         )
     elif name == "roboarm-v0":
         return RoboArmEnv_v0(
