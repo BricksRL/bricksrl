@@ -3,11 +3,7 @@ from environments.dummy.mixed_obs_dummy import MixedObsDummyEnv
 from environments.dummy.vec_obs_dummy import VecObsDummyEnv
 from hydra import compose, initialize
 from src.agents import RandomAgent, SACAgent, TD3Agent
-from torchrl.envs import (
-    Compose,
-    ToTensorImage,
-    TransformedEnv,
-)
+from torchrl.envs import Compose, ToTensorImage, TransformedEnv
 from torchrl.envs.utils import step_mdp
 
 
@@ -19,6 +15,7 @@ def rollout(env, agent, max_steps=1000):
         td = env.step(td)
         agent.add_experience(td)
         td = step_mdp(td)
+
 
 def get_env(env):
     if env == "mixed":
@@ -77,6 +74,7 @@ def test_td3_agent(env):
     # Test training
     agent.train(batch_size=1, num_updates=1)
 
+
 @pytest.mark.parametrize(
     "env",
     ["mixed", "vec"],
@@ -91,4 +89,3 @@ def test_drq_agent(env):
     rollout(env, agent, max_steps=10)
     # Test training
     agent.train(batch_size=1, num_updates=1)
-    
