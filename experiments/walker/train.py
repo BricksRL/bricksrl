@@ -7,6 +7,7 @@ import numpy as np
 import wandb
 from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
+from torchrl.envs.utils import step_mdp
 
 # Add the project root to PYTHONPATH
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
@@ -57,6 +58,8 @@ def run(cfg: DictConfig) -> None:
             agent_actions = []
             if env_name in VIDEO_LOGGING_ENVS:
                 image_caputres = [td.get("original_image").numpy()]
+                # so we can reset the robot in the camera view
+                input("Press Enter to start episode...")
 
             print("Start new data collection...", flush=True)
             while not done and not truncated:
@@ -73,11 +76,13 @@ def run(cfg: DictConfig) -> None:
                     image_caputres.append(td.get(("next", "original_image")).numpy())
                 if done:
                     break
+                td = step_mdp(td)
             loss_info = agent.train(
                 batch_size=batch_size, num_updates=num_updates * ep_steps
             )
             action = td.get("action").numpy()
             agent_actions.append(action)
+            
             if quit:
                 break
 

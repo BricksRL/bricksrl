@@ -226,7 +226,6 @@ class WalkerMixedEnv_v0(BaseEnv):
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
         self.current_upward_distance = 0
-        self.tracker_initialized = False
         self.walking_path = []
         if tensordict is not None:
             action = tensordict.get("action").numpy().squeeze()
@@ -236,8 +235,17 @@ class WalkerMixedEnv_v0(BaseEnv):
         time.sleep(self.sleep_time)
         observation = self.read_from_hub()
         norm_obs = self.normalize_state(observation, self.vec_observation_key)
-        self.tracker = get_tracker(self.tracker_type)
-        frame = self.init_tracker()
+        # TODO: try to keep the same tracker even when episode is done 
+        # so we dont have to draw and detect the object again.
+        # Currently, we are reinitializing the tracker every time the episode is done.
+        # As when moving the robot to init position at end of episode the tracker gets lost.
+        self.tracker_initialized = False
+        if not self.tracker_initialized:
+            self.tracker = get_tracker(self.tracker_type)
+            frame = self.init_tracker()
+        else:
+            ret, frame = self.camera.read()
+            success, bbox = self.tracker.update(frame)
         resized_frame = cv2.resize(frame, (64, 64))
         return TensorDict(
             {
@@ -251,33 +259,6 @@ class WalkerMixedEnv_v0(BaseEnv):
             },
             batch_size=[1],
         )
-
-    def reward(
-        self,
-        action: np.ndarray,
-        next_state: np.ndarray,
-    ) -> Tuple[float, bool]:
-        """Reward function of walker.
-
-        Goal: Increase forward velocity, estimated from acceleration.
-
-        Args:
-            action (np.ndarray): The action taken.
-            next_state (np.ndarray): The next state.
-
-        Returns:
-            Tuple[float, bool]: The reward received and a boolean indicating whether the episode is done.
-        """
-
-        done = False
-        # pitch and roll need to stay in range [-75, 75] outside done = True
-        pitch, roll = next_state[:, -3], next_state[:, -2]
-        if np.abs(pitch) > 100 or np.abs(roll) > 100:
-            done = True
-            reward = 0
-            return reward, done
-
-        return reward.item(), done
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         """ """
@@ -332,6 +313,7 @@ class WalkerMixedEnv_v0(BaseEnv):
         else:
             reward = 0  # No reward if tracking fails
             done = True  # End episode if tracking fails
+            self.tracker_initialized = False
 
         resized_frame = cv2.resize(frame, (64, 64))
 
