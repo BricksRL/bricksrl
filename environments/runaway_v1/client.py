@@ -1,21 +1,23 @@
 # NOTE: Run this program with the latest
 # firmware provided via https://beta.pybricks.com/
 
+import ustruct
+from micropython import kbd_intr
 from pybricks.hubs import InventorHub
+from pybricks.parameters import Direction, Port
 from pybricks.pupdevices import Motor, UltrasonicSensor
-from pybricks.parameters import Port, Direction
-from pybricks.tools import wait
 from pybricks.robotics import DriveBase
+from pybricks.tools import wait
+from uselect import poll
 
 # Standard MicroPython modules
 from usys import stdin, stdout
-from uselect import poll
-import ustruct
-from micropython import kbd_intr
 
 kbd_intr(-1)
 
 hub = InventorHub()
+
+
 def normalize_angle(angle):
     # Normalize angle to be within 0 and 360
     while angle <= 0:
@@ -23,6 +25,8 @@ def normalize_angle(angle):
     while angle > 360:
         angle -= 360
     return angle
+
+
 def transform_range(value, old_min, old_max, new_min, new_max):
     """
     Transform a value from one range to another.
@@ -41,6 +45,8 @@ def transform_range(value, old_min, old_max, new_min, new_max):
     scale = (new_max - new_min) / (old_max - old_min)
     # Apply the transformation
     return new_min + (value - old_min) * scale
+
+
 # Initialize the drive base.
 left_motor = Motor(Port.E, Direction.COUNTERCLOCKWISE)
 right_motor = Motor(Port.A)
@@ -64,10 +70,18 @@ while True:
     left_action_value, right_action_value = ustruct.unpack("!ff", data)
 
     # Apply action to each motor
-    left_motor.run_angle(speed=speed, rotation_angle=transform_range(left_action_value, -1, 1, -120, 120), wait=False)
-    right_motor.run_angle(speed=speed, rotation_angle=transform_range(right_action_value, -1, 1, -120, 120), wait=False)
+    left_motor.run_angle(
+        speed=speed,
+        rotation_angle=transform_range(left_action_value, -1, 1, -120, 120),
+        wait=False,
+    )
+    right_motor.run_angle(
+        speed=speed,
+        rotation_angle=transform_range(right_action_value, -1, 1, -120, 120),
+        wait=False,
+    )
 
-    wait(50)  # Small delay 
+    wait(50)  # Small delay
 
     # get current state of the robot
     (left, right) = (left_motor.angle(), right_motor.angle())
@@ -75,5 +89,7 @@ while True:
     dist = sensor.distance()
 
     # send current state
-    out_msg = ustruct.pack('!fffff', normalize_angle(left), normalize_angle(right), pitch, roll, dist)
+    out_msg = ustruct.pack(
+        "!fffff", normalize_angle(left), normalize_angle(right), pitch, roll, dist
+    )
     stdout.buffer.write(out_msg)

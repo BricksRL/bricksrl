@@ -1,20 +1,23 @@
+import random
 import time
-import cv2
 from typing import Tuple
 
+import cv2
+
 import numpy as np
-import random
 import torch
 
 from environments.base.base_env import BaseEnv
 from tensordict import TensorDict, TensorDictBase
 from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec
 
+
 def random_center_position(frame):
     height, width = frame.shape[:2]
     center_x = random.randint(0, width)
     center_y = random.randint(0, height)
     return center_x, center_y
+
 
 class RoboArmMixedEnv_v0(BaseEnv):
     """ """
@@ -28,7 +31,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
         "LM": (0, 120),
         "RM": (-900, 900),
     }
-    goal_color=(0, 0, 255) # red
+    goal_color = (0, 0, 255)  # red
     vec_observation_key = "vec_observation"
     image_observation_key = "image_observation"
     original_image_key = "original_image"
@@ -89,8 +92,8 @@ class RoboArmMixedEnv_v0(BaseEnv):
         shape = frame.shape
         # img_dtype = frame.dtype
         image_observation_spec = BoundedTensorSpec(
-            low=torch.zeros((1,)+shape, dtype=torch.uint8),
-            high=torch.ones((1,)+shape, dtype=torch.uint8) * 255,
+            low=torch.zeros((1,) + shape, dtype=torch.uint8),
+            high=torch.ones((1,) + shape, dtype=torch.uint8) * 255,
         )
 
         self.observation_spec = CompositeSpec(shape=(1,))
@@ -125,9 +128,11 @@ class RoboArmMixedEnv_v0(BaseEnv):
         green_mask = cv2.inRange(hsv, lower_green, upper_green)
 
         # Find contours in the green mask
-        contours, _ = cv2.findContours(green_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            green_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+        )
         return contours
-    
+
     def _draw_contours(self, frame, contours):
         for contour in contours:
             # Optional: Draw green contours for visualization
@@ -135,7 +140,9 @@ class RoboArmMixedEnv_v0(BaseEnv):
 
     def _draw_goal_circle(self, frame):
         # Draw the circle on the frame
-        cv2.circle(frame, (self.center_x, self.center_y), self.goal_radius, self.goal_color, -1)  # Red color
+        cv2.circle(
+            frame, (self.center_x, self.center_y), self.goal_radius, self.goal_color, -1
+        )  # Red color
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
         """
@@ -165,8 +172,12 @@ class RoboArmMixedEnv_v0(BaseEnv):
         return TensorDict(
             {
                 self.vec_observation_key: norm_obs.float(),
-                self.image_observation_key: torch.from_numpy(resized_frame)[None, :].float(),
-                self.original_image_key: torch.from_numpy(frame)[None, :].to(torch.uint8),
+                self.image_observation_key: torch.from_numpy(resized_frame)[
+                    None, :
+                ].float(),
+                self.original_image_key: torch.from_numpy(frame)[None, :].to(
+                    torch.uint8
+                ),
             },
             batch_size=[1],
         )
@@ -175,27 +186,33 @@ class RoboArmMixedEnv_v0(BaseEnv):
         # Calculate the distance between the two centers
         distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
         return distance < (r1 + r2), distance
-    
+
     def reward(
         self,
         frame: np.ndarray,
         contours: list,
     ) -> Tuple[float, bool]:
-        """
-        """
+        """ """
         # TODO Albert said we can make it a moving average so in the case we dont detect contours we can still give a reward
         # Maybe a better idea would be to give previous reward if we dont detect contours!
         done = False
-        reward = .0
+        reward = 0.0
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
-            done, distance = self._is_overlapping_and_distance(self.center_x, self.center_y, self.goal_radius, x + w/2, y + h/2, max(w, h)/2)
+            done, distance = self._is_overlapping_and_distance(
+                self.center_x,
+                self.center_y,
+                self.goal_radius,
+                x + w / 2,
+                y + h / 2,
+                max(w, h) / 2,
+            )
             if self.reward_signal == "dense":
-                reward = - distance
+                reward = -distance
                 break
             elif self.reward_signal == "sparse":
                 if done:
-                    reward = 1.
+                    reward = 1.0
                 break
             else:
                 raise ValueError("Reward signal must be dense or sparse.")
@@ -219,7 +236,6 @@ class RoboArmMixedEnv_v0(BaseEnv):
         contours = self._get_contours(frame)
         self._draw_contours(frame, contours=contours)
 
-
         # calc reward and done
         reward, done = self.reward(
             frame,
@@ -232,8 +248,12 @@ class RoboArmMixedEnv_v0(BaseEnv):
                 self.vec_observation_key: self.normalize_state(
                     next_observation, self.vec_observation_key
                 ).float(),
-                self.image_observation_key: torch.from_numpy(resized_frame)[None, :].float(),
-                self.original_image_key: torch.from_numpy(frame)[None, :].to(torch.uint8),
+                self.image_observation_key: torch.from_numpy(resized_frame)[
+                    None, :
+                ].float(),
+                self.original_image_key: torch.from_numpy(frame)[None, :].to(
+                    torch.uint8
+                ),
                 "reward": torch.tensor([reward]).float(),
                 "done": torch.tensor([done]).bool(),
             },
