@@ -1,4 +1,4 @@
-pybricksdev==1.0.0a46
+pybricksdev
 tensordict==0.2.1
 torchrl==0.2.1
 hydra-core==1.3.2
