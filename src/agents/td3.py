@@ -53,7 +53,6 @@ class TD3Agent(BaseAgent):
             qvalue_network=self.model[1],
             action_spec=action_spec,
             num_qvalue_nets=2,
-            gamma=agent_config.gamma,
             loss_function=agent_config.loss_function,
             separate_losses=False,
         )
