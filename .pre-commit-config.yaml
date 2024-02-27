@@ -1,0 +1,5 @@
+repos:
+-   repo: https://github.com/omnilib/ufmt
+    rev: v1.3.0  # or use the latest version
+    hooks:
+    -   id: ufmt
