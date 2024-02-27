@@ -60,7 +60,7 @@ class PybricksHub:
             await self.client.write_gatt_char(
                 self.PYBRICKS_COMMAND_EVENT_CHAR_UUID,
                 b"\x06" + data,  # Prepend "write stdin" command
-                response=False, 
+                response=False,
             )
         except Exception as e:
             # Handle exceptions.
@@ -85,7 +85,7 @@ class PybricksHub:
             print(e)
         finally:
             self.disconnected = True
-        
+
         self.client = None
         self.device = None
         self.rx_char = None
@@ -99,7 +99,10 @@ class PybricksHub:
         if data[0] == 0x01:  # "write stdout" event (0x01)
             payload = data[1:]
             # print("Received:", payload)
-            if len(payload) != len(self.exception_out_data) and self.payload_buffer is None:
+            if (
+                len(payload) != len(self.exception_out_data)
+                and self.payload_buffer is None
+            ):
                 self.payload_buffer = payload
             elif (
                 len(payload) != len(self.exception_out_data)
