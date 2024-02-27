@@ -1,6 +1,8 @@
 from environments import (
     BalanceEnv_v0,
     DoNothingEnv,
+    RoboArmEnv_v0,
+    RoboArmMixedEnv_v0,
     RunAwayEnv_v0,
     RunAwayEnv_v1,
     SpinningEnv_v1,
@@ -8,9 +10,6 @@ from environments import (
     WalkerEnv_v1,
     WalkerEnv_v2,
     WalkerMixedEnv_v0,
-    WalkerWallEnv_v0,
-    RoboArmEnv_v0,
-    RoboArmMixedEnv_v0,
 )
 
 
@@ -62,13 +61,6 @@ def make(name="RunAway", env_conf=None):
             reward_normalization_factor=env_conf.reward_normalization_factor,
             reward_clip_acc=env_conf.reward_clip_acc,
             use_acceleration_reward=env_conf.use_acceleration_reward,
-            verbose=env_conf.verbose,
-            sleep_time=env_conf.sleep_time,
-        )
-    elif name == "walkerwall-v0":
-        return WalkerWallEnv_v0(
-            max_episode_steps=env_conf.max_episode_steps,
-            max_distance=env_conf.max_distance,
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
         )
