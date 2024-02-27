@@ -1,5 +1,6 @@
-from tensordict import TensorDictBase
 import torch
+from tensordict import TensorDictBase
+
 from src.agents.base import BaseAgent
 
 
