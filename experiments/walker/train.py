@@ -6,8 +6,8 @@ import hydra
 import numpy as np
 import wandb
 from omegaconf import DictConfig, OmegaConf
-from tqdm import tqdm
 from torchrl.envs.utils import step_mdp
+from tqdm import tqdm
 
 # Add the project root to PYTHONPATH
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
@@ -16,12 +16,17 @@ if project_root not in sys.path:
 
 from environments import make_env, VIDEO_LOGGING_ENVS
 from src.agents import get_agent
-from src.utils import login, logout, prefill_buffer, setup_check, tensordict2dict, create_video_from_images
-
-
-@hydra.main(
-    version_base=None, config_path=project_root + "/conf", config_name="config"
+from src.utils import (
+    create_video_from_images,
+    login,
+    logout,
+    prefill_buffer,
+    setup_check,
+    tensordict2dict,
 )
+
+
+@hydra.main(version_base=None, config_path=project_root + "/conf", config_name="config")
 def run(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
 
@@ -82,7 +87,7 @@ def run(cfg: DictConfig) -> None:
             )
             action = td.get("action").numpy()
             agent_actions.append(action)
-            
+
             if quit:
                 break
 

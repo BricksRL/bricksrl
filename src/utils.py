@@ -8,6 +8,7 @@ from moviepy.editor import concatenate_videoclips, ImageClip
 from omegaconf import DictConfig
 from tensordict import TensorDictBase
 from tqdm import tqdm
+from torchrl.envs.utils import step_mdp
 
 
 def setup_check(robot: str, config: DictConfig):
@@ -127,6 +128,7 @@ def prefill_buffer(env, agent, num_episodes=10, stop_on_done=False):
                     )
                     if inpt == "q":
                         break
+                td = step_mdp(td)
         print("Prefill done! Buffer size: ", agent.replay_buffer.__len__())
 
 

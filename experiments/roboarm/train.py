@@ -6,6 +6,7 @@ import hydra
 import numpy as np
 import wandb
 from omegaconf import DictConfig, OmegaConf
+from torchrl.envs.utils import step_mdp
 from tqdm import tqdm
 
 # Add the project root to PYTHONPATH
@@ -82,6 +83,7 @@ def run(cfg: DictConfig) -> None:
                 ep_return += td.get(("next", "reward"), 0)
                 if done:
                     break
+                td = step_mdp(td)
             loss_info = agent.train(
                 batch_size=batch_size, num_updates=num_updates * ep_steps
             )
