@@ -6,3 +6,4 @@ wandb==0.16.1
 opencv-python==4.9.0.80
 moviepy==1.0.3
 tqdm==4.66.1
+pytest==8.0.2
