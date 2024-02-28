@@ -25,7 +25,6 @@ ALL_WALKER_ENVS = [
     "walker-v0",
     "walker-v1",
     "walker-v2",
-    "WalkerWall-v0",
     "walker_mixed-v0",
 ]
 ALL_ROBOARM_ENVS = ["roboarm-v0", "roboarm_mixed-v0"]
