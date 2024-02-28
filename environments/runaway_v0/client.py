@@ -1,19 +1,20 @@
 # NOTE: Run this program with the latest
 # firmware provided via https://beta.pybricks.com/
 
+import ustruct
+from micropython import kbd_intr
 from pybricks.hubs import InventorHub
+from pybricks.parameters import Direction, Port
 from pybricks.pupdevices import Motor, UltrasonicSensor
-from pybricks.parameters import Port, Direction
-from pybricks.tools import wait
 from pybricks.robotics import DriveBase
+from pybricks.tools import wait
+from uselect import poll
 
 # Standard MicroPython modules
 from usys import stdin, stdout
-from uselect import poll
-import ustruct
-from micropython import kbd_intr
 
 kbd_intr(-1)
+
 
 def normalize_angle(angle):
     # Normalize angle to be within 0 and 360
@@ -22,6 +23,8 @@ def normalize_angle(angle):
     while angle > 360:
         angle -= 360
     return angle
+
+
 def transform_range(value, old_min, old_max, new_min, new_max):
     """
     Transform a value from one range to another.
@@ -73,5 +76,7 @@ while True:
     dist = sensor.distance()
 
     # send current state
-    out_msg = ustruct.pack('!fffff', normalize_angle(left), normalize_angle(right), pitch, roll, dist)
+    out_msg = ustruct.pack(
+        "!fffff", normalize_angle(left), normalize_angle(right), pitch, roll, dist
+    )
     stdout.buffer.write(out_msg)

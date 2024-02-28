@@ -192,7 +192,9 @@ class WalkerEnv_v1(BaseEnv):
         next_tensordict = TensorDict(
             {
                 self.observation_key: self.normalize_state(next_observation).float(),
-                self.original_vec_observation_key: torch.from_numpy(next_observation).float(),
+                self.original_vec_observation_key: torch.from_numpy(
+                    next_observation
+                ).float(),
                 "reward": torch.tensor([reward]).float(),
                 "done": torch.tensor([done]).bool(),
             },

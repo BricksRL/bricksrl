@@ -1,6 +1,5 @@
-import tensordict as td
 import torch
-from torchrl.data import BoundedTensorSpec
+from tensordict import TensorDictBase
 
 from src.agents.base import BaseAgent
 
@@ -16,11 +15,12 @@ class RandomAgent(BaseAgent):
         self.replay_buffer = {}
 
     @torch.no_grad()
-    def get_action(self, state):
+    def get_action(self, tensordict: TensorDictBase):
         """Sample random actions from a uniform distribution"""
-        return self.action_spec.rand().numpy()
+        tensordict.set("action", self.action_spec.rand())
+        return tensordict
 
-    def add_experience(self, transition: td.TensorDict):
+    def add_experience(self, transition: TensorDictBase):
         """Add experience to replay buffer"""
         pass
 

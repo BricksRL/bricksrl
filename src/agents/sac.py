@@ -38,7 +38,6 @@ class SACAgent(BaseAgent):
             delay_qvalue=True,
             value_network=None,  # None to use SAC version 2
             num_qvalue_nets=2,
-            gamma=agent_config.gamma,
             fixed_alpha=agent_config.fixed_alpha,
             alpha_init=agent_config.alpha_init,
             loss_function=agent_config.loss_function,

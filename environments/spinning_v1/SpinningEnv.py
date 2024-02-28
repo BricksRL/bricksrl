@@ -163,7 +163,11 @@ class SpinningEnv_v1(BaseEnv):
         # calc reward and done
         next_tensordict = TensorDict(
             {
-                self.observation_key: self.normalize_state(np.concatenate((next_observation, np.array([[self.direction]])), axis=1)).float(),
+                self.observation_key: self.normalize_state(
+                    np.concatenate(
+                        (next_observation, np.array([[self.direction]])), axis=1
+                    )
+                ).float(),
             },
             batch_size=[1],
         )

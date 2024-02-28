@@ -20,9 +20,8 @@ class VecObsDummyEnv(EnvBase):
     state_dim = 7
     observation_key = "vec_observation"
 
-    def __init__(
-        self,
-    ):
+    def __init__(self, max_episode_steps=10):
+        self.max_episode_steps = max_episode_steps
         self._batch_size = torch.Size([1])
         self.action_spec = BoundedTensorSpec(
             low=-torch.ones((1, self.action_dim)),
@@ -51,7 +50,7 @@ class VecObsDummyEnv(EnvBase):
         """
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
-        observation = self.observation_spec.rand()
+        observation = self.observation_spec[self.observation_key].rand()
         return TensorDict(
             {
                 self.observation_key: observation.float(),
@@ -70,7 +69,7 @@ class VecObsDummyEnv(EnvBase):
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         """ """
         action = tensordict.get("action").numpy()
-        next_observation = self.observation_spec.rand()
+        next_observation = self.observation_spec[self.observation_key].rand()
 
         reward, done = self.reward(
             action=action,

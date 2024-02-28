@@ -1,15 +1,15 @@
-from pybricks.hubs import InventorHub
-from pybricks.pupdevices import Motor, ColorSensor
-from pybricks.parameters import Port
-from pybricks.tools import wait
-
 import umath
-# Standard MicroPython modules
-from usys import stdin, stdout
-from uselect import poll
+import urandom
 import ustruct
 from micropython import kbd_intr
-import urandom
+from pybricks.hubs import InventorHub
+from pybricks.parameters import Port
+from pybricks.pupdevices import ColorSensor, Motor
+from pybricks.tools import wait
+from uselect import poll
+
+# Standard MicroPython modules
+from usys import stdin, stdout
 
 kbd_intr(-1)
 
@@ -26,12 +26,13 @@ low_motor = Motor(Port.D)
 low_motor.control.limits(500, 1000, 900)
 low_motor.run_target(speed=400, target_angle=60)
 
-# Rotation motor range (-360, 360) 
+# Rotation motor range (-360, 360)
 # observe as its basically ~ 180
 rotation_motor = Motor(Port.B)
 
-#color_sensor = ColorSensor(Port.C)
+# color_sensor = ColorSensor(Port.C)
 motors = {"HM": high_motor, "LM": low_motor, "RM": rotation_motor}
+
 
 def get_current_motor_angles():
     angles = {}
@@ -40,11 +41,14 @@ def get_current_motor_angles():
         angles.update({k: angle})
     return angles
 
+
 def run_angle(motor, angle, speed=300):
     motor.run_angle(speed=speed, rotation_angle=angle, wait=False)
 
+
 def get_angle(motor):
     return motor.angle()
+
 
 def normalize_angle(angle, low_angle=-180, high_angle=179, original_one_round=360):
     # Normalize angle to be within -179 to 179 degrees
@@ -53,6 +57,7 @@ def normalize_angle(angle, low_angle=-180, high_angle=179, original_one_round=36
     while angle > high_angle:
         angle -= original_one_round
     return angle
+
 
 def transform_range(value, old_min, old_max, new_min, new_max):
     """
@@ -84,8 +89,8 @@ while True:
 
     # Read action values for the motors
     data = stdin.buffer.read(12)  # Reading 4 bytes (4 floats)
-    rotation_action, low_action, high_action  = ustruct.unpack("!fff", data)
-    
+    rotation_action, low_action, high_action = ustruct.unpack("!fff", data)
+
     # transform action range for motors
     high_action = transform_range(high_action, -1, 1, -60, 60)
     low_action = transform_range(low_action, -1, 1, -50, 50)
@@ -93,13 +98,17 @@ while True:
 
     angles = get_current_motor_angles()
 
-    if not (angles["HM"] + high_action > max(high_motor_range)) and not(angles["HM"] + high_action < min(high_motor_range)):
+    if not (angles["HM"] + high_action > max(high_motor_range)) and not (
+        angles["HM"] + high_action < min(high_motor_range)
+    ):
         high_motor.run_angle(speed=500, rotation_angle=high_action, wait=False)
 
-    if not (angles["LM"] + low_action > max(low_motor_range)) and not (angles["LM"] + low_action < min(low_motor_range)):
-       low_motor.run_angle(speed=300, rotation_angle=low_action, wait=False)
+    if not (angles["LM"] + low_action > max(low_motor_range)) and not (
+        angles["LM"] + low_action < min(low_motor_range)
+    ):
+        low_motor.run_angle(speed=300, rotation_angle=low_action, wait=False)
 
-    #if not (angles["RM"] + rotation_action > 180) or not (angles["RM"] + rotation_action < -180):
+    # if not (angles["RM"] + rotation_action > 180) or not (angles["RM"] + rotation_action < -180):
     rotation_motor.run_angle(speed=500, rotation_angle=rotation_action, wait=False)
 
     wait(200)
@@ -109,6 +118,12 @@ while True:
     low_angle = low_motor.angle()
 
     # GM HM LM RM
-    out_msg = ustruct.pack("!fff", low_angle, normalize_angle(high_angle), normalize_angle(rotation_angle, low_angle=-900, high_angle=900, original_one_round=1800))
+    out_msg = ustruct.pack(
+        "!fff",
+        low_angle,
+        normalize_angle(high_angle),
+        normalize_angle(
+            rotation_angle, low_angle=-900, high_angle=900, original_one_round=1800
+        ),
+    )
     stdout.buffer.write(out_msg)
-

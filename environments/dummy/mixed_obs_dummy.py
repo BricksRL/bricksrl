@@ -21,9 +21,8 @@ class MixedObsDummyEnv(EnvBase):
     vec_observation_key = "vec_observation"
     image_observation_key = "image_observation"
 
-    def __init__(
-        self,
-    ):
+    def __init__(self, max_episode_steps=10):
+        self.max_episode_steps = max_episode_steps
         self._batch_size = torch.Size([1])
         self.action_spec = BoundedTensorSpec(
             low=-torch.ones((1, self.action_dim)),

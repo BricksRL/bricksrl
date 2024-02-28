@@ -235,7 +235,7 @@ class WalkerMixedEnv_v0(BaseEnv):
         time.sleep(self.sleep_time)
         observation = self.read_from_hub()
         norm_obs = self.normalize_state(observation, self.vec_observation_key)
-        # TODO: try to keep the same tracker even when episode is done 
+        # TODO: try to keep the same tracker even when episode is done
         # so we dont have to draw and detect the object again.
         # Currently, we are reinitializing the tracker every time the episode is done.
         # As when moving the robot to init position at end of episode the tracker gets lost.

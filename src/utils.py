@@ -7,8 +7,8 @@ from environments import ALL_2WHEELER_ENVS, ALL_ROBOARM_ENVS, ALL_WALKER_ENVS
 from moviepy.editor import concatenate_videoclips, ImageClip
 from omegaconf import DictConfig
 from tensordict import TensorDictBase
-from tqdm import tqdm
 from torchrl.envs.utils import step_mdp
+from tqdm import tqdm
 
 
 def setup_check(robot: str, config: DictConfig):
