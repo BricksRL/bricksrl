@@ -60,7 +60,7 @@ def test_sac_agent(env, device):
 
     # Test data collection
     env = get_env(env)
-    agent = SACAgent(env.observation_spec, env.action_spec, cfg.agent)
+    agent = SACAgent(env.observation_spec, env.action_spec, cfg.agent, device=device)
     print(agent)
     rollout(env, agent, max_steps=10)
     # Test training
@@ -81,7 +81,7 @@ def test_td3_agent(env, device):
 
     # Test data collection
     env = get_env(env)
-    agent = TD3Agent(env.observation_spec, env.action_spec, cfg.agent)
+    agent = TD3Agent(env.observation_spec, env.action_spec, cfg.agent, device=device)
     rollout(env, agent, max_steps=10)
     # Test training
     agent.train(batch_size=1, num_updates=1)
@@ -101,7 +101,7 @@ def test_drq_agent(env, device):
 
     # Test data collection
     env = get_env(env)
-    agent = SACAgent(env.observation_spec, env.action_spec, cfg.agent)
+    agent = SACAgent(env.observation_spec, env.action_spec, cfg.agent, device=device)
     rollout(env, agent, max_steps=10)
     # Test training
     agent.train(batch_size=1, num_updates=1)
