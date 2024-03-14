@@ -140,7 +140,7 @@ class WalkerEnv_v2(BaseEnv):
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
         if tensordict is not None:
-            action = tensordict.get("action").numpy().squeeze()
+            action = tensordict.get("action").cpu().numpy().squeeze()
         else:
             action = np.zeros(self.action_dim)
         self.send_to_hub(action)
