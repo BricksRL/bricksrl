@@ -1,4 +1,5 @@
 import pytest
+import torch
 from environments.dummy.mixed_obs_dummy import MixedObsDummyEnv
 from environments.dummy.vec_obs_dummy import VecObsDummyEnv
 from hydra import compose, initialize
@@ -34,7 +35,7 @@ def get_env(env):
 )
 @pytest.mark.parametrize(
     "device",
-    ["cpu", "cuda:0"],
+    ["cpu", "cuda"],
 )
 def test_random_agent(env, device):
     with initialize(config_path="../conf"):
@@ -52,9 +53,13 @@ def test_random_agent(env, device):
 )
 @pytest.mark.parametrize(
     "device",
-    ["cpu", "cuda:0"],
+    ["cpu", "cuda"],
 )
 def test_sac_agent(env, device):
+    if torch.cuda.is_available() and device == "cuda":
+        device = "cuda"
+    else:
+        device = "cpu"
     with initialize(config_path="../conf"):
         cfg = compose(config_name="config", overrides=["agent=sac", "device=" + device])
 
@@ -73,9 +78,13 @@ def test_sac_agent(env, device):
 )
 @pytest.mark.parametrize(
     "device",
-    ["cpu", "cuda:0"],
+    ["cpu", "cuda"],
 )
 def test_td3_agent(env, device):
+    if torch.cuda.is_available() and device == "cuda":
+        device = "cuda"
+    else:
+        device = "cpu"
     with initialize(config_path="../conf"):
         cfg = compose(config_name="config", overrides=["agent=td3", "device=" + device])
 
@@ -93,9 +102,13 @@ def test_td3_agent(env, device):
 )
 @pytest.mark.parametrize(
     "device",
-    ["cpu", "cuda:0"],
+    ["cpu", "cuda"],
 )
 def test_drq_agent(env, device):
+    if torch.cuda.is_available() and device == "cuda":
+        device = "cuda"
+    else:
+        device = "cpu"
     with initialize(config_path="../conf"):
         cfg = compose(config_name="config", overrides=["agent=drq", "device=" + device])
 
