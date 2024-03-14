@@ -85,7 +85,7 @@ def run(cfg: DictConfig) -> None:
             loss_info = agent.train(
                 batch_size=batch_size, num_updates=num_updates * ep_steps
             )
-            action = td.get("action").numpy()
+            action = td.get("action").cpu().numpy()
             agent_actions.append(action)
 
             if quit:

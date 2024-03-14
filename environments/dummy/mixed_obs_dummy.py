@@ -77,7 +77,7 @@ class MixedObsDummyEnv(EnvBase):
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         """ """
-        action = tensordict.get("action").numpy()
+        action = tensordict.get("action").cpu().numpy()
         observation = self.observation_spec[self.vec_observation_key].rand()
         image_observation = self.observation_spec[self.image_observation_key].rand()
 

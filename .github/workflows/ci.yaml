@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.8, 3.9]
+        python-version: [3.8.18, 3.9]
 
     steps:
     - name: Checkout code
@@ -32,9 +32,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: List files # checking if the files are in the right place
+      run: |
+        ls
+
     - name: Run tests with pytest
       run: |
-        pip install pytest
         pytest
 
     - name: Check code formatting with ufmt

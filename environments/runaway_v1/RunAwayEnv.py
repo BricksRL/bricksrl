@@ -125,7 +125,7 @@ class RunAwayEnv_v1(BaseEnv):
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
         if tensordict is not None:
-            action = tensordict.get("action").numpy().squeeze(0)
+            action = tensordict.get("action").cpu().numpy().squeeze(0)
         else:
             action = np.zeros(self.action_dim)
         self.send_to_hub(action)
@@ -179,7 +179,7 @@ class RunAwayEnv_v1(BaseEnv):
             and an empty dictionary.
         """
         # Send action to hub to receive next state
-        self.send_to_hub(tensordict.get("action").numpy().squeeze(0))
+        self.send_to_hub(tensordict.get("action").cpu().numpy().squeeze(0))
         time.sleep(
             self.sleep_time
         )  # we need to wait some time for sensors to read and to
