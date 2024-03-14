@@ -164,7 +164,7 @@ class TD3Agent(BaseAgent):
         """Get action from actor network"""
 
         with set_exploration_type(ExplorationType.RANDOM):
-            out_td = self.actor_explore(td)
+            out_td = self.actor_explore(td.to(self.device))
         self.actor_explore.step(1)
         self.td_preprocessing(out_td)
         return out_td

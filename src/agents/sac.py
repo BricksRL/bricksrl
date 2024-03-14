@@ -24,6 +24,9 @@ class SACAgent(BaseAgent):
         )
         self.critic = get_critic(self.observation_keys, agent_config)
 
+        self.actor.to(device)
+        self.critic.to(device)
+
         # initialize networks
         self.init_nets([self.actor, self.critic])
 
@@ -153,7 +156,7 @@ class SACAgent(BaseAgent):
     def get_action(self, td: TensorDictBase) -> TensorDictBase:
         """Get action from actor network"""
         with set_exploration_type(ExplorationType.RANDOM):
-            out_td = self.actor(td)
+            out_td = self.actor(td.to(self.device))
         self.td_preprocessing(out_td)
         return out_td
 
