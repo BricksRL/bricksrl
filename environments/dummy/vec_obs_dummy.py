@@ -68,7 +68,7 @@ class VecObsDummyEnv(EnvBase):
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         """ """
-        action = tensordict.get("action").numpy()
+        action = tensordict.get("action").cpu().numpy()
         next_observation = self.observation_spec[self.observation_key].rand()
 
         reward, done = self.reward(
