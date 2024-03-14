@@ -33,7 +33,8 @@ jobs:
         pip install -r requirements.txt
 
     - name: List files # checking if the files are in the right place
-      run: ls -lah
+      run: |
+        ls
 
     - name: Run tests with pytest
       run: |
