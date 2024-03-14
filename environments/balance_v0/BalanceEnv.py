@@ -35,7 +35,7 @@ class BalanceEnv_v0(BaseEnv):
     motor_angles = (0, 360)
     roll_angles = (-90, 90)
     rotation_velocity = (-250, 250)  # adapt to real values
-    observation_key = "observation_vector"
+    observation_key = "vec_observation"
 
     def __init__(
         self,
@@ -94,10 +94,10 @@ class BalanceEnv_v0(BaseEnv):
         """
         state = (
             torch.from_numpy(state)
-            - self.observation_spec["observation_vector"].space.low
+            - self.observation_spec[self.observation_key].space.low
         ) / (
-            self.observation_spec["observation_vector"].space.high
-            - self.observation_spec["observation_vector"].space.low
+            self.observation_spec[self.observation_key].space.high
+            - self.observation_spec[self.observation_key].space.low
         )
         return state
 
@@ -149,12 +149,16 @@ class BalanceEnv_v0(BaseEnv):
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         """ """
         # Send action to hub to receive next state
+        start_time = time.time()
         self.send_to_hub(tensordict.get("action").numpy().squeeze())
         time.sleep(
             self.sleep_time
         )  # we need to wait some time for sensors to read and to
         # receive the next state
         next_observation = self.read_from_hub()
+
+        end_time = time.time()
+        print(f"Time to send and receive: {(end_time - start_time):.2f} seconds")
 
         # calc reward and done
         next_tensordict = TensorDict(
