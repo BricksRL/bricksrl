@@ -32,7 +32,11 @@ def get_env(env):
     "env",
     ["mixed", "vec"],
 )
-def test_random_agent(env):
+@pytest.mark.parametrize(
+    "device",
+    ["cpu", "cuda:0"],
+)
+def test_random_agent(env, device):
     with initialize(config_path="../conf"):
         cfg = compose(config_name="config")
 
@@ -46,9 +50,13 @@ def test_random_agent(env):
     "env",
     ["mixed", "vec"],
 )
-def test_sac_agent(env):
+@pytest.mark.parametrize(
+    "device",
+    ["cpu", "cuda:0"],
+)
+def test_sac_agent(env, device):
     with initialize(config_path="../conf"):
-        cfg = compose(config_name="config", overrides=["agent=sac"])
+        cfg = compose(config_name="config", overrides=["agent=sac", "device=" + device])
 
     # Test data collection
     env = get_env(env)
@@ -63,9 +71,13 @@ def test_sac_agent(env):
     "env",
     ["mixed", "vec"],
 )
-def test_td3_agent(env):
+@pytest.mark.parametrize(
+    "device",
+    ["cpu", "cuda:0"],
+)
+def test_td3_agent(env, device):
     with initialize(config_path="../conf"):
-        cfg = compose(config_name="config", overrides=["agent=td3"])
+        cfg = compose(config_name="config", overrides=["agent=td3", "device=" + device])
 
     # Test data collection
     env = get_env(env)
@@ -79,9 +91,13 @@ def test_td3_agent(env):
     "env",
     ["mixed", "vec"],
 )
-def test_drq_agent(env):
+@pytest.mark.parametrize(
+    "device",
+    ["cpu", "cuda:0"],
+)
+def test_drq_agent(env, device):
     with initialize(config_path="../conf"):
-        cfg = compose(config_name="config", overrides=["agent=drq"])
+        cfg = compose(config_name="config", overrides=["agent=drq", "device=" + device])
 
     # Test data collection
     env = get_env(env)
