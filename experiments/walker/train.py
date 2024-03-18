@@ -73,12 +73,14 @@ def run(cfg: DictConfig) -> None:
                 td = agent.get_action(td)
                 td = env.step(td)
                 agent.add_experience(td)
-                total_agent_step_time = time.time() - step_start_time
-                total_step_times.append(total_agent_step_time)
                 done = td.get(("next", "done"), False)
                 ep_return += td.get(("next", "reward"), 0)
                 if env_name in VIDEO_LOGGING_ENVS:
-                    image_caputres.append(td.get(("next", "original_image")).numpy())
+                    image_caputres.append(
+                        td.get(("next", "original_image")).cpu().numpy()
+                    )
+                total_agent_step_time = time.time() - step_start_time
+                total_step_times.append(total_agent_step_time)
                 if done:
                     break
                 td = step_mdp(td)
