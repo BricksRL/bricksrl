@@ -15,3 +15,4 @@ dropout: 0.0
 
 prb: 0
 buffer_size: 1000000
+reset_params: False

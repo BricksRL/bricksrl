@@ -84,9 +84,10 @@ class TD3Agent(BaseAgent):
             critic_params, lr=agent_config.lr, weight_decay=0.0
         )
 
+        # Reset weights
+        self.reset_params = agent_config.reset_params
         # general stats
         self.collected_transitions = 0
-        self.episodes = 0
         # td stats for delayed update
         self.total_updates = 0
         self.do_pretrain = False
@@ -115,6 +116,14 @@ class TD3Agent(BaseAgent):
             print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
         except:
             raise ValueError("Replay Buffer not loaded")
+
+    def reset_networks(self):
+        """reset network parameters"""
+        print("Resetting Networks!")
+        self.loss_module.actor_network_params.apply(self.reset_parameter)
+        self.loss_module.target_actor_network_params.apply(self.reset_parameter)
+        self.loss_module.qvalue_network_params.apply(self.reset_parameter)
+        self.loss_module.target_qvalue_network_params.apply(self.reset_parameter)
 
     def create_replay_buffer(
         self,
@@ -179,6 +188,8 @@ class TD3Agent(BaseAgent):
         log_data = {}
         for _ in range(num_updates):
             self.total_updates += 1
+            if self.reset_params and self.total_updates % self.reset_params == 0:
+                self.reset_networks()
             # Sample a batch from the replay buffer
             sampled_tensordict = self.replay_buffer.sample()
             if sampled_tensordict.device != self.device:
