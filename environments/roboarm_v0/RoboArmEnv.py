@@ -180,7 +180,7 @@ class RoboArmEnv_v0(BaseEnv):
 
         # receive the next state
         next_observation = self.read_from_hub()
-        goal_state = tensordict.get(self.original_goal_observation_key).numpy()
+        goal_state = tensordict.get(self.original_goal_observation_key).cpu().numpy()
 
         # calc reward and done
         reward, done = self.reward(
