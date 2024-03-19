@@ -30,10 +30,6 @@ class SACAgent(BaseAgent):
         # initialize networks
         self.init_nets([self.actor, self.critic])
 
-        # set initial network weights
-        # use a small std to start with small action values at the beginning
-        # initialize(self.actor, std=0.02)
-
         # define loss function
         self.loss_module = SACLoss(
             actor_network=self.actor,
@@ -50,6 +46,9 @@ class SACAgent(BaseAgent):
             self.loss_module, eps=agent_config.soft_update_eps
         )
         self.target_net_updater.init_()
+
+        # Reset weights
+        self.reset_params = agent_config.reset_params
 
         # Define Replay Buffer
         self.replay_buffer = self.create_replay_buffer(
@@ -79,7 +78,7 @@ class SACAgent(BaseAgent):
 
         # general stats
         self.collected_transitions = 0
-        self.episodes = 0
+        self.total_updates = 0
         self.do_pretrain = agent_config.pretrain
 
     def get_agent_statedict(self):
@@ -106,6 +105,14 @@ class SACAgent(BaseAgent):
             print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
         except:
             raise ValueError("Replay Buffer not loaded")
+
+    def reset_networks(self):
+        """reset network parameters"""
+        print("Resetting Networks!")
+        self.loss_module.actor_network_params.apply(self.reset_parameter)
+        self.loss_module.target_actor_network_params.apply(self.reset_parameter)
+        self.loss_module.qvalue_network_params.apply(self.reset_parameter)
+        self.loss_module.target_qvalue_network_params.apply(self.reset_parameter)
 
     def td_preprocessing(self, td: TensorDictBase) -> TensorDictBase:
         # TODO not ideal to have this here
@@ -181,6 +188,9 @@ class SACAgent(BaseAgent):
         """Train the agent"""
         self.actor.train()
         for i in range(num_updates):
+            self.total_updates += 1
+            if self.reset_params and self.total_updates % self.reset_params == 0:
+                self.reset_networks()
             # Sample a batch from the replay buffer
             batch = self.replay_buffer.sample(batch_size)
             # Compute SAC Loss

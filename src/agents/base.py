@@ -1,7 +1,9 @@
+import math
 from typing import Tuple
 
 import torch
 import torch.nn as nn
+import torch.nn.init as init
 from tensordict import TensorDict, TensorDictBase
 from torchrl.data.tensor_specs import TensorSpec
 from torchrl.envs.utils import set_exploration_mode
@@ -50,6 +52,14 @@ class BaseAgent:
             for net in model:
                 net(td)
         del td
+
+    @staticmethod
+    def reset_parameter(param):
+        if param.data.ndimension() == 2:  # Weights
+            init.kaiming_uniform_(param.data, a=math.sqrt(5))
+        else:  # Biases and others
+            # Adjust based on your specific needs
+            init.uniform_(param.data, -1, 1)
 
     def get_action(self, tensordict: TensorDictBase) -> TensorDictBase:
         """Returns an action given a state.

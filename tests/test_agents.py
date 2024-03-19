@@ -110,7 +110,9 @@ def test_drq_agent(env, device):
     else:
         device = "cpu"
     with initialize(config_path="../conf"):
-        cfg = compose(config_name="config", overrides=["agent=drq", "device=" + device])
+        cfg = compose(
+            config_name="config", overrides=["agent=droq", "device=" + device]
+        )
 
     # Test data collection
     env = get_env(env)
