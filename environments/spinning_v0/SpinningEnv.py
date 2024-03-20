@@ -36,6 +36,7 @@ class SpinningEnv_v0(BaseEnv):
     roll_angles = (-90, 90)
     rotation_velocity = (-100, 100)  # adapt to real values
     observation_key = "vec_observation"
+    original_vec_observation_key = "original_vec_observation"
 
     def __init__(
         self,
@@ -122,13 +123,16 @@ class SpinningEnv_v0(BaseEnv):
 
         state = self.read_from_hub()
         self.direction = np.random.randint(0, 2)  # (0,1) left or right
-        norm_observation = self.normalize_state(
-            np.concatenate((state, np.array([[self.direction]])), axis=1)
+        full_original_state = np.concatenate(
+            (state, np.array([[self.direction]])), axis=1
         )
+        norm_observation = self.normalize_state(full_original_state)
         return TensorDict(
             {
                 self.observation_key: norm_observation.float(),
-                # "original_vec_observation": observation.squeeze(),
+                self.original_vec_observation_key: torch.from_numpy(
+                    full_original_state
+                ).float(),
             },
             batch_size=[1],
         )
@@ -140,7 +144,7 @@ class SpinningEnv_v0(BaseEnv):
         If the robot is spinning in the wrong direction, we want to minimize the angular velocity.
         """
         done = False
-        velocity = tensordict.get((self.observation_key))[:, -2]
+        velocity = tensordict.get((self.original_vec_observation_key))[:, -2]
 
         if self.direction == 0:
             reward = velocity
@@ -159,14 +163,17 @@ class SpinningEnv_v0(BaseEnv):
         )  # we need to wait some time for sensors to read and to
         # receive the next state
         next_observation = self.read_from_hub()
-
+        full_original_next_observation = np.concatenate(
+            (next_observation, np.array([[self.direction]])), axis=1
+        )
         # calc reward and done
         next_tensordict = TensorDict(
             {
                 self.observation_key: self.normalize_state(
-                    np.concatenate(
-                        (next_observation, np.array([[self.direction]])), axis=1
-                    )
+                    full_original_next_observation
+                ).float(),
+                self.original_vec_observation_key: torch.from_numpy(
+                    full_original_next_observation
                 ).float(),
             },
             batch_size=[1],
