@@ -38,7 +38,10 @@ def run(cfg: DictConfig) -> None:
 
     # prefill buffer with random actions
     prefill_buffer(
-        env=env, agent=agent, num_episodes=cfg.agent.prefill_episodes, stop_on_done=True
+        env=env,
+        agent=agent,
+        num_episodes=cfg.agent.prefill_episodes,
+        stop_on_done=True if cfg.env.name == "runaway-v0" else False,
     )
 
     batch_size = cfg.agent.batch_size
@@ -54,12 +57,13 @@ def run(cfg: DictConfig) -> None:
             ep_return = 0
             ep_steps = 0
             total_step_times = []
-
+            actions = []
             print("Start new data collection...", flush=True)
             while not done and not truncated:
                 ep_steps += 1
                 step_start_time = time.time()
                 td = agent.get_action(td)
+                actions.append(td.get("action").cpu().numpy())
                 td = env.step(td)
                 agent.add_experience(td)
                 total_agent_step_time = time.time() - step_start_time
@@ -67,11 +71,12 @@ def run(cfg: DictConfig) -> None:
                 done = td.get(("next", "done"), False)
                 ep_return += td.get(("next", "reward"), 0)
                 if done:
-                    inpt = input(
-                        "Please reset the robot to the starting position and press Enter to continue or q to quit:"
-                    )
-                    if inpt == "q":
-                        quit = True
+                    if cfg.env.name == "runaway_v0":
+                        inpt = input(
+                            "Please reset the robot to the starting position and press Enter to continue or q to quit:"
+                        )
+                        if inpt == "q":
+                            quit = True
                     break
                 td = step_mdp(td)
             loss_info = agent.train(
@@ -88,7 +93,10 @@ def run(cfg: DictConfig) -> None:
                 "total_step_time": np.mean(total_step_times),
                 "buffer_size": agent.replay_buffer.__len__(),
                 "done": done,
+                "mean_action": np.mean(actions),
             }
+            if cfg.env.name == "runaway-v0":
+                log_dict.update({"distance": td.get("original_vec_observation")[0][-1]})
 
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)

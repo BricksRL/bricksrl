@@ -12,7 +12,7 @@ from environments.roboarm_mixed_v0.RoboArmMixedEnv import RoboArmMixedEnv_v0
 from environments.roboarm_v0.RoboArmEnv import RoboArmEnv_v0
 from environments.runaway_v0.RunAwayEnv import RunAwayEnv_v0
 from environments.runaway_v1.RunAwayEnv import RunAwayEnv_v1
-from environments.spinning_v1.SpinningEnv import SpinningEnv_v1
+from environments.spinning_v0.SpinningEnv import SpinningEnv_v0
 from environments.walker_mixed_v0.WalkerEnv import WalkerMixedEnv_v0
 from environments.walker_v0.WalkerEnv import WalkerEnv_v0
 from environments.walker_v1.WalkerEnv import WalkerEnv_v1
@@ -20,7 +20,7 @@ from environments.walker_v2.WalkerEnv import WalkerEnv_v2
 
 
 VIDEO_LOGGING_ENVS = ["roboar_mixed-v0", "walker_mixed-v0"]
-ALL_2WHEELER_ENVS = ["Spinning-v1", "runaway-v0", "runaway-v1", "balance-v0"]
+ALL_2WHEELER_ENVS = ["spinning-v0", "runaway-v0", "runaway-v1", "balance-v0"]
 ALL_WALKER_ENVS = [
     "walker-v0",
     "walker-v1",
@@ -83,8 +83,8 @@ def make(name="RunAway", env_conf=None):
             min_distance=env_conf.min_distance,
             verbose=env_conf.verbose,
         )
-    elif name == "spinning-v1":
-        return SpinningEnv_v1(
+    elif name == "spinning-v0":
+        return SpinningEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             sleep_time=env_conf.sleep_time,
             verbose=env_conf.verbose,
@@ -146,12 +146,6 @@ def make(name="RunAway", env_conf=None):
             reward_signal=env_conf.reward_signal,
             camera_id=env_conf.camera_id,
             goal_radius=env_conf.goal_radius,
-        )
-    elif name == "DoNothing":
-        return DoNothingEnv(
-            max_episode_steps=env_conf.max_episode_steps,
-            max_distance=env_conf.max_distance,
-            min_distance=env_conf.min_distance,
         )
     else:
         print("Environment not found")
