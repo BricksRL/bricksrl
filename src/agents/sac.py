@@ -114,6 +114,10 @@ class SACAgent(BaseAgent):
         self.loss_module.qvalue_network_params.apply(self.reset_parameter)
         self.loss_module.target_qvalue_network_params.apply(self.reset_parameter)
 
+    def eval(self):
+        """Sets the agent to evaluation mode."""
+        self.actor.eval()
+
     def td_preprocessing(self, td: TensorDictBase) -> TensorDictBase:
         # TODO not ideal to have this here
         td.pop("scale")
@@ -163,6 +167,14 @@ class SACAgent(BaseAgent):
     def get_action(self, td: TensorDictBase) -> TensorDictBase:
         """Get action from actor network"""
         with set_exploration_type(ExplorationType.RANDOM):
+            out_td = self.actor(td.to(self.device))
+        self.td_preprocessing(out_td)
+        return out_td
+
+    @torch.no_grad()
+    def get_eval_action(self, td: TensorDictBase) -> TensorDictBase:
+        """Get eval action from actor network"""
+        with set_exploration_type(ExplorationType.MODE):
             out_td = self.actor(td.to(self.device))
         self.td_preprocessing(out_td)
         return out_td

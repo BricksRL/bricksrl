@@ -53,6 +53,10 @@ class BaseAgent:
                 net(td)
         del td
 
+    def eval(self):
+        """Sets the agent to evaluation mode."""
+        raise NotImplementedError
+
     @staticmethod
     def reset_parameter(param):
         if param.data.ndimension() == 2:  # Weights
@@ -62,13 +66,24 @@ class BaseAgent:
             init.uniform_(param.data, -1, 1)
 
     def get_action(self, tensordict: TensorDictBase) -> TensorDictBase:
-        """Returns an action given a state.
+        """Returns a sampled action given a tensordict to collect data.
 
         Args:
-            state (np.ndarray): The current state of the environment.
+            tensordict (TensorDictBase): Tensordict containing the current state of the environment.
 
         Returns:
-            np.ndarray: The action to take in the environment.
+            TensorDictBase: TensorDict containing the sampled action to take in the environment.
+        """
+        raise NotImplementedError
+
+    def get_eval_action(self, tensordict: TensorDictBase) -> TensorDictBase:
+        """Returns an action given a tensordict to evaluate the agent.
+
+        Args:
+            tensordict (TensorDictBase): Tensordict containing the current state of the environment.
+
+        Returns:
+            TensorDictBase: TensorDict containing the eval action to take in the environment.
         """
         raise NotImplementedError
 
