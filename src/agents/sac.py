@@ -167,6 +167,14 @@ class SACAgent(BaseAgent):
         self.td_preprocessing(out_td)
         return out_td
 
+    @torch.no_grad()
+    def get_eval_action(self, td: TensorDictBase) -> TensorDictBase:
+        """Get eval action from actor network"""
+        with set_exploration_type(ExplorationType.MODE):
+            out_td = self.actor(td.to(self.device))
+        self.td_preprocessing(out_td)
+        return out_td
+
     def add_experience(self, transition: td.TensorDict):
         """Add experience to replay buffer"""
         self.replay_buffer.extend(transition)

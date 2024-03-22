@@ -20,6 +20,12 @@ class RandomAgent(BaseAgent):
         tensordict.set("action", self.action_spec.rand())
         return tensordict
 
+    @torch.no_grad()
+    def get_eval_action(self, tensordict: TensorDictBase):
+        """Sample random actions from a uniform distribution"""
+        tensordict.set("action", self.action_spec.rand())
+        return tensordict
+
     def add_experience(self, transition: TensorDictBase):
         """Add experience to replay buffer"""
         pass
