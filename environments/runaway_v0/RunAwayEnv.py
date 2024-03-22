@@ -161,7 +161,7 @@ class RunAwayEnv_v0(BaseEnv):
             reward = 1.0
         else:
             reward = 0.0
-        if next_state[:, -1] > 2000:
+        if state[:, -1] >= 2000:
             done = True
         return reward, done
 
