@@ -71,7 +71,7 @@ def run(cfg: DictConfig) -> None:
                 done = td.get(("next", "done"), False)
                 ep_return += td.get(("next", "reward"), 0)
                 if done:
-                    if cfg.env.name == "runaway_v0":
+                    if cfg.env.name == "runaway-v0":
                         inpt = input(
                             "Please reset the robot to the starting position and press Enter to continue or q to quit:"
                         )
@@ -92,7 +92,7 @@ def run(cfg: DictConfig) -> None:
                 "steps": ep_steps,
                 "total_step_time": np.mean(total_step_times),
                 "buffer_size": agent.replay_buffer.__len__(),
-                "done": done,
+                "done": done.float(),
                 "mean_action": np.mean(actions),
             }
             if cfg.env.name == "runaway-v0":
