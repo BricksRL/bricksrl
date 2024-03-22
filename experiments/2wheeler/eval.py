@@ -17,7 +17,7 @@ if project_root not in sys.path:
 
 from environments import make_env
 from src.agents import get_agent
-from src.utils import login, logout, setup_check, tensordict2dict
+from src.utils import login, setup_check
 
 
 @hydra.main(version_base=None, config_path=project_root + "/conf", config_name="config")
