@@ -168,6 +168,10 @@ class TD3Agent(BaseAgent):
         if "image_embedding" in td.keys():
             td.pop("image_embedding")
 
+    def eval(self):
+        """Sets the agent to evaluation mode."""
+        self.actor.eval()
+
     @torch.no_grad()
     def get_action(self, td: TensorDictBase) -> TensorDictBase:
         """Get action from actor network"""

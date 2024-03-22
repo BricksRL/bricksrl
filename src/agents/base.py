@@ -53,6 +53,10 @@ class BaseAgent:
                 net(td)
         del td
 
+    def eval(self):
+        """Sets the agent to evaluation mode."""
+        raise NotImplementedError
+
     @staticmethod
     def reset_parameter(param):
         if param.data.ndimension() == 2:  # Weights

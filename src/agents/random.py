@@ -14,6 +14,9 @@ class RandomAgent(BaseAgent):
         self.do_pretrain = False
         self.replay_buffer = {}
 
+    def eval(self):
+        """Sets the agent to evaluation mode."""
+
     @torch.no_grad()
     def get_action(self, tensordict: TensorDictBase):
         """Sample random actions from a uniform distribution"""

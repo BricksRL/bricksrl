@@ -114,6 +114,10 @@ class SACAgent(BaseAgent):
         self.loss_module.qvalue_network_params.apply(self.reset_parameter)
         self.loss_module.target_qvalue_network_params.apply(self.reset_parameter)
 
+    def eval(self):
+        """Sets the agent to evaluation mode."""
+        self.actor.eval()
+
     def td_preprocessing(self, td: TensorDictBase) -> TensorDictBase:
         # TODO not ideal to have this here
         td.pop("scale")
