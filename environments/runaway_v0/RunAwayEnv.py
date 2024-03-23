@@ -182,6 +182,7 @@ class RunAwayEnv_v0(BaseEnv):
                 ).float(),  # for reward calc
             },
             batch_size=[1],
+            device=tensordict.device,
         )
         # calc reward and done
         reward, done = self.reward(
