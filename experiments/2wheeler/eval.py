@@ -39,6 +39,7 @@ def run(cfg: DictConfig) -> None:
 
     eval_episodes = cfg.episodes
     quit = False
+    _ = input("Press Enter to start evaluation...")
     try:
         for e in tqdm(range(eval_episodes), desc="Evaluation"):
             td = env.reset()
