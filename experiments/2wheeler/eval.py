@@ -31,6 +31,7 @@ def run(cfg: DictConfig) -> None:
     # make agent
     agent, project_name = get_agent(action_space, state_space, cfg)
     login(agent)
+    agent.eval()
 
     # initialize wandb
     wandb.init(project=project_name + "_eval")

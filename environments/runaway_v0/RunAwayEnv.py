@@ -163,6 +163,9 @@ class RunAwayEnv_v0(BaseEnv):
             reward = 0.0
         if state[:, -1] >= 2000:
             done = True
+
+        if state[:, -1] <= 100:
+            done = True
         return reward, done
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
