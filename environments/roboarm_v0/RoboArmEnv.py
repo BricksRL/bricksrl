@@ -2,10 +2,10 @@ import time
 from typing import Tuple
 
 import numpy as np
-
 import torch
 
 from environments.base.base_env import BaseEnv
+from numpy import linalg
 from tensordict import TensorDict, TensorDictBase
 from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec
 
@@ -153,7 +153,8 @@ class RoboArmEnv_v0(BaseEnv):
 
         done = False
         if self.reward_signal == "dense":
-            error = np.sum(np.abs(achieved_state - goal_state))
+            # error = np.sum(np.abs(achieved_state - goal_state))
+            error = linalg.norm(achieved_state - goal_state)
             reward = -error / 1000
             if error < np.mean(self.goal_thresholds):
                 done = True
