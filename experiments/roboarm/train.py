@@ -67,7 +67,8 @@ def run(cfg: DictConfig) -> None:
             total_step_times = []
             if env_name in VIDEO_LOGGING_ENVS:
                 image_caputres = [td.get("original_image").numpy()]
-
+            if env_name == "roboarm-v0":
+                goal_state = td.get(env.original_goal_observation_key).cpu().numpy()
             print("Start new data collection...", flush=True)
             while not done and not truncated:
                 ep_steps += 1
@@ -75,12 +76,15 @@ def run(cfg: DictConfig) -> None:
                 td = agent.get_action(td)
                 td = env.step(td)
                 if env_name in VIDEO_LOGGING_ENVS:
-                    image_caputres.append(td.get(("next", "original_image")).numpy())
+                    image_caputres.append(
+                        td.get(("next", "original_image")).cpu().numpy()
+                    )
                 agent.add_experience(td)
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)
                 done = td.get(("next", "done"), False)
                 ep_return += td.get(("next", "reward"), 0)
+
                 if done:
                     break
                 td = step_mdp(td)
@@ -100,7 +104,10 @@ def run(cfg: DictConfig) -> None:
                 "buffer_size": agent.replay_buffer.__len__(),
                 "done": done.float(),
             }
-
+            if env_name == "roboarm-v0":
+                achieved_state = td.get(env.original_observation_key).cpu().numpy()
+                final_error = np.sum(np.abs(achieved_state - goal_state))
+                log_dict.update({"final_error": final_error})
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)
             if env_name in VIDEO_LOGGING_ENVS:
