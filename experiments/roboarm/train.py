@@ -98,7 +98,7 @@ def run(cfg: DictConfig) -> None:
                 "steps": ep_steps,
                 "total_step_time": np.mean(total_step_times),
                 "buffer_size": agent.replay_buffer.__len__(),
-                "done": done,
+                "done": done.float(),
             }
 
             log_dict.update(tensordict2dict(loss_info))

@@ -14,13 +14,13 @@ class RoboArmEnv_v0(BaseEnv):
     """ """
 
     action_dim = 4  # (Grab_motor_action, high_motor_action, low_motor_action, rotation_motor_action)
-    # angles are in range [-180, 179]
-    state_dim = 4  # (GM, HM, LM, RM, GGM, GHM, GLM, GRM)
+
+    state_dim = 4  # (GM, HM, LM, RM)
 
     motor_ranges = {
         "GM": (-148, -44),
         "HM": (-150, 30),
-        "LM": (0, 120),
+        "LM": (10, 70),
         "RM": (-900, 900),
     }
 
@@ -52,7 +52,7 @@ class RoboArmEnv_v0(BaseEnv):
             shape=(1, self.action_dim),
         )
 
-        self.goal_thresholds = np.array([20, 20])
+        self.goal_thresholds = np.array([50])
         # Observation 4 motors (GM, HM, LM, RM) + goal positions (GGM, GHM, GLM, GRM)
         observation_spec = BoundedTensorSpec(
             low=torch.tensor(
