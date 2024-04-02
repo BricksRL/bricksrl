@@ -25,11 +25,11 @@ high_motor_range = (-150, 10)
 high_motor = Motor(Port.A)
 high_motor.run_target(speed=400, target_angle=-70)
 
-# Low motor range (0, 120)
-low_motor_range = (0, 120)
+# Low motor range (10, 70)
+low_motor_range = (10, 70)
 low_motor = Motor(Port.D)
 low_motor.control.limits(500, 1000, 900)
-low_motor.run_target(speed=400, target_angle=60)
+low_motor.run_target(speed=400, target_angle=40)
 
 # Rotation motor range (-360, 360)
 # observe as its basically ~ 180
@@ -101,7 +101,7 @@ while True:
     # transform action range for motors
     grab_action = transform_range(grab_action, -1, 1, -25, 25)
     high_action = transform_range(high_action, -1, 1, -60, 60)
-    low_action = transform_range(low_action, -1, 1, -50, 50)
+    low_action = transform_range(low_action, -1, 1, -30, 30)
     rotation_action = transform_range(rotation_action, -1, 1, -180, 180)
 
     angles = get_current_motor_angles()
@@ -114,17 +114,17 @@ while True:
     if not (angles["HM"] + high_action > max(high_motor_range)) and not (
         angles["HM"] + high_action < min(high_motor_range)
     ):
-        high_motor.run_angle(speed=500, rotation_angle=high_action, wait=False)
+        high_motor.run_angle(speed=250, rotation_angle=high_action, wait=False)
 
     if not (angles["LM"] + low_action > max(low_motor_range)) and not (
         angles["LM"] + low_action < min(low_motor_range)
     ):
-        low_motor.run_angle(speed=300, rotation_angle=low_action, wait=False)
+        low_motor.run_angle(speed=250, rotation_angle=low_action, wait=False)
 
     # if not (angles["RM"] + rotation_action > 180) or not (angles["RM"] + rotation_action < -180):
-    rotation_motor.run_angle(speed=500, rotation_angle=rotation_action, wait=False)
+    rotation_motor.run_angle(speed=250, rotation_angle=rotation_action, wait=False)
 
-    wait(200)
+    wait(250)
 
     rotation_angle = rotation_motor.angle()
     high_angle = high_motor.angle()
