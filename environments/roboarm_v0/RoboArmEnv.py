@@ -52,7 +52,9 @@ class RoboArmEnv_v0(BaseEnv):
             shape=(1, self.action_dim),
         )
 
-        self.goal_thresholds = np.array([50])
+        self.goal_thresholds = np.array(
+            [50]
+        )  # everythin below 20 is very good. 50 is still good!
         # Observation 4 motors (GM, HM, LM, RM) + goal positions (GGM, GHM, GLM, GRM)
         observation_spec = BoundedTensorSpec(
             low=torch.tensor(
