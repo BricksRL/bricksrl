@@ -19,7 +19,7 @@ class RoboArmEnv_v0(BaseEnv):
 
     motor_ranges = {
         "GM": (-148, -44),
-        "HM": (-150, 30),
+        "HM": (-150, 10),
         "LM": (10, 70),
         "RM": (-900, 900),
     }
