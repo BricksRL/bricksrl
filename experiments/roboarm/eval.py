@@ -19,6 +19,15 @@ from environments import make_env, VIDEO_LOGGING_ENVS
 from src.agents import get_agent
 from src.utils import create_video_from_images, login, setup_check
 
+"""
+Goal positions for the evaluation:
+
+    stretch-out: [GM: -130, RM: 0, LM: 70, HM: -130]
+    grab-up: [GM: -130, RM: 0, LM: 70, HM: 25]
+    hold-high: [GM: -50, RM: 0, LM: 15, HM: -130]
+    random: [GM: -100, RM: 120, LM: 34, HM: -90]
+"""
+
 
 @hydra.main(version_base=None, config_path=project_root + "/conf", config_name="config")
 def run(cfg: DictConfig) -> None:
@@ -68,13 +77,6 @@ def run(cfg: DictConfig) -> None:
                 done = td.get(("next", "done"), False)
                 ep_return += td.get(("next", "reward"), 0)
 
-                if env_name == "roboarm-v0":
-                    achieved_state = td.get(env.original_observation_key).cpu().numpy()
-                    print("---" * 10)
-                    print("Goal state: ", goal_state)
-                    print("Achieved state: ", achieved_state)
-                    print("Error: ", np.sum(np.abs(achieved_state - goal_state)))
-
                 if done:
                     break
                 td = step_mdp(td)
@@ -90,6 +92,14 @@ def run(cfg: DictConfig) -> None:
                 "total_step_time": np.mean(total_step_times),
                 "done": done.float(),
             }
+            if env_name == "roboarm-v0":
+                achieved_state = td.get(env.original_observation_key).cpu().numpy()
+                error = np.linalg.norm(achieved_state - goal_state)
+                print("---" * 10)
+                print("Goal state: ", goal_state)
+                print("Achieved state: ", achieved_state)
+                print("Error: ", error)
+                log_dict["final_error"] = error
 
             wandb.log(log_dict)
             if env_name in VIDEO_LOGGING_ENVS:

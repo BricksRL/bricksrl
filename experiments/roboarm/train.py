@@ -106,7 +106,7 @@ def run(cfg: DictConfig) -> None:
             }
             if env_name == "roboarm-v0":
                 achieved_state = td.get(env.original_observation_key).cpu().numpy()
-                final_error = np.sum(np.abs(achieved_state - goal_state))
+                final_error = np.linalg.norm(achieved_state - goal_state)
                 log_dict.update({"final_error": final_error})
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)
