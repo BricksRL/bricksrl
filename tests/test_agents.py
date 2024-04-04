@@ -3,7 +3,7 @@ import torch
 from environments.dummy.mixed_obs_dummy import MixedObsDummyEnv
 from environments.dummy.vec_obs_dummy import VecObsDummyEnv, VecGoalObsDummyEnv
 from hydra import compose, initialize
-from src.agents import RandomAgent, SACAgent, TD3Agent, get_agent
+from src.agents import get_agent
 from torchrl.envs import Compose, ToTensorImage, TransformedEnv
 from torchrl.envs.utils import step_mdp
 
@@ -47,7 +47,7 @@ def test_random_agent(env, device):
 
     # Test data collection
     env = get_env(env)
-    agent = RandomAgent(env.observation_spec, env.action_spec, cfg.agent)
+    agent, _ = get_agent(env.action_spec, env.observation_spec, cfg)
     collection_round(env, agent, max_steps=10)
 
 
@@ -69,8 +69,7 @@ def test_sac_agent(env, device):
 
     # Test data collection
     env = get_env(env)
-    agent = SACAgent(env.observation_spec, env.action_spec, cfg.agent, device=device)
-    print(agent)
+    agent, _ = get_agent(env.action_spec, env.observation_spec, cfg)
     collection_round(env, agent, max_steps=10)
     # Test training
     agent.train(batch_size=1, num_updates=1)
@@ -109,7 +108,6 @@ def test_td3_agent(env, device):
     # Test data collection
     env = get_env(env)
     agent, _ = get_agent(env.action_spec, env.observation_spec, cfg)
-    #agent = TD3Agent(env.observation_spec, env.action_spec, cfg.agent, device=device)
     collection_round(env, agent, max_steps=10)
 
     # Test training
@@ -150,7 +148,7 @@ def test_drq_agent(env, device):
 
     # Test data collection
     env = get_env(env)
-    agent = SACAgent(env.observation_spec, env.action_spec, cfg.agent, device=device)
+    agent, _ = get_agent(env.action_spec, env.observation_spec, cfg)
     collection_round(env, agent, max_steps=10)
     # Test training
     agent.train(batch_size=1, num_updates=1)
