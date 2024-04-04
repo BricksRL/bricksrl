@@ -4,11 +4,11 @@ run_name: ""
 mode: "offline"
 verbose: 0
 
-device: "cuda:0"
+device: "cuda"
 episodes: 200
 
 defaults:
   - _self_
   # random, bc, sac, td3
-  - agent: sac 
+  - agent: td3 
   - env: roboarm-v0
