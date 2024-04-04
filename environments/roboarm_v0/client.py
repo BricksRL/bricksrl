@@ -131,6 +131,10 @@ while True:
     grab_angle = grab_motor.angle()
     low_angle = low_motor.angle()
 
+    # sometimes low angle jumps out of range and cant move back this corrects those cases
+    if low_angle < 10:
+        low_motor.run_target(speed=200, target_angle=10)
+
     # GM HM LM RM
     out_msg = ustruct.pack(
         "!ffff",
