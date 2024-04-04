@@ -19,13 +19,14 @@ from environments.walker_v1.WalkerEnv import WalkerEnv_v1
 from environments.walker_v2.WalkerEnv import WalkerEnv_v2
 
 
-VIDEO_LOGGING_ENVS = ["roboar_mixed-v0", "walker_mixed-v0"]
+VIDEO_LOGGING_ENVS = ["roboar_mixed-v0", "walker_mixed-v0", "walker_mixed_v1"]
 ALL_2WHEELER_ENVS = ["spinning-v0", "runaway-v0", "runaway-v1", "balance-v0"]
 ALL_WALKER_ENVS = [
     "walker-v0",
     "walker-v1",
     "walker-v2",
     "walker_mixed-v0",
+    "walker_mixed-v1",
 ]
 ALL_ROBOARM_ENVS = ["roboarm-v0", "roboarm_mixed-v0"]
 ALL_ENVS = ALL_2WHEELER_ENVS + ALL_WALKER_ENVS + ALL_ROBOARM_ENVS
@@ -122,6 +123,16 @@ def make(name="RunAway", env_conf=None):
             sleep_time=env_conf.sleep_time,
         )
     elif name == "walker_mixed-v0":
+        return WalkerMixedEnv_v0(
+            max_episode_steps=env_conf.max_episode_steps,
+            sleep_time=env_conf.sleep_time,
+            verbose=env_conf.verbose,
+            camera_id=env_conf.camera_id,
+            image_path=env_conf.image_path,
+            tracker_type=env_conf.tracker_type,
+            auto_obj_detection=env_conf.auto_obj_detection,
+        )
+    elif name == "walker_mixed-v1":
         return WalkerMixedEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             sleep_time=env_conf.sleep_time,

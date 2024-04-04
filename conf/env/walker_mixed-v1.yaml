@@ -1,0 +1,14 @@
+name: "walker_mixed-v1"
+max_episode_steps: 100
+# env specific params
+verbose: 0
+# env wrapper
+frame_stack: 1
+action_filter: 1
+sleep_time: 0.0
+camera_id: 2
+image_path: "environments/walker_mixed_v1/img/robodog.jpg"
+# use auto object detection or draw bbox manually
+auto_obj_detection: False
+# Options: KCF, BOOSTING, MIL, TLD, MEDIANFLOW, MOSSE, CSRT
+tracker_type: CSRT

@@ -12,7 +12,7 @@ from tensordict import TensorDict, TensorDictBase
 from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec
 
 
-class WalkerMixedEnv_v0(BaseEnv):
+class WalkerMixedEnv_v1(BaseEnv):
     """ """
 
     action_dim = 4  # (lf_value, lb_value, rf_value, rb_value)
@@ -90,9 +90,21 @@ class WalkerMixedEnv_v0(BaseEnv):
                 ]
             ),
         )
+        # get initial observation to define image observation spec
+        ret, frame = self.camera.read()
+        if not ret:
+            raise ValueError("Camera not available.")
+        frame = cv2.resize(frame, (64, 64))
+        shape = frame.shape
+        # img_dtype = frame.dtype
+        image_observation_spec = BoundedTensorSpec(
+            low=torch.zeros((1,) + shape, dtype=torch.uint8),
+            high=torch.ones((1,) + shape, dtype=torch.uint8) * 255,
+        )
 
         self.observation_spec = CompositeSpec(shape=(1,))
         self.observation_spec.set(self.vec_observation_key, observation_spec)
+        self.observation_spec.set(self.image_observation_key, image_observation_spec)
 
         super().__init__(
             action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
