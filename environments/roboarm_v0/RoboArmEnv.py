@@ -21,7 +21,7 @@ class RoboArmEnv_v0(BaseEnv):
         "GM": (-148, -44),
         "HM": (-150, 10),
         "LM": (10, 70),
-        "RM": (-900, 900),
+        "RM": (-180, 179),
     }
 
     observation_key = "vec_observation"
@@ -134,6 +134,36 @@ class RoboArmEnv_v0(BaseEnv):
             batch_size=[1],
         )
 
+    @staticmethod
+    def shortest_angular_distance_vectorized(
+        theta_goal: np.array, theta_current: np.array
+    ) -> float:
+        """
+        Calculate the shortest angular distance between two arrays of angles.
+
+        Parameters:
+        - theta_goal: Array of goal angles in degrees.
+        - theta_current: Array of current angles in degrees.
+
+        Returns:
+        - Array of the shortest angular distances in degrees.
+        """
+
+        # Convert angles from degrees to radians
+        theta_goal_rad = np.radians(theta_goal)
+        theta_current_rad = np.radians(theta_current)
+
+        # Calculate difference in radians using np.arctan2 for vectorized operation
+        delta_theta_rad = np.arctan2(
+            np.sin(theta_goal_rad - theta_current_rad),
+            np.cos(theta_goal_rad - theta_current_rad),
+        )
+
+        # Convert result back to degrees
+        delta_theta_deg = np.degrees(delta_theta_rad)
+
+        return delta_theta_deg
+
     def reward(
         self,
         achieved_state: np.array,
@@ -155,14 +185,19 @@ class RoboArmEnv_v0(BaseEnv):
 
         done = False
         if self.reward_signal == "dense":
-            # error = np.sum(np.abs(achieved_state - goal_state))
-            error = linalg.norm(achieved_state - goal_state)
-            reward = -error / 1000
+            angle_deltas = self.shortest_angular_distance_vectorized(
+                goal_state, achieved_state
+            )
+            error = np.sum(np.abs(angle_deltas))
+            reward = -error / 100
             if error < np.mean(self.goal_thresholds):
                 done = True
         elif self.reward_signal == "sparse":
-            errors = np.abs(achieved_state - goal_state)
-            if np.all(errors <= self.goal_thresholds):
+            angle_deltas = self.shortest_angular_distance_vectorized(
+                goal_state, achieved_state
+            )
+            error = np.sum(np.abs(angle_deltas))
+            if np.all(error <= self.goal_thresholds):
                 reward = 1
                 done = True
 
