@@ -10,6 +10,7 @@ from torchrl.envs import (
 from environments.balance_v0.BalanceEnv import BalanceEnv_v0
 from environments.roboarm_mixed_v0.RoboArmMixedEnv import RoboArmMixedEnv_v0
 from environments.roboarm_v0.RoboArmEnv import RoboArmEnv_v0
+from environments.roboarm_v0.RoboArmSim import RoboArmSimEnv_v0
 from environments.runaway_v0.RunAwayEnv import RunAwayEnv_v0
 from environments.runaway_v1.RunAwayEnv import RunAwayEnv_v1
 from environments.spinning_v0.SpinningEnv import SpinningEnv_v0
@@ -27,7 +28,7 @@ ALL_WALKER_ENVS = [
     "walker-v2",
     "walker_mixed-v0",
 ]
-ALL_ROBOARM_ENVS = ["roboarm-v0", "roboarm_mixed-v0"]
+ALL_ROBOARM_ENVS = ["roboarm-v0", "roboarm_mixed-v0", "roboarm_sim-v0"]
 ALL_ENVS = ALL_2WHEELER_ENVS + ALL_WALKER_ENVS + ALL_ROBOARM_ENVS
 
 
@@ -136,6 +137,13 @@ def make(name="RunAway", env_conf=None):
             max_episode_steps=env_conf.max_episode_steps,
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
+            reward_signal=env_conf.reward_signal,
+        )
+    elif name == "roboarm_sim-v0":
+        return RoboArmSimEnv_v0(
+            max_episode_steps=env_conf.max_episode_steps,
+            verbose=env_conf.verbose,
+            noise=env_conf.noise,
             reward_signal=env_conf.reward_signal,
         )
     elif name == "roboarm_mixed-v0":

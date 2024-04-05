@@ -11,7 +11,7 @@ from torchrl.envs import EnvBase
 
 class BaseEnv(EnvBase):
     """
-    The base class for all reinforcement learning environments used with the Lego robots.
+    The base class for reinforcement learning environments used with the Lego robots.
 
     Args:
         action_dim (int): The dimensionality of the action space.
@@ -91,6 +91,57 @@ class BaseEnv(EnvBase):
             state.shape[1] == self.state_dim
         ), f"State has shape {state.shape[0]} and does not match state dimension: {self.state_dim}."
         return state
+
+    def sample_random_action(self, tensordict: TensorDictBase) -> TensorDictBase:
+        """
+        Sample a random action from the action space.
+
+        Returns:
+            TensorDictBase: A dictionary containing the sampled action.
+        """
+        if tensordict is not None:
+            tensordict.set("action", self.action_spec.rand())
+            return tensordict
+        else:
+            return TensorDict({"action": self.action_spec.rand()}, [])
+
+    def close(self) -> None:
+        self.hub.close()
+
+    def _step(
+        self,
+    ):
+        raise NotImplementedError
+
+    def _reset(
+        self,
+    ):
+        raise NotImplementedError
+
+    def _set_seed(self, seed: int):
+        return super()._set_seed(seed)
+
+
+class BaseSimEnv(EnvBase):
+    """
+    The base class for reinforcement learning environments used to simulate Lego robots.
+
+    Args:
+        action_dim (int): The dimensionality of the action space.
+        state_dim (int): The dimensionality of the state space.
+    """
+
+    def __init__(
+        self,
+        action_dim: int,
+        state_dim: int,
+        verbose: bool = False,
+    ):
+        self.verbose = verbose
+        self.action_dim = action_dim
+        self.state_dim = state_dim
+
+        super().__init__(batch_size=torch.Size([1]))
 
     def sample_random_action(self, tensordict: TensorDictBase) -> TensorDictBase:
         """

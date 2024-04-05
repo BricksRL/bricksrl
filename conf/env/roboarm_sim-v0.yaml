@@ -1,0 +1,9 @@
+name: "roboarm_sim-v0"
+max_episode_steps: 100
+# env specific params
+verbose: 0
+# env wrapper
+frame_stack: 1
+action_filter: 1
+noise: 0.01
+reward_signal: dense
