@@ -137,7 +137,10 @@ def get_mixed_critic(
 
 
 def get_deterministic_actor(observation_keys, action_spec, agent_config):
-    if len(observation_keys) == 1 and "vec_observation" in observation_keys:
+    if (
+        "vec_observation" in observation_keys
+        and not "image_observation" in observation_keys
+    ):
         return get_vec_deterministic_actor(
             action_spec=action_spec,
             in_keys=observation_keys,
