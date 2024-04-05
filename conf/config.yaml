@@ -5,7 +5,7 @@ mode: "offline"
 verbose: 0
 
 device: "cuda"
-episodes: 200
+episodes: 250
 
 defaults:
   - _self_
