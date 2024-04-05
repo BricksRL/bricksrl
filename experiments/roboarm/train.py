@@ -74,10 +74,6 @@ def run(cfg: DictConfig) -> None:
                 ep_steps += 1
                 step_start_time = time.time()
                 td = agent.get_action(td)
-                print("***" * 10)
-                print("Goal State: ", td.get("original_goal_state"))
-                print("State: ", td.get("original_state"))
-                print("Normalized State: ", td.get("vec_observation"))
                 td = env.step(td)
                 if env_name in VIDEO_LOGGING_ENVS:
                     image_caputres.append(
@@ -111,7 +107,13 @@ def run(cfg: DictConfig) -> None:
             }
             if env_name == "roboarm-v0":
                 achieved_state = td.get(env.original_observation_key).cpu().numpy()
-                final_error = np.linalg.norm(achieved_state - goal_state)
+                final_error = np.sum(
+                    np.abs(
+                        env.shortest_angular_distance_vectorized(
+                            goal_state, achieved_state
+                        )
+                    )
+                )
                 log_dict.update({"final_error": final_error})
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)
