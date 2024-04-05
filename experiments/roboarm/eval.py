@@ -67,6 +67,12 @@ def run(cfg: DictConfig) -> None:
                 ep_steps += 1
                 step_start_time = time.time()
                 td = agent.get_eval_action(td)
+                print("***" * 10)
+                print("Goal State: ", td.get("original_goal_state"))
+                print("Normalized Goal State: ", td.get("goal_state"))
+                print("State: ", td.get("original_state"))
+                print("Normalized State: ", td.get("vec_observation"))
+                print("Action: ", td.get("action"))
                 td = env.step(td)
                 if env_name in VIDEO_LOGGING_ENVS:
                     image_caputres.append(

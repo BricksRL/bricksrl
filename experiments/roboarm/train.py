@@ -74,6 +74,10 @@ def run(cfg: DictConfig) -> None:
                 ep_steps += 1
                 step_start_time = time.time()
                 td = agent.get_action(td)
+                print("***" * 10)
+                print("Goal State: ", td.get("original_goal_state"))
+                print("State: ", td.get("original_state"))
+                print("Normalized State: ", td.get("vec_observation"))
                 td = env.step(td)
                 if env_name in VIDEO_LOGGING_ENVS:
                     image_caputres.append(
@@ -85,9 +89,10 @@ def run(cfg: DictConfig) -> None:
                 done = td.get(("next", "done"), False)
                 ep_return += td.get(("next", "reward"), 0)
 
+                td = step_mdp(td)
                 if done:
                     break
-                td = step_mdp(td)
+
             loss_info = agent.train(
                 batch_size=batch_size, num_updates=num_updates * ep_steps
             )
