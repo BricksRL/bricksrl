@@ -21,7 +21,7 @@ class RoboArmEnv_v0(BaseEnv):
         "GM": (-148, -44),
         "HM": (-150, 10),
         "LM": (10, 70),
-        "RM": (-900, 900),
+        "RM": (-180, 179),
     }
 
     observation_key = "vec_observation"
