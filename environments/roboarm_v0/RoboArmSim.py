@@ -131,6 +131,36 @@ class RoboArmSimEnv_v0(BaseSimEnv):
             batch_size=[1],
         )
 
+    @staticmethod
+    def shortest_angular_distance_vectorized(
+        theta_goal: np.array, theta_current: np.array
+    ) -> float:
+        """
+        Calculate the shortest angular distance between two arrays of angles.
+
+        Parameters:
+        - theta_goal: Array of goal angles in degrees.
+        - theta_current: Array of current angles in degrees.
+
+        Returns:
+        - Array of the shortest angular distances in degrees.
+        """
+
+        # Convert angles from degrees to radians
+        theta_goal_rad = np.radians(theta_goal)
+        theta_current_rad = np.radians(theta_current)
+
+        # Calculate difference in radians using np.arctan2 for vectorized operation
+        delta_theta_rad = np.arctan2(
+            np.sin(theta_goal_rad - theta_current_rad),
+            np.cos(theta_goal_rad - theta_current_rad),
+        )
+
+        # Convert result back to degrees
+        delta_theta_deg = np.degrees(delta_theta_rad)
+
+        return delta_theta_deg
+
     def reward(
         self,
         achieved_state: np.array,
@@ -152,14 +182,19 @@ class RoboArmSimEnv_v0(BaseSimEnv):
 
         done = False
         if self.reward_signal == "dense":
-            # error = np.sum(np.abs(achieved_state - goal_state))
-            error = linalg.norm(achieved_state - goal_state)
-            reward = -error / 1000
+            angle_deltas = self.shortest_angular_distance_vectorized(
+                goal_state, achieved_state
+            )
+            error = np.sum(np.abs(angle_deltas))
+            reward = -error / 100
             if error < np.mean(self.goal_thresholds):
                 done = True
         elif self.reward_signal == "sparse":
-            errors = np.abs(achieved_state - goal_state)
-            if np.all(errors <= self.goal_thresholds):
+            angle_deltas = self.shortest_angular_distance_vectorized(
+                goal_state, achieved_state
+            )
+            error = np.sum(np.abs(angle_deltas))
+            if np.all(error <= self.goal_thresholds):
                 reward = 1
                 done = True
 
@@ -238,10 +273,12 @@ class RoboArmSimEnv_v0(BaseSimEnv):
 
         self.current_position = np.array(
             [
-                current_grab_angle,
-                current_high_angle,
-                current_low_angle,
-                current_rotation_angle,
+                [
+                    current_grab_angle,
+                    current_high_angle,
+                    current_low_angle,
+                    current_rotation_angle,
+                ]
             ]
         )
         return self.current_position

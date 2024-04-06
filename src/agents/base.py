@@ -4,7 +4,7 @@ from typing import Tuple
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-from tensordict import TensorDict, TensorDictBase
+from tensordict import TensorDictBase
 from torchrl.data.tensor_specs import TensorSpec
 from torchrl.envs.utils import set_exploration_mode
 

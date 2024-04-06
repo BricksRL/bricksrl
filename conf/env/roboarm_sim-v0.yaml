@@ -5,5 +5,5 @@ verbose: 0
 # env wrapper
 frame_stack: 1
 action_filter: 1
-noise: 0.01
+noise: 0.05
 reward_signal: dense

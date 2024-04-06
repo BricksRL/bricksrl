@@ -156,9 +156,6 @@ class BaseSimEnv(EnvBase):
         else:
             return TensorDict({"action": self.action_spec.rand()}, [])
 
-    def close(self) -> None:
-        self.hub.close()
-
     def _step(
         self,
     ):
