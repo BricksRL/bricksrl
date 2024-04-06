@@ -67,7 +67,7 @@ def run(cfg: DictConfig) -> None:
             total_step_times = []
             if env_name in VIDEO_LOGGING_ENVS:
                 image_caputres = [td.get("original_image").numpy()]
-            if env_name == "roboarm-v0":
+            if env_name == "roboarm-v0" or env_name == "roboarm_sim-v0":
                 goal_state = td.get(env.original_goal_observation_key).cpu().numpy()
             print("Start new data collection...", flush=True)
             while not done and not truncated:
@@ -105,7 +105,7 @@ def run(cfg: DictConfig) -> None:
                 "buffer_size": agent.replay_buffer.__len__(),
                 "done": done.float(),
             }
-            if env_name == "roboarm-v0":
+            if env_name == "roboarm-v0" or env_name == "roboarm_sim-v0":
                 achieved_state = td.get(env.original_observation_key).cpu().numpy()
                 final_error = np.sum(
                     np.abs(

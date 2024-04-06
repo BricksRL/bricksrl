@@ -1,4 +1,3 @@
-# TODO
 import os
 import sys
 import time
@@ -18,15 +17,6 @@ if project_root not in sys.path:
 from environments import make_env, VIDEO_LOGGING_ENVS
 from src.agents import get_agent
 from src.utils import create_video_from_images, login, setup_check
-
-"""
-Goal positions for the evaluation:
-
-    stretch-out: [GM: -130, RM: 0, LM: 70, HM: -130]
-    grab-up: [GM: -130, RM: 0, LM: 70, HM: 25]
-    hold-high: [GM: -50, RM: 0, LM: 15, HM: -130]
-    random: [GM: -100, RM: 120, LM: 34, HM: -90]
-"""
 
 
 @hydra.main(version_base=None, config_path=project_root + "/conf", config_name="config")
@@ -60,7 +50,7 @@ def run(cfg: DictConfig) -> None:
             total_step_times = []
             if env_name in VIDEO_LOGGING_ENVS:
                 image_caputres = [td.get("original_image").numpy()]
-            if env_name == "roboarm-v0":
+            if env_name == "roboarm-v0" or env_name == "roboarm_sim-v0":
                 goal_state = td.get(env.original_goal_observation_key).cpu().numpy()
             print("Start new evaluation...", flush=True)
             while not done and not truncated:
@@ -92,7 +82,7 @@ def run(cfg: DictConfig) -> None:
                 "total_step_time": np.mean(total_step_times),
                 "done": done.float(),
             }
-            if env_name == "roboarm-v0":
+            if env_name == "roboarm-v0" or env_name == "roboarm_sim-v0":
                 achieved_state = td.get(env.original_observation_key).cpu().numpy()
                 error = np.sum(
                     np.abs(
