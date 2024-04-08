@@ -1,4 +1,3 @@
-# TODO
 import os
 import sys
 import time
@@ -51,7 +50,7 @@ def run(cfg: DictConfig) -> None:
             total_step_times = []
             if env_name in VIDEO_LOGGING_ENVS:
                 image_caputres = [td.get("original_image").numpy()]
-            if env_name == "roboarm-v0":
+            if env_name == "roboarm-v0" or env_name == "roboarm_sim-v0":
                 goal_state = td.get(env.original_goal_observation_key).cpu().numpy()
             print("Start new evaluation...", flush=True)
             while not done and not truncated:
@@ -68,13 +67,6 @@ def run(cfg: DictConfig) -> None:
                 done = td.get(("next", "done"), False)
                 ep_return += td.get(("next", "reward"), 0)
 
-                if env_name == "roboarm-v0":
-                    achieved_state = td.get(env.original_observation_key).cpu().numpy()
-                    print("---" * 10)
-                    print("Goal state: ", goal_state)
-                    print("Achieved state: ", achieved_state)
-                    print("Error: ", np.sum(np.abs(achieved_state - goal_state)))
-
                 if done:
                     break
                 td = step_mdp(td)
@@ -90,6 +82,16 @@ def run(cfg: DictConfig) -> None:
                 "total_step_time": np.mean(total_step_times),
                 "done": done.float(),
             }
+            if env_name == "roboarm-v0" or env_name == "roboarm_sim-v0":
+                achieved_state = td.get(env.original_observation_key).cpu().numpy()
+                error = np.sum(
+                    np.abs(
+                        env.shortest_angular_distance_vectorized(
+                            goal_state, achieved_state
+                        )
+                    )
+                )
+                log_dict["final_error"] = error
 
             wandb.log(log_dict)
             if env_name in VIDEO_LOGGING_ENVS:

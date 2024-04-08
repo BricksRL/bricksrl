@@ -4,13 +4,13 @@ from typing import Tuple
 import numpy as np
 import torch
 
-from environments.base.base_env import BaseEnv
+from environments.base.base_env import BaseSimEnv
 from numpy import linalg
 from tensordict import TensorDict, TensorDictBase
 from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec
 
 
-class RoboArmEnv_v0(BaseEnv):
+class RoboArmSimEnv_v0(BaseSimEnv):
     """ """
 
     action_dim = 4  # (Grab_motor_action, high_motor_action, low_motor_action, rotation_motor_action)
@@ -32,11 +32,11 @@ class RoboArmEnv_v0(BaseEnv):
     def __init__(
         self,
         max_episode_steps: int = 50,
-        sleep_time: float = 0.0,
+        noise: float = 0.1,
         verbose: bool = False,
         reward_signal: str = "dense",
     ):
-        self.sleep_time = sleep_time
+        self.noise = noise
 
         assert reward_signal in [
             "dense",
@@ -45,6 +45,7 @@ class RoboArmEnv_v0(BaseEnv):
         self.reward_signal = reward_signal
         self.max_episode_steps = max_episode_steps
         self._batch_size = torch.Size([1])
+        self.current_position = None
 
         self.action_spec = BoundedTensorSpec(
             low=-torch.ones((1, self.action_dim)),
@@ -110,13 +111,9 @@ class RoboArmEnv_v0(BaseEnv):
         """
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
-        if tensordict is not None:
-            action = tensordict.get("action").cpu().numpy().squeeze()
-        else:
-            action = np.zeros(self.action_dim)
-        self.send_to_hub(action)
-        time.sleep(self.sleep_time)
-        observation = self.read_from_hub()
+
+        observation = self.observation_spec[self.observation_key].rand().numpy()
+        self.current_position = observation
         norm_obs = self.normalize_state(observation, self.observation_key)
         # sample random goal state
         goal_state = self.observation_spec[self.goal_observation_key].rand().numpy()
@@ -208,16 +205,90 @@ class RoboArmEnv_v0(BaseEnv):
 
         return reward, done
 
+    @staticmethod
+    def transform_range(value, old_min, old_max, new_min, new_max):
+        """
+        Transform a value from one range to another.
+
+        Parameters:
+        value (float): The value to transform.
+        old_min (float): The minimum value of the old range.
+        old_max (float): The maximum value of the old range.
+        new_min (float): The minimum value of the new range.
+        new_max (float): The maximum value of the new range.
+
+        Returns:
+        float: The transformed value.
+        """
+        # Compute the scale factor between the old and new ranges
+        scale = (new_max - new_min) / (old_max - old_min)
+        # Apply the transformation
+        return new_min + (value - old_min) * scale
+
+    @staticmethod
+    def normalize_angle(angle, low_angle=-180, high_angle=179, original_one_round=360):
+        # Normalize angle to be within -179 to 179 degrees
+        while angle <= low_angle:
+            angle += original_one_round
+        while angle > high_angle:
+            angle -= original_one_round
+        return angle
+
+    def apply_action(self, action: np.ndarray) -> np.ndarray:
+
+        noise = np.random.normal(0, self.noise, size=4)
+        action += noise
+
+        rotation_action, low_action, high_action, grab_action = action
+        # transform action range for motors
+        grab_action = self.transform_range(grab_action, -1, 1, -25, 25)
+        high_action = self.transform_range(high_action, -1, 1, -60, 60)
+        low_action = self.transform_range(low_action, -1, 1, -30, 30)
+        rotation_action = self.transform_range(rotation_action, -1, 1, -180, 180)
+
+        (
+            current_grab_angle,
+            current_high_angle,
+            current_low_angle,
+            current_rotation_angle,
+        ) = self.current_position.squeeze()
+
+        if not (
+            current_grab_angle + grab_action > max(self.motor_ranges["GM"])
+        ) and not (current_grab_angle + grab_action < min(self.motor_ranges["GM"])):
+            current_grab_angle += grab_action
+
+        if not (
+            current_high_angle + high_action > max(self.motor_ranges["HM"])
+        ) and not (current_high_angle + high_action < min(self.motor_ranges["HM"])):
+            current_high_angle += high_action
+
+        if not (current_low_angle + low_action > max(self.motor_ranges["LM"])) and not (
+            current_low_angle + low_action < min(self.motor_ranges["LM"])
+        ):
+            current_low_angle += low_action
+
+        current_rotation_angle += rotation_action
+        current_rotation_angle = self.normalize_angle(current_rotation_angle)
+
+        self.current_position = np.array(
+            [
+                [
+                    current_grab_angle,
+                    current_high_angle,
+                    current_low_angle,
+                    current_rotation_angle,
+                ]
+            ]
+        )
+        return self.current_position
+
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         """ """
         # Send action to hub to receive next state
-        self.send_to_hub(tensordict.get("action").cpu().numpy().squeeze())
-        time.sleep(
-            self.sleep_time
-        )  # we need to wait some time for sensors to read and to
+        action = tensordict.get("action").cpu().numpy().squeeze()
 
-        # receive the next state
-        next_observation = self.read_from_hub()
+        next_observation = self.apply_action(action)
         goal_state = tensordict.get(self.original_goal_observation_key).cpu().numpy()
 
         # calc reward and done
