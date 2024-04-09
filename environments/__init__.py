@@ -20,7 +20,7 @@ from environments.walker_v1.WalkerEnv import WalkerEnv_v1
 from environments.walker_v2.WalkerEnv import WalkerEnv_v2
 
 
-VIDEO_LOGGING_ENVS = ["roboar_mixed-v0", "walker_mixed-v0", "walker_mixed_v1"]
+VIDEO_LOGGING_ENVS = ["roboarm_mixed-v0", "walker_mixed-v0", "walker_mixed_v1"]
 ALL_2WHEELER_ENVS = ["spinning-v0", "runaway-v0", "runaway-v1", "balance-v0"]
 ALL_WALKER_ENVS = [
     "walker-v0",
