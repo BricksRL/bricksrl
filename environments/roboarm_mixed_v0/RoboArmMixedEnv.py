@@ -31,7 +31,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
         "LM": (10, 70),
         "RM": (-180, 179),
     }
-    goal_color = (0, 0, 255)  # red
+    goal_color = (0, 255, 0)  # red
     vec_observation_key = "vec_observation"
     image_observation_key = "image_observation"
     original_image_key = "original_image"
@@ -54,6 +54,9 @@ class RoboArmMixedEnv_v0(BaseEnv):
         self.reward_signal = reward_signal
         self.max_episode_steps = max_episode_steps
         self.goal_radius = goal_radius
+        self.prev_reward = 0.0  # if we dont detect contours we can still give a reward
+        self.contour_threshold = 10
+        self.distance_threshold = 40
         self.camera = cv2.VideoCapture(int(camera_id))
         self._batch_size = torch.Size([1])
 
@@ -123,8 +126,8 @@ class RoboArmMixedEnv_v0(BaseEnv):
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         # Define range of green color in HSV to define those values and tune them use: https://github.com/BY571/python_webcam/blob/main/color_track_bar.py
-        lower_green = (43, 90, 147)
-        upper_green = (58, 255, 255)
+        lower_green = (135, 155, 86)
+        upper_green = (179, 255, 255)
         green_mask = cv2.inRange(hsv, lower_green, upper_green)
 
         # Find contours in the green mask
@@ -136,12 +139,16 @@ class RoboArmMixedEnv_v0(BaseEnv):
     def _draw_contours(self, frame, contours):
         for contour in contours:
             # Optional: Draw green contours for visualization
-            cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
+            cv2.drawContours(frame, [contour], -1, (0, 0, 255), 2)
 
     def _draw_goal_circle(self, frame):
         # Draw the circle on the frame
         cv2.circle(
-            frame, (self.center_x, self.center_y), self.goal_radius, self.goal_color, -1
+            frame,
+            (self.goal_center_x, self.goal_center_y),
+            self.goal_radius,
+            self.goal_color,
+            -1,
         )  # Red color
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
@@ -164,7 +171,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
 
         ret, frame = self.camera.read()
         # get random goal location
-        self.center_x, self.center_y = random_center_position(frame)
+        self.goal_center_x, self.goal_center_y = random_center_position(frame)
         self._draw_goal_circle(frame)
         self._draw_contours(frame, self._get_contours(frame))
         resized_frame = cv2.resize(frame, (64, 64))
@@ -182,10 +189,17 @@ class RoboArmMixedEnv_v0(BaseEnv):
             batch_size=[1],
         )
 
-    def _is_overlapping_and_distance(self, x1, y1, r1, x2, y2, r2):
-        # Calculate the distance between the two centers
-        distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
-        return distance < (r1 + r2), distance
+    def calculate_distance(self, contour):
+        x, y, w, h = cv2.boundingRect(contour)
+        center_x, center_y = x + w // 2, y + h // 2
+        distance = int(
+            (
+                (center_x - self.goal_center_x) ** 2
+                + (center_y - self.goal_center_y) ** 2
+            )
+            ** 0.5
+        )
+        return distance, center_x, center_y
 
     def reward(
         self,
@@ -193,30 +207,48 @@ class RoboArmMixedEnv_v0(BaseEnv):
         contours: list,
     ) -> Tuple[float, bool]:
         """ """
-        # TODO Albert said we can make it a moving average so in the case we dont detect contours we can still give a reward
-        # Maybe a better idea would be to give previous reward if we dont detect contours!
+        significant_contour_found = False
         done = False
         reward = 0.0
-        for contour in contours:
-            x, y, w, h = cv2.boundingRect(contour)
-            done, distance = self._is_overlapping_and_distance(
-                self.center_x,
-                self.center_y,
-                self.goal_radius,
-                x + w / 2,
-                y + h / 2,
-                max(w, h) / 2,
-            )
-            if self.reward_signal == "dense":
-                reward = -distance
-                break
-            elif self.reward_signal == "sparse":
-                if done:
-                    reward = 1.0
-                break
-            else:
-                raise ValueError("Reward signal must be dense or sparse.")
 
+        distances = []
+        for contour in contours:
+            if (
+                cv2.contourArea(contour) > self.contour_threshold
+            ):  # Only consider contours with area > 10 as significant
+                significant_contour_found = True
+                cv2.drawContours(
+                    frame, [contour], -1, (0, 0, 255), 2
+                )  # Draw each contour
+                distance, _, _ = self.calculate_distance(contour)
+                distances.append(distance)
+                if distance <= self.distance_threshold:
+                    done = True
+                    break
+        cv2.putText(
+            frame,
+            f"Distance: {np.mean(distances)}",
+            (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 0),
+            2,
+        )
+        if self.reward_signal == "dense":
+            if significant_contour_found:
+                reward = -np.mean(distances) / 100  # maybe min?
+            else:
+                reward = self.prev_reward
+        elif self.reward_signal == "sparse":
+            if done:
+                reward = 1.0
+        else:
+            raise ValueError("Reward signal must be dense or sparse.")
+        if done:
+            cv2.putText(
+                frame, "Done!", (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2
+            )
+        self.prev_reward = reward
         return reward, done
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
@@ -234,14 +266,13 @@ class RoboArmMixedEnv_v0(BaseEnv):
         ret, frame = self.camera.read()
         self._draw_goal_circle(frame)
         contours = self._get_contours(frame)
-        self._draw_contours(frame, contours=contours)
 
         # calc reward and done
         reward, done = self.reward(
             frame,
             contours,
         )
-        self._draw_contours(frame, contours=contours)
+        # self._draw_contours(frame, contours=contours)
         resized_frame = cv2.resize(frame, (64, 64))
         next_tensordict = TensorDict(
             {
