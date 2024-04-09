@@ -27,9 +27,9 @@ class RoboArmMixedEnv_v0(BaseEnv):
     state_dim = 3  # (HM, LM, RM)
 
     motor_ranges = {
-        "HM": (-150, 30),
-        "LM": (0, 120),
-        "RM": (-900, 900),
+        "HM": (-150, 10),
+        "LM": (10, 70),
+        "RM": (-180, 179),
     }
     goal_color = (0, 0, 255)  # red
     vec_observation_key = "vec_observation"

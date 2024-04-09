@@ -21,14 +21,13 @@ high_motor = Motor(Port.A)
 high_motor.run_target(speed=400, target_angle=-70)
 
 # Low motor range (0, 120)
-low_motor_range = (0, 120)
+low_motor_range = (10, 70)
 low_motor = Motor(Port.D)
 low_motor.control.limits(500, 1000, 900)
-low_motor.run_target(speed=400, target_angle=60)
+low_motor.run_target(speed=200, target_angle=40)
 
-# Rotation motor range (-360, 360)
-# observe as its basically ~ 180
-rotation_motor = Motor(Port.B)
+# Rotation motor range (-180, 179)
+rotation_motor = Motor(Port.B, gears=[20, 60])
 
 # color_sensor = ColorSensor(Port.C)
 motors = {"HM": high_motor, "LM": low_motor, "RM": rotation_motor}
@@ -93,37 +92,40 @@ while True:
 
     # transform action range for motors
     high_action = transform_range(high_action, -1, 1, -60, 60)
-    low_action = transform_range(low_action, -1, 1, -50, 50)
-    rotation_action = transform_range(rotation_action, -1, 1, -180, 180)
+    low_action = transform_range(low_action, -1, 1, -30, 30)
+    rotation_action = transform_range(rotation_action, -1, 1, -100, 100)
 
     angles = get_current_motor_angles()
 
-    if not (angles["HM"] + high_action > max(high_motor_range)) and not (
-        angles["HM"] + high_action < min(high_motor_range)
-    ):
-        high_motor.run_angle(speed=500, rotation_angle=high_action, wait=False)
+    # Adjust high action to ensure it stays within range after being applied
+    if angles["HM"] + high_action > max(high_motor_range):
+        high_action = max(high_motor_range) - angles["HM"]
+    elif angles["HM"] + high_action < min(high_motor_range):
+        high_action = min(high_motor_range) - angles["HM"]
+    high_motor.run_angle(speed=250, rotation_angle=high_action, wait=False)
 
-    if not (angles["LM"] + low_action > max(low_motor_range)) and not (
-        angles["LM"] + low_action < min(low_motor_range)
-    ):
-        low_motor.run_angle(speed=300, rotation_angle=low_action, wait=False)
-
-    # if not (angles["RM"] + rotation_action > 180) or not (angles["RM"] + rotation_action < -180):
-    rotation_motor.run_angle(speed=500, rotation_angle=rotation_action, wait=False)
-
-    wait(200)
+    # Adjust low action to ensure it stays within range after being applied
+    if angles["LM"] + low_action > max(low_motor_range):
+        low_action = max(low_motor_range) - angles["LM"]
+    elif angles["LM"] + low_action < min(low_motor_range):
+        low_action = min(low_motor_range) - angles["LM"]
+    low_motor.run_angle(speed=250, rotation_angle=low_action, wait=False)
+    rotation_motor.run_angle(speed=250, rotation_angle=rotation_action, wait=False)
+    wait(250)
 
     rotation_angle = rotation_motor.angle()
     high_angle = high_motor.angle()
     low_angle = low_motor.angle()
 
+    # sometimes low angle jumps out of range and cant move back this corrects those cases
+    if low_angle < 10:
+        low_motor.run_target(speed=200, target_angle=10)
+
     # GM HM LM RM
     out_msg = ustruct.pack(
         "!fff",
+        high_angle,
         low_angle,
-        normalize_angle(high_angle),
-        normalize_angle(
-            rotation_angle, low_angle=-900, high_angle=900, original_one_round=1800
-        ),
+        normalize_angle(rotation_angle),
     )
     stdout.buffer.write(out_msg)
