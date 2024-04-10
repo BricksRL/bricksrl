@@ -43,7 +43,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
         verbose: bool = False,
         reward_signal: str = "dense",
         camera_id: int = 0,
-        goal_radius: float = 50,
+        goal_radius: float = 25,
     ):
         self.sleep_time = sleep_time
 
@@ -56,7 +56,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
         self.goal_radius = goal_radius
         self.prev_reward = 0.0  # if we dont detect contours we can still give a reward
         self.contour_threshold = 10
-        self.distance_threshold = 40
+        self.distance_threshold = 50
         self.camera = cv2.VideoCapture(int(camera_id))
         self._batch_size = torch.Size([1])
 
@@ -126,14 +126,12 @@ class RoboArmMixedEnv_v0(BaseEnv):
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         # Define range of green color in HSV to define those values and tune them use: https://github.com/BY571/python_webcam/blob/main/color_track_bar.py
-        lower_green = (135, 155, 86)
-        upper_green = (179, 255, 255)
-        green_mask = cv2.inRange(hsv, lower_green, upper_green)
+        lower_red = (135, 155, 86)
+        upper_red = (179, 255, 255)
+        red_mask = cv2.inRange(hsv, lower_red, upper_red)
 
         # Find contours in the green mask
-        contours, _ = cv2.findContours(
-            green_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(red_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         return contours
 
     def _draw_contours(self, frame, contours):
@@ -272,7 +270,6 @@ class RoboArmMixedEnv_v0(BaseEnv):
             frame,
             contours,
         )
-        # self._draw_contours(frame, contours=contours)
         resized_frame = cv2.resize(frame, (64, 64))
         next_tensordict = TensorDict(
             {
