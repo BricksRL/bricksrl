@@ -4,7 +4,7 @@ import ustruct
 from micropython import kbd_intr
 from pybricks.hubs import InventorHub
 from pybricks.parameters import Port
-from pybricks.pupdevices import ColorSensor, Motor
+from pybricks.pupdevices import Motor
 from pybricks.tools import wait
 from uselect import poll
 
@@ -26,10 +26,10 @@ low_motor = Motor(Port.D)
 low_motor.control.limits(500, 1000, 900)
 low_motor.run_target(speed=200, target_angle=40)
 
-# Rotation motor range (-180, 179)
+# Rotation motor range (-20, 160)
+rotation_motor_range = (-140, 40)
 rotation_motor = Motor(Port.B, gears=[20, 60])
-
-# color_sensor = ColorSensor(Port.C)
+print(rotation_motor.angle())
 motors = {"HM": high_motor, "LM": low_motor, "RM": rotation_motor}
 
 
@@ -87,13 +87,13 @@ while True:
         wait(1)
 
     # Read action values for the motors
-    data = stdin.buffer.read(12)  # Reading 4 bytes (4 floats)
+    data = stdin.buffer.read(12)
     rotation_action, low_action, high_action = ustruct.unpack("!fff", data)
 
     # transform action range for motors
     high_action = transform_range(high_action, -1, 1, -60, 60)
     low_action = transform_range(low_action, -1, 1, -30, 30)
-    rotation_action = transform_range(rotation_action, -1, 1, -100, 100)
+    rotation_action = transform_range(rotation_action, -1, 1, -90, 90)
 
     angles = get_current_motor_angles()
 
@@ -110,22 +110,28 @@ while True:
     elif angles["LM"] + low_action < min(low_motor_range):
         low_action = min(low_motor_range) - angles["LM"]
     low_motor.run_angle(speed=250, rotation_angle=low_action, wait=False)
+
+    # Adjust rotation action to ensure it stays within range after being applied
+    if angles["RM"] + rotation_action > max(rotation_motor_range):
+        rotation_action = max(rotation_motor_range) - angles["RM"]
+    elif angles["RM"] + rotation_action < min(rotation_motor_range):
+        rotation_action = min(rotation_motor_range) - angles["RM"]
     rotation_motor.run_angle(speed=250, rotation_angle=rotation_action, wait=False)
     wait(250)
 
-    rotation_angle = rotation_motor.angle()
     high_angle = high_motor.angle()
     low_angle = low_motor.angle()
+    rotation_angle = rotation_motor.angle()
 
     # sometimes low angle jumps out of range and cant move back this corrects those cases
     if low_angle < 10:
         low_motor.run_target(speed=200, target_angle=10)
 
-    # GM HM LM RM
+    # HM LM RM
     out_msg = ustruct.pack(
         "!fff",
         high_angle,
         low_angle,
-        normalize_angle(rotation_angle),
+        rotation_angle,
     )
     stdout.buffer.write(out_msg)

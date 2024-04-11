@@ -12,24 +12,55 @@ from tensordict import TensorDict, TensorDictBase
 from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec
 
 
-def random_center_position(frame):
-    height, width = frame.shape[:2]
-    center_x = random.randint(0, width)
-    center_y = random.randint(0, height)
-    return center_x, center_y
+def draw_u_shape(image, circle_radius, u_shape_radius, center, border_width=2):
+    """
+    Draws a U-shaped pattern of circles on the image, covering the lower half-circle.
+
+    Parameters:
+    - image: The image on which to draw.
+    - circle_radius: Radius of the individual circles.
+    - u_shape_radius: Radius of the overall U shape from the center.
+    - center: Center point (x, y) of the U shape.
+    """
+    # Calculate the angle step to prevent overlap, considering the circumference
+    angle_step = circle_radius / u_shape_radius  # Simple ratio for spacing
+
+    # Define start and end angles for the lower half-circle
+    start_angle = 0  # Starting from the right
+    end_angle = np.pi  # Ending at the left
+
+    # Generate angles for positioning circles
+    angles = np.arange(start_angle, end_angle, angle_step)
+
+    circle_positions = []
+    for angle in angles:
+        x = int(center[0] + u_shape_radius * np.cos(angle))
+        y = int(center[1] + u_shape_radius * np.sin(angle))
+        circle_positions.append((x, y))
+
+        # # add noise to the circle position
+        # x += np.random.randint(-30, 30)
+        # y += np.random.randint(-30, 30)
+
+        # First draw the black border circle
+        cv2.circle(image, (x, y), circle_radius + border_width, (0, 0, 0), -1)
+        # Then draw the green circle inside
+        cv2.circle(image, (x, y), circle_radius, (0, 255, 0), -1)
+
+    return image, circle_positions
 
 
 class RoboArmMixedEnv_v0(BaseEnv):
     """ """
 
     action_dim = 3  # (high_motor_action, low_motor_action, rotation_motor_action)
-    # angles are in range [-180, 179]
+
     state_dim = 3  # (HM, LM, RM)
 
     motor_ranges = {
         "HM": (-150, 10),
         "LM": (10, 70),
-        "RM": (-180, 179),
+        "RM": (-140, 40),  # Rotation motor needs to be place in the center
     }
     goal_color = (0, 255, 0)  # red
     vec_observation_key = "vec_observation"
@@ -44,6 +75,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
         reward_signal: str = "dense",
         camera_id: int = 0,
         goal_radius: float = 25,
+        u_shape_radius=200,  # Radius of the U shape for the goals
     ):
         self.sleep_time = sleep_time
 
@@ -57,6 +89,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
         self.prev_reward = 0.0  # if we dont detect contours we can still give a reward
         self.contour_threshold = 10
         self.distance_threshold = 50
+        self.u_shape_radius = u_shape_radius
         self.camera = cv2.VideoCapture(int(camera_id))
         self._batch_size = torch.Size([1])
 
@@ -91,8 +124,8 @@ class RoboArmMixedEnv_v0(BaseEnv):
         ret, frame = self.camera.read()
         if not ret:
             raise ValueError("Camera not available.")
-        frame = cv2.resize(frame, (64, 64))
-        shape = frame.shape
+        resized_frame = cv2.resize(frame, (64, 64))
+        shape = resized_frame.shape
         # img_dtype = frame.dtype
         image_observation_spec = BoundedTensorSpec(
             low=torch.zeros((1,) + shape, dtype=torch.uint8),
@@ -102,6 +135,9 @@ class RoboArmMixedEnv_v0(BaseEnv):
         self.observation_spec = CompositeSpec(shape=(1,))
         self.observation_spec.set(self.vec_observation_key, observation_spec)
         self.observation_spec.set(self.image_observation_key, image_observation_spec)
+
+        self.goal_positions = self.init_camera_position()
+
         super().__init__(
             action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
         )
@@ -120,6 +156,33 @@ class RoboArmMixedEnv_v0(BaseEnv):
             self.observation_spec[key].space.high - self.observation_spec[key].space.low
         )
         return state
+
+    def init_camera_position(
+        self,
+    ):
+        print(
+            "\nInitializing camera position... \nMake sure the robot is in the center of the frame.\nPlease press 'c' to continue..."
+        )
+        while True:
+            ret, frame = self.camera.read()
+            if not ret:
+                print("Error: Can't receive frame. Exiting ...")
+                break
+
+            center = (frame.shape[1] // 2, frame.shape[0] // 2)
+
+            frame_with_u_shape, goal_positions = draw_u_shape(
+                frame, self.goal_radius, self.u_shape_radius, center
+            )
+
+            cv2.imshow("Init RobotPosition", frame_with_u_shape)
+
+            if cv2.waitKey(1) == ord("c"):
+                break
+
+        # cv2.destroyAllWindows()
+
+        return goal_positions
 
     def _get_contours(self, frame):
         # Convert to HSV
@@ -165,11 +228,16 @@ class RoboArmMixedEnv_v0(BaseEnv):
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
         observation = self.read_from_hub()
+        # assert
         norm_obs = self.normalize_state(observation, self.vec_observation_key)
 
         ret, frame = self.camera.read()
         # get random goal location
-        self.goal_center_x, self.goal_center_y = random_center_position(frame)
+        self.goal_center_x, self.goal_center_y = random.choice(self.goal_positions)
+        # add some noise to the goal location
+        self.goal_center_x += np.random.randint(-30, 30)
+        self.goal_center_y += np.random.randint(-30, 30)
+
         self._draw_goal_circle(frame)
         self._draw_contours(frame, self._get_contours(frame))
         resized_frame = cv2.resize(frame, (64, 64))
@@ -264,7 +332,8 @@ class RoboArmMixedEnv_v0(BaseEnv):
         ret, frame = self.camera.read()
         self._draw_goal_circle(frame)
         contours = self._get_contours(frame)
-
+        cv2.imshow("Camera", frame)
+        cv2.waitKey(1)
         # calc reward and done
         reward, done = self.reward(
             frame,
