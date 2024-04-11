@@ -12,26 +12,57 @@ from tensordict import TensorDict, TensorDictBase
 from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec
 
 
-def random_center_position(frame):
-    height, width = frame.shape[:2]
-    center_x = random.randint(0, width)
-    center_y = random.randint(0, height)
-    return center_x, center_y
+def draw_u_shape(image, circle_radius, u_shape_radius, center, border_width=2):
+    """
+    Draws a U-shaped pattern of circles on the image, covering the lower half-circle.
+
+    Parameters:
+    - image: The image on which to draw.
+    - circle_radius: Radius of the individual circles.
+    - u_shape_radius: Radius of the overall U shape from the center.
+    - center: Center point (x, y) of the U shape.
+    """
+    # Calculate the angle step to prevent overlap, considering the circumference
+    angle_step = circle_radius / u_shape_radius  # Simple ratio for spacing
+
+    # Define start and end angles for the lower half-circle
+    start_angle = 0  # Starting from the right
+    end_angle = np.pi  # Ending at the left
+
+    # Generate angles for positioning circles
+    angles = np.arange(start_angle, end_angle, angle_step)
+
+    circle_positions = []
+    for angle in angles:
+        x = int(center[0] + u_shape_radius * np.cos(angle))
+        y = int(center[1] + u_shape_radius * np.sin(angle))
+        circle_positions.append((x, y))
+
+        # # add noise to the circle position
+        # x += np.random.randint(-30, 30)
+        # y += np.random.randint(-30, 30)
+
+        # First draw the black border circle
+        cv2.circle(image, (x, y), circle_radius + border_width, (0, 0, 0), -1)
+        # Then draw the green circle inside
+        cv2.circle(image, (x, y), circle_radius, (0, 255, 0), -1)
+
+    return image, circle_positions
 
 
 class RoboArmMixedEnv_v0(BaseEnv):
     """ """
 
     action_dim = 3  # (high_motor_action, low_motor_action, rotation_motor_action)
-    # angles are in range [-180, 179]
+
     state_dim = 3  # (HM, LM, RM)
 
     motor_ranges = {
         "HM": (-150, 10),
-        "LM": (10, 70),
-        "RM": (-180, 179),
+        "LM": (10, 75),
+        "RM": (-140, 40),  # Rotation motor needs to be place in the center
     }
-    goal_color = (0, 0, 255)  # red
+    goal_color = (0, 255, 0)  # red
     vec_observation_key = "vec_observation"
     image_observation_key = "image_observation"
     original_image_key = "original_image"
@@ -43,7 +74,8 @@ class RoboArmMixedEnv_v0(BaseEnv):
         verbose: bool = False,
         reward_signal: str = "dense",
         camera_id: int = 0,
-        goal_radius: float = 50,
+        goal_radius: float = 25,
+        u_shape_radius=200,  # Radius of the U shape for the goals
     ):
         self.sleep_time = sleep_time
 
@@ -54,6 +86,10 @@ class RoboArmMixedEnv_v0(BaseEnv):
         self.reward_signal = reward_signal
         self.max_episode_steps = max_episode_steps
         self.goal_radius = goal_radius
+        self.prev_reward = 0.0  # if we dont detect contours we can still give a reward
+        self.contour_threshold = 10
+        self.distance_threshold = 50
+        self.u_shape_radius = u_shape_radius
         self.camera = cv2.VideoCapture(int(camera_id))
         self._batch_size = torch.Size([1])
 
@@ -88,8 +124,8 @@ class RoboArmMixedEnv_v0(BaseEnv):
         ret, frame = self.camera.read()
         if not ret:
             raise ValueError("Camera not available.")
-        frame = cv2.resize(frame, (64, 64))
-        shape = frame.shape
+        resized_frame = cv2.resize(frame, (64, 64))
+        shape = resized_frame.shape
         # img_dtype = frame.dtype
         image_observation_spec = BoundedTensorSpec(
             low=torch.zeros((1,) + shape, dtype=torch.uint8),
@@ -99,6 +135,9 @@ class RoboArmMixedEnv_v0(BaseEnv):
         self.observation_spec = CompositeSpec(shape=(1,))
         self.observation_spec.set(self.vec_observation_key, observation_spec)
         self.observation_spec.set(self.image_observation_key, image_observation_spec)
+
+        self.goal_positions = self.init_camera_position()
+
         super().__init__(
             action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
         )
@@ -118,30 +157,59 @@ class RoboArmMixedEnv_v0(BaseEnv):
         )
         return state
 
+    def init_camera_position(
+        self,
+    ):
+        print(
+            "\nInitializing camera position... \nMake sure the robot is in the center of the frame.\nPlease press 'c' to continue..."
+        )
+        while True:
+            ret, frame = self.camera.read()
+            if not ret:
+                print("Error: Can't receive frame. Exiting ...")
+                break
+
+            center = (frame.shape[1] // 2, frame.shape[0] // 2)
+
+            frame_with_u_shape, goal_positions = draw_u_shape(
+                frame, self.goal_radius, self.u_shape_radius, center
+            )
+
+            cv2.imshow("Init RobotPosition", frame_with_u_shape)
+
+            if cv2.waitKey(1) == ord("c"):
+                break
+
+        # cv2.destroyAllWindows()
+
+        return goal_positions
+
     def _get_contours(self, frame):
         # Convert to HSV
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         # Define range of green color in HSV to define those values and tune them use: https://github.com/BY571/python_webcam/blob/main/color_track_bar.py
-        lower_green = (43, 90, 147)
-        upper_green = (58, 255, 255)
-        green_mask = cv2.inRange(hsv, lower_green, upper_green)
+        lower_red = (135, 155, 86)
+        upper_red = (179, 255, 255)
+        red_mask = cv2.inRange(hsv, lower_red, upper_red)
 
         # Find contours in the green mask
-        contours, _ = cv2.findContours(
-            green_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(red_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         return contours
 
     def _draw_contours(self, frame, contours):
         for contour in contours:
             # Optional: Draw green contours for visualization
-            cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
+            cv2.drawContours(frame, [contour], -1, (0, 0, 255), 2)
 
     def _draw_goal_circle(self, frame):
         # Draw the circle on the frame
         cv2.circle(
-            frame, (self.center_x, self.center_y), self.goal_radius, self.goal_color, -1
+            frame,
+            (self.goal_center_x, self.goal_center_y),
+            self.goal_radius,
+            self.goal_color,
+            -1,
         )  # Red color
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
@@ -160,11 +228,16 @@ class RoboArmMixedEnv_v0(BaseEnv):
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
         observation = self.read_from_hub()
+        # assert
         norm_obs = self.normalize_state(observation, self.vec_observation_key)
 
         ret, frame = self.camera.read()
         # get random goal location
-        self.center_x, self.center_y = random_center_position(frame)
+        self.goal_center_x, self.goal_center_y = random.choice(self.goal_positions)
+        # add some noise to the goal location
+        self.goal_center_x += np.random.randint(-30, 30)
+        self.goal_center_y += np.random.randint(-30, 30)
+
         self._draw_goal_circle(frame)
         self._draw_contours(frame, self._get_contours(frame))
         resized_frame = cv2.resize(frame, (64, 64))
@@ -182,10 +255,17 @@ class RoboArmMixedEnv_v0(BaseEnv):
             batch_size=[1],
         )
 
-    def _is_overlapping_and_distance(self, x1, y1, r1, x2, y2, r2):
-        # Calculate the distance between the two centers
-        distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
-        return distance < (r1 + r2), distance
+    def calculate_distance(self, contour):
+        x, y, w, h = cv2.boundingRect(contour)
+        center_x, center_y = x + w // 2, y + h // 2
+        distance = int(
+            (
+                (center_x - self.goal_center_x) ** 2
+                + (center_y - self.goal_center_y) ** 2
+            )
+            ** 0.5
+        )
+        return distance, center_x, center_y
 
     def reward(
         self,
@@ -193,30 +273,48 @@ class RoboArmMixedEnv_v0(BaseEnv):
         contours: list,
     ) -> Tuple[float, bool]:
         """ """
-        # TODO Albert said we can make it a moving average so in the case we dont detect contours we can still give a reward
-        # Maybe a better idea would be to give previous reward if we dont detect contours!
+        significant_contour_found = False
         done = False
         reward = 0.0
-        for contour in contours:
-            x, y, w, h = cv2.boundingRect(contour)
-            done, distance = self._is_overlapping_and_distance(
-                self.center_x,
-                self.center_y,
-                self.goal_radius,
-                x + w / 2,
-                y + h / 2,
-                max(w, h) / 2,
-            )
-            if self.reward_signal == "dense":
-                reward = -distance
-                break
-            elif self.reward_signal == "sparse":
-                if done:
-                    reward = 1.0
-                break
-            else:
-                raise ValueError("Reward signal must be dense or sparse.")
 
+        distances = []
+        for contour in contours:
+            if (
+                cv2.contourArea(contour) > self.contour_threshold
+            ):  # Only consider contours with area > 10 as significant
+                significant_contour_found = True
+                cv2.drawContours(
+                    frame, [contour], -1, (0, 0, 255), 2
+                )  # Draw each contour
+                distance, _, _ = self.calculate_distance(contour)
+                distances.append(distance)
+                if distance <= self.distance_threshold:
+                    done = True
+                    break
+        cv2.putText(
+            frame,
+            f"Distance: {np.mean(distances)}",
+            (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 0),
+            2,
+        )
+        if self.reward_signal == "dense":
+            if significant_contour_found:
+                reward = -np.mean(distances) / 100  # maybe min?
+            else:
+                reward = self.prev_reward
+        elif self.reward_signal == "sparse":
+            if done:
+                reward = 1.0
+        else:
+            raise ValueError("Reward signal must be dense or sparse.")
+        if done:
+            cv2.putText(
+                frame, "Done!", (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2
+            )
+        self.prev_reward = reward
         return reward, done
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
@@ -234,14 +332,13 @@ class RoboArmMixedEnv_v0(BaseEnv):
         ret, frame = self.camera.read()
         self._draw_goal_circle(frame)
         contours = self._get_contours(frame)
-        self._draw_contours(frame, contours=contours)
-
+        cv2.imshow("Camera", frame)
+        cv2.waitKey(1)
         # calc reward and done
         reward, done = self.reward(
             frame,
             contours,
         )
-        self._draw_contours(frame, contours=contours)
         resized_frame = cv2.resize(frame, (64, 64))
         next_tensordict = TensorDict(
             {

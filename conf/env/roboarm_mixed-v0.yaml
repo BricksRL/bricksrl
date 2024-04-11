@@ -8,4 +8,4 @@ action_filter: 1
 sleep_time: 0.0
 reward_signal: dense
 camera_id: 2
-goal_radius: 50
+goal_radius: 25
