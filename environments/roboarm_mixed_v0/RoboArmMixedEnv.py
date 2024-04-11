@@ -59,7 +59,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
 
     motor_ranges = {
         "HM": (-150, 10),
-        "LM": (10, 70),
+        "LM": (10, 75),
         "RM": (-140, 40),  # Rotation motor needs to be place in the center
     }
     goal_color = (0, 255, 0)  # red

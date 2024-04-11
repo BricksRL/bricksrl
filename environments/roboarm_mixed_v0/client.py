@@ -1,5 +1,3 @@
-import umath
-import urandom
 import ustruct
 from micropython import kbd_intr
 from pybricks.hubs import InventorHub
@@ -21,7 +19,7 @@ high_motor = Motor(Port.A)
 high_motor.run_target(speed=400, target_angle=-70)
 
 # Low motor range (0, 120)
-low_motor_range = (10, 70)
+low_motor_range = (10, 75)
 low_motor = Motor(Port.D)
 low_motor.control.limits(500, 1000, 900)
 low_motor.run_target(speed=200, target_angle=40)
@@ -29,7 +27,6 @@ low_motor.run_target(speed=200, target_angle=40)
 # Rotation motor range (-20, 160)
 rotation_motor_range = (-140, 40)
 rotation_motor = Motor(Port.B, gears=[20, 60])
-print(rotation_motor.angle())
 motors = {"HM": high_motor, "LM": low_motor, "RM": rotation_motor}
 
 
@@ -116,6 +113,7 @@ while True:
         rotation_action = max(rotation_motor_range) - angles["RM"]
     elif angles["RM"] + rotation_action < min(rotation_motor_range):
         rotation_action = min(rotation_motor_range) - angles["RM"]
+    rotation_motor.control.limits(250, 200, 500)
     rotation_motor.run_angle(speed=250, rotation_angle=rotation_action, wait=False)
     wait(250)
 
