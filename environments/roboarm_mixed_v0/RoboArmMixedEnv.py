@@ -38,10 +38,6 @@ def draw_u_shape(image, circle_radius, u_shape_radius, center, border_width=2):
         y = int(center[1] + u_shape_radius * np.sin(angle))
         circle_positions.append((x, y))
 
-        # # add noise to the circle position
-        # x += np.random.randint(-30, 30)
-        # y += np.random.randint(-30, 30)
-
         # First draw the black border circle
         cv2.circle(image, (x, y), circle_radius + border_width, (0, 0, 0), -1)
         # Then draw the green circle inside
@@ -88,7 +84,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
         self.goal_radius = goal_radius
         self.prev_reward = 0.0  # if we dont detect contours we can still give a reward
         self.contour_threshold = 10
-        self.distance_threshold = 50
+        self.distance_threshold = 40
         self.u_shape_radius = u_shape_radius
         self.camera = cv2.VideoCapture(int(camera_id))
         self._batch_size = torch.Size([1])
@@ -235,8 +231,8 @@ class RoboArmMixedEnv_v0(BaseEnv):
         # get random goal location
         self.goal_center_x, self.goal_center_y = random.choice(self.goal_positions)
         # add some noise to the goal location
-        self.goal_center_x += np.random.randint(-30, 30)
-        self.goal_center_y += np.random.randint(-30, 30)
+        self.goal_center_x += np.random.randint(-25, 25)
+        self.goal_center_y += np.random.randint(-20, 20)
 
         self._draw_goal_circle(frame)
         self._draw_contours(frame, self._get_contours(frame))
@@ -293,7 +289,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
                     break
         cv2.putText(
             frame,
-            f"Distance: {np.mean(distances)}",
+            f"Distance: {round(np.mean(distances), 2)}",
             (10, 30),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
@@ -302,7 +298,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
         )
         if self.reward_signal == "dense":
             if significant_contour_found:
-                reward = -np.mean(distances) / 100  # maybe min?
+                reward = -np.mean(distances) / 100
             else:
                 reward = self.prev_reward
         elif self.reward_signal == "sparse":
@@ -312,7 +308,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
             raise ValueError("Reward signal must be dense or sparse.")
         if done:
             cv2.putText(
-                frame, "Done!", (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2
+                frame, "Done!", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2
             )
         self.prev_reward = reward
         return reward, done

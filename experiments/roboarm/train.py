@@ -54,6 +54,7 @@ def run(cfg: DictConfig) -> None:
     num_updates = cfg.agent.num_updates
     env_name = cfg.env.name
     train_episodes = cfg.episodes
+    max_episode_steps = cfg.env.max_episode_steps
 
     print("Start training...")
     quit = False
@@ -117,7 +118,7 @@ def run(cfg: DictConfig) -> None:
                 log_dict.update({"final_error": final_error})
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)
-            if env_name in VIDEO_LOGGING_ENVS and done and ep_steps < 100:
+            if env_name in VIDEO_LOGGING_ENVS and done and ep_steps < max_episode_steps:
                 video_name = "episode_{}.mp4".format(e)
                 create_video_from_images(image_caputres, video_name, fps=5)
                 wandb.log({"video": wandb.Video(video_name, fps=5, format="mp4")})

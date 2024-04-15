@@ -1,5 +1,5 @@
 name: "roboarm_mixed-v0"
-max_episode_steps: 100
+max_episode_steps: 30
 # env specific params
 verbose: 0
 # env wrapper
