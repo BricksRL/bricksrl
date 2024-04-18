@@ -16,6 +16,7 @@ from environments.runaway_v1.RunAwayEnv import RunAwayEnv_v1
 from environments.spinning_v0.SpinningEnv import SpinningEnv_v0
 from environments.walker_mixed_v0.WalkerEnv import WalkerMixedEnv_v0
 from environments.walker_v0.WalkerEnv import WalkerEnv_v0
+from environments.walker_v0.WalkerEnvSim import WalkerEnvSim_v0
 from environments.walker_v1.WalkerEnv import WalkerEnv_v1
 from environments.walker_v2.WalkerEnv import WalkerEnv_v2
 
@@ -24,6 +25,7 @@ VIDEO_LOGGING_ENVS = ["roboarm_mixed-v0", "walker_mixed-v0", "walker_mixed_v1"]
 ALL_2WHEELER_ENVS = ["spinning-v0", "runaway-v0", "runaway-v1", "balance-v0"]
 ALL_WALKER_ENVS = [
     "walker-v0",
+    "walker_sim-v0",
     "walker-v1",
     "walker-v2",
     "walker_mixed-v0",
@@ -102,6 +104,14 @@ def make(name="RunAway", env_conf=None):
             max_episode_steps=env_conf.max_episode_steps,
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
+        )
+    elif name == "walker_sim-v0":
+        return WalkerEnvSim_v0(
+            max_episode_steps=env_conf.max_episode_steps,
+            noise=env_conf.noise,
+            low_action_angle=env_conf.low_action_angle,
+            high_action_angle=env_conf.high_action_angle,
+            verbose=env_conf.verbose,
         )
     elif name == "walker-v1":
         return WalkerEnv_v1(
