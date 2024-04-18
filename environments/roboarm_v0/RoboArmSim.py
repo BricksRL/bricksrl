@@ -1,11 +1,9 @@
-import time
 from typing import Tuple
 
 import numpy as np
 import torch
 
 from environments.base.base_env import BaseSimEnv
-from numpy import linalg
 from tensordict import TensorDict, TensorDictBase
 from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec
 

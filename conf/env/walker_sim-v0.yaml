@@ -1,0 +1,11 @@
+name: "walker_sim-v0"
+max_episode_steps: 100
+# env specific params
+noise: 0.1
+low_action_angle: -100
+high_action_angle: 0
+verbose: 0
+# env wrapper
+frame_stack: 1
+action_filter: 1
+
