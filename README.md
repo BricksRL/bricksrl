@@ -103,21 +103,6 @@ Before running experiments, please review and modify the configuration settings 
 
 ### Robots
 
-<div style="display: flex; flex-direction: column; align-items: center;">
-    <figure style="text-align: center;">
-        <img src="https://drive.google.com/uc?export=view&id=1IxqQ1VZchPZMNXyZnTULuNy53-LMYT6W" width="128" height="128" alt="2Wheeler">
-        <figcaption style="text-align: center;">2Wheeler</figcaption>
-    </figure>
-    <figure style="text-align: center;">
-        <img src="https://drive.google.com/uc?export=view&id=1ImR0f1UNjC4sUHXWWg_D06eukrh-doW9" width="128" height="128" alt="Walker">
-        <figcaption style="text-align: center;">Walker</figcaption>
-    </figure>
-    <figure style="text-align: center;">
-        <img src="https://drive.google.com/uc?export=view&id=1IYCJrl5rZBvOb6xKwbSUZqYrVwKjCpJH" width="128" height="128" alt="RoboArm">
-        <figcaption style="text-align: center;">RoboArm</figcaption>
-    </figure>
-</div>
-
 
 | ![2wheeler](https://drive.google.com/uc?export=view&id=1IxqQ1VZchPZMNXyZnTULuNy53-LMYT6W) | ![Walker](https://drive.google.com/uc?export=view&id=1ImR0f1UNjC4sUHXWWg_D06eukrh-doW9) | ![RoboArm](https://drive.google.com/uc?export=view&id=1IYCJrl5rZBvOb6xKwbSUZqYrVwKjCpJH) | 
 |:--:|:--:|:--:|  
