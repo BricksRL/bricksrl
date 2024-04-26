@@ -32,6 +32,67 @@
 ### Client 
 Update your client script on the [PyBricks Hub](https://beta.pybricks.com/) whenever you want to run a new environment
 
+### Repo Structure
+<details>
+  <summary>Click me</summary>
+
+```
+project_root/
+│
+├── configs/                    # Centralized configuration directory
+│   ├── config.yaml             # Base config
+│   ├── env/                    # Environment and task specific configs
+|   |   ├── runaway-v0.yaml
+|   |   ├── spinning_v0.yaml
+|   |   ├── walker-v0.yaml
+|   |   ├── walker_sim-v0.yaml
+|   |   ├── roboarm-v0.yaml
+|   |   ├── roboarm_sim-v0.yaml
+|   |   └── roboarm_mixed-v0.yaml  
+│   └── agent/                   # Agent specific configs
+|       ├── sac.yaml
+|       ├── td3.yaml
+|       └── droq.yaml
+│   
+├── experiments/                # Experiments directory
+│   ├── 2wheeler/               # 2wheeler robot specific experiments
+|   |   ├── train.py
+|   |   └── eval.py  
+│   ├── walker/                 # Walker robot specific experiments
+|   |   ├── train.py
+|   |   └── eval.py  
+│   └── roboarm/                # Roboarm specific experiments
+|       ├── train.py
+|       └── eval.py  
+│
+├── environments/               # Environments directory
+│   ├── __init__.py
+│   ├── base/                   # Base environment class
+|   |   ├── base_env.py
+|   |   └── PybricksHubClass.py # For Async-Communication with the robot
+│   ├── runaway_v0.py           # Environment for the 2wheeler robot
+|   |   ├── client.py
+|   |   └── Env.py  
+│   ├── walker_v0.py            # Environment for the walker
+|   |   ├── client.py
+|   |   └── Env.py
+│   └── ...
+│
+├── src/                     # Source code for common utilities, robot models, etc.
+│   ├── __init__.py
+│   ├── utils/
+│   ├── agents/
+|   |   ├── sac.py
+|   |   └── td3.py
+│   └── networks/
+|       └── ...
+│
+└── tests/                   # Unit tests and integration tests
+    ├── ...
+
+```
+</details>
+
 ### Config
 Before running experiments, please review and modify the configuration settings according to your needs. Each environment and agent setup has its own specific configuration file under the configs/ directory. For more information checkout the [config README](conf/README.md).
 
@@ -53,7 +114,6 @@ Before running experiments, please review and modify the configuration settings 
 <img src="https://drive.google.com/uc?export=view&id=1U2s_zKFJyHdb1EnetHSpmB7DHs9Tz-vG" width="500" height="300" alt="Training Curve">
 
 
-![Training Curve](https://drive.google.com/uc?export=view&id=1U2s_zKFJyHdb1EnetHSpmB7DHs9Tz-vG)
 
 
 # Additional Info
