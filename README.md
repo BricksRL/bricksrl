@@ -104,12 +104,15 @@ Before running experiments, please review and modify the configuration settings 
 ### Robots
 
 <div style="display: flex;">
+    <figure style="text-align: center;">
     <img src="https://drive.google.com/uc?export=view&id=1IxqQ1VZchPZMNXyZnTULuNy53-LMYT6W" width="128" height="128" alt="2Wheeler">
     </figure>
+    <figure style="text-align: center;">
     <figcaption>2Wheeler</figcaption>
     <img src="https://drive.google.com/uc?export=view&id=1ImR0f1UNjC4sUHXWWg_D06eukrh-doW9" width="128" height="128" alt="Walker">
     <figcaption>Walker</figcaption>
     </figure>
+    <figure style="text-align: center;">
     <img src="https://drive.google.com/uc?export=view&id=1IYCJrl5rZBvOb6xKwbSUZqYrVwKjCpJH" width="128" height="128" alt="RoboArm">
     <figcaption>RoboArm</figcaption>
     </figure>
