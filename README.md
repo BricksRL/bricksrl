@@ -3,6 +3,7 @@
 ## Prerequisites
 <details>
   <summary>Click me</summary>
+
 ### Enable web Bluetooth on chrome
 
  1. Go to "chrome://flags/" 
