@@ -118,7 +118,20 @@ Before running experiments, please review and modify the configuration settings 
     </figure>
 </div>
 
-
+<div style="display: flex; flex-direction: column; align-items: center;">
+    <figure>
+        <img src="https://drive.google.com/uc?id=1IxqQ1VZchPZMNXyZnTULuNy53-LMYT6W" width="128" height="128" alt="2Wheeler">
+        <figcaption>2Wheeler</figcaption>
+    </figure>
+    <figure>
+        <img src="https://drive.google.com/uc?id=1ImR0f1UNjC4sUHXWWg_D06eukrh-doW9" width="128" height="128" alt="Walker">
+        <figcaption>Walker</figcaption>
+    </figure>
+    <figure>
+        <img src="https://drive.google.com/uc?id=1IYCJrl5rZBvOb6xKwbSUZqYrVwKjCpJH" width="128" height="128" alt="RoboArm">
+        <figcaption>RoboArm</figcaption>
+    </figure>
+</div>
 
 
 
