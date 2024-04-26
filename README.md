@@ -1,6 +1,8 @@
 # TorchBricksRL
 
 ## Prerequisites
+<details>
+  <summary>Click me</summary>
 ### Enable web Bluetooth on chrome
 
  1. Go to "chrome://flags/" 
@@ -27,10 +29,11 @@
    ```bash
    pip install -r requirements.txt
     ```
+</details>
 
 ## Usage
 ### Client 
-Update your client script on the [PyBricks Hub](https://beta.pybricks.com/) whenever you want to run a new environment
+Update your client script on the [PyBricks Hub](https://beta.pybricks.com/) whenever you want to run a new environment with your robot.
 
 ### Repo Structure
 <details>
@@ -96,6 +99,11 @@ project_root/
 ### Config
 Before running experiments, please review and modify the configuration settings according to your needs. Each environment and agent setup has its own specific configuration file under the configs/ directory. For more information checkout the [config README](conf/README.md).
 
+
+### Robots
+
+
+
 ## Run Experiments
 ### Train an Agent
 
@@ -109,10 +117,24 @@ Before running experiments, please review and modify the configuration settings 
    ```
 
 ## Results
+<details>
+  <summary>Click me</summary>
+
 ### 2Wheeler Results:
 
-<img src="https://drive.google.com/uc?export=view&id=1U2s_zKFJyHdb1EnetHSpmB7DHs9Tz-vG" width="500" height="300" alt="Training Curve">
+<img src="https://drive.google.com/uc?export=view&id=1U2s_zKFJyHdb1EnetHSpmB7DHs9Tz-vG" width="500" height="300" alt="2Wheeler Results">
 
+### Walker Results:
+
+<img src="https://drive.google.com/uc?export=view&id=19ygYa7gBj8WBzn4ZwXc6007hyBDqTwJ6" width="500" height="300" alt="Walker Results">
+
+### RoboArm Results:
+
+<img src="https://drive.google.com/uc?export=view&id=1Qow1VICXMv25gMSP4Kt-fW37Kxl6rOWi" width="500" height="300" alt="RoboArm Results">
+
+<img src="https://drive.google.com/uc?export=view&id=1d58vv2JNNP1U1x_oh8uz93wH8WKj3F4k" width="500" height="300" alt="RoboArm Mixed Results">
+
+</details>
 
 
 
