@@ -103,6 +103,7 @@ Before running experiments, please review and modify the configuration settings 
 
 ### Robots
 
+Robots utilized for our experiments. Building instructions can be found [here]().
 
 | ![2wheeler](https://drive.google.com/uc?export=view&id=1IxqQ1VZchPZMNXyZnTULuNy53-LMYT6W) | ![Walker](https://drive.google.com/uc?export=view&id=1ImR0f1UNjC4sUHXWWg_D06eukrh-doW9) | ![RoboArm](https://drive.google.com/uc?export=view&id=1IYCJrl5rZBvOb6xKwbSUZqYrVwKjCpJH) | 
 |:--:|:--:|:--:|  
