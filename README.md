@@ -1,29 +1,59 @@
-# PyBricksRL
+# TorchBricksRL
 
-## Enable web Bluetooth on chrome
+## Prerequisites
+### Enable web Bluetooth on chrome
 
  1. Go to "chrome://flags/" 
  2. enable "Experimental Web Platform features"
  3. restart chrome
  4. Use beta.pybricks.com to edit and upload the client scripts for each environment
 
-## Setup Environment and Packages
+### Environment Setup
 
-Create your conda environment with: `conda create --name lego python=3.8`
+1. **Create a Conda environment:**
+   ```bash
+   conda create --name torchbricksrl python=3.8
+    ```
+2. **Activate the environment:**
+   ```bash
+   conda activate torchbricksrl
+    ```
+3. **Install PyTorch:**
+   ```bash
+   pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
-Activate the conda environment with: `conda activate lego`
+    ```
+4. **Install additional packages:**
+   ```bash
+   pip install -r requirements.txt
+    ```
 
-Install PyTorch: `pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
-
-Install packages needed with: `pip install -r requirements.txt`
-
-
-## Client 
+## Usage
+### Client 
 Update your client script on the [PyBricks Hub](https://beta.pybricks.com/) whenever you want to run a new environment
 
+### Config
+Before running experiments, please review and modify the configuration settings according to your needs. Each environment and agent setup has its own specific configuration file under the configs/ directory. For more information checkout the [config README](conf/README.md).
 
-## Helpers:
-We created a [PyBricks GPT](https://chat.openai.com/g/g-YZYA1j4yF-pybrics-lego-doc) which is an expert on the PyBricks documentation and can help you with coding and debugging client code for the PyBricks Hub.
+## Run Experiments
+### Train an Agent
+
+   ```bash
+   python experiments/walker/train.py
+   ```
+
+### Evaluate an Agent
+   ```bash
+   python experiments/walker/eval.py
+   ```
+
+## Results
+### 2Wheeler Results:
+
+<img src="https://drive.google.com/uc?export=view&id=1U2s_zKFJyHdb1EnetHSpmB7DHs9Tz-vG" width="500" height="300" alt="Training Curve">
+
+
+![Training Curve](https://drive.google.com/uc?export=view&id=1U2s_zKFJyHdb1EnetHSpmB7DHs9Tz-vG)
 
 
 # Additional Info
