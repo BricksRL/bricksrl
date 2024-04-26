@@ -1,38 +1,44 @@
-# PyBricksRL
+# TorchBricksRL
 
-## Enable web Bluetooth on chrome
+## Prerequisites
+<details>
+  <summary>Click me</summary>
+
+### Enable web Bluetooth on chrome
 
  1. Go to "chrome://flags/" 
  2. enable "Experimental Web Platform features"
  3. restart chrome
  4. Use beta.pybricks.com to edit and upload the client scripts for each environment
 
-## Setup Environment and Packages
+### Environment Setup
 
-Create your conda environment with: `conda create --name lego python=3.8`
+1. **Create a Conda environment:**
+   ```bash
+   conda create --name torchbricksrl python=3.8
+    ```
+2. **Activate the environment:**
+   ```bash
+   conda activate torchbricksrl
+    ```
+3. **Install PyTorch:**
+   ```bash
+   pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
-Activate the conda environment with: `conda activate lego`
+    ```
+4. **Install additional packages:**
+   ```bash
+   pip install -r requirements.txt
+    ```
+</details>
 
-Install PyTorch: `pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
+## Usage
+### Client 
+Update your client script on the [PyBricks Hub](https://beta.pybricks.com/) whenever you want to run a new environment with your robot.
 
-Install packages needed with: `pip install -r requirements.txt`
-
-
-## Client 
-Update your client script on the [PyBricks Hub](https://beta.pybricks.com/) whenever you want to run a new environment
-
-
-## Helpers:
-We created a [PyBricks GPT](https://chat.openai.com/g/g-YZYA1j4yF-pybrics-lego-doc) which is an expert on the PyBricks documentation and can help you with coding and debugging client code for the PyBricks Hub.
-
-
-# Additional Info
-Code examples from PyBricks. Might be interesting as expert policies for offline RL. [GitHub Pybricks examples](https://github.com/pybricks/pybricks-projects/blob/master/sets/mindstorms-robot-inventor/main-models/gelo/gelo_basic.py)
-
-
-
-
-## Repo structure 
+### Repo Structure
+<details>
+  <summary>Click me</summary>
 
 ```
 project_root/
@@ -40,13 +46,17 @@ project_root/
 ├── configs/                    # Centralized configuration directory
 │   ├── config.yaml             # Base config
 │   ├── env/                    # Environment and task specific configs
-|   |   ├── runaway_v0.yaml
-|   |   ├── walker_v0.yaml
-|   |   └── roboarm_v0.yaml  
+|   |   ├── runaway-v0.yaml
+|   |   ├── spinning_v0.yaml
+|   |   ├── walker-v0.yaml
+|   |   ├── walker_sim-v0.yaml
+|   |   ├── roboarm-v0.yaml
+|   |   ├── roboarm_sim-v0.yaml
+|   |   └── roboarm_mixed-v0.yaml  
 │   └── agent/                   # Agent specific configs
 |       ├── sac.yaml
 |       ├── td3.yaml
-|       └── drq.yaml
+|       └── droq.yaml
 │   
 ├── experiments/                # Experiments directory
 │   ├── 2wheeler/               # 2wheeler robot specific experiments
@@ -70,9 +80,7 @@ project_root/
 │   ├── walker_v0.py            # Environment for the walker
 |   |   ├── client.py
 |   |   └── Env.py
-│   └── roboarm_v0.py           # Environment for the roboarm
-|       ├── client.py
-|       └── Env.py
+│   └── ...
 │
 ├── src/                     # Source code for common utilities, robot models, etc.
 │   ├── __init__.py
@@ -87,3 +95,55 @@ project_root/
     ├── ...
 
 ```
+</details>
+
+### Config
+Before running experiments, please review and modify the configuration settings according to your needs. Each environment and agent setup has its own specific configuration file under the configs/ directory. For more information checkout the [config README](conf/README.md).
+
+
+### Robots
+
+Robots utilized for our experiments. Building instructions can be found [here]().
+
+| ![2wheeler](https://drive.google.com/uc?export=view&id=1IxqQ1VZchPZMNXyZnTULuNy53-LMYT6W) | ![Walker](https://drive.google.com/uc?export=view&id=1ImR0f1UNjC4sUHXWWg_D06eukrh-doW9) | ![RoboArm](https://drive.google.com/uc?export=view&id=1IYCJrl5rZBvOb6xKwbSUZqYrVwKjCpJH) | 
+|:--:|:--:|:--:|  
+| **2Wheeler** |  **Walker** | **RoboArm** |
+
+
+## Run Experiments
+### Train an Agent
+
+   ```bash
+   python experiments/walker/train.py
+   ```
+
+### Evaluate an Agent
+   ```bash
+   python experiments/walker/eval.py
+   ```
+
+## Results
+<details>
+  <summary>Click me</summary>
+
+### 2Wheeler Results:
+
+<img src="https://drive.google.com/uc?export=view&id=1U2s_zKFJyHdb1EnetHSpmB7DHs9Tz-vG" width="500" height="300" alt="2Wheeler Results">
+
+### Walker Results:
+
+<img src="https://drive.google.com/uc?export=view&id=19ygYa7gBj8WBzn4ZwXc6007hyBDqTwJ6" width="500" height="300" alt="Walker Results">
+
+### RoboArm Results:
+
+<img src="https://drive.google.com/uc?export=view&id=1Qow1VICXMv25gMSP4Kt-fW37Kxl6rOWi" width="500" height="300" alt="RoboArm Results">
+
+<img src="https://drive.google.com/uc?export=view&id=1d58vv2JNNP1U1x_oh8uz93wH8WKj3F4k" width="500" height="300" alt="RoboArm Mixed Results">
+
+</details>
+
+
+
+# Additional Info
+Code examples from PyBricks. Might be interesting as expert policies for offline RL. [GitHub Pybricks examples](https://github.com/pybricks/pybricks-projects/blob/master/sets/mindstorms-robot-inventor/main-models/gelo/gelo_basic.py)
+
