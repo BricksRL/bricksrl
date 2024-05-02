@@ -1,5 +1,3 @@
-import umath
-import urandom
 import ustruct
 from micropython import kbd_intr
 from pybricks.hubs import InventorHub
@@ -7,34 +5,28 @@ from pybricks.parameters import Port
 from pybricks.pupdevices import Motor
 from pybricks.tools import wait
 from uselect import poll
-
-# Standard MicroPython modules
 from usys import stdin, stdout
 
 kbd_intr(-1)
 
 hub = InventorHub()
 
-# Initialize the drive base.
-# Grab Motor range (130, 179) left side closed (-148, -45)
+# Initialize and set the motors
 grab_motor_range = (-148, -45)
 grab_motor = Motor(Port.E)
 grab_motor.run_target(speed=400, target_angle=-95)  # start roughly in the middle
-# High Motor range (-150, 10)
+
 high_motor_range = (-150, 10)
 high_motor = Motor(Port.A)
 high_motor.run_target(speed=400, target_angle=-70)
 
-# Low motor range (10, 70)
 low_motor_range = (10, 70)
 low_motor = Motor(Port.D)
 low_motor.control.limits(500, 1000, 900)
 low_motor.run_target(speed=400, target_angle=40)
 
-# Rotation motor range (-180, 179)
 rotation_motor = Motor(Port.B, gears=[20, 60])
 
-# color_sensor = ColorSensor(Port.C)
 motors = {"GM": grab_motor, "HM": high_motor, "LM": low_motor, "RM": rotation_motor}
 
 
@@ -85,6 +77,7 @@ def transform_range(value, old_min, old_max, new_min, new_max):
 
 keyboard = poll()
 keyboard.register(stdin)
+motor_speed = 250
 
 while True:
 
@@ -97,7 +90,7 @@ while True:
         "!ffff", data
     )
 
-    # transform action range for motors
+    # Transform action range for motors
     grab_action = transform_range(grab_action, -1, 1, -25, 25)
     high_action = transform_range(high_action, -1, 1, -60, 60)
     low_action = transform_range(low_action, -1, 1, -30, 30)
@@ -105,40 +98,44 @@ while True:
 
     angles = get_current_motor_angles()
 
-    # test clip action if too big or to low instead of not applying
     # Adjust grab action to ensure it stays within range after being applied
     if angles["GM"] + grab_action > max(grab_motor_range):
         grab_action = max(grab_motor_range) - angles["GM"]
     elif angles["GM"] + grab_action < min(grab_motor_range):
         grab_action = min(grab_motor_range) - angles["GM"]
-    grab_motor.run_angle(speed=250, rotation_angle=grab_action, wait=False)
+    grab_motor.run_angle(speed=motor_speed, rotation_angle=grab_action, wait=False)
 
     # Adjust high action to ensure it stays within range after being applied
     if angles["HM"] + high_action > max(high_motor_range):
         high_action = max(high_motor_range) - angles["HM"]
     elif angles["HM"] + high_action < min(high_motor_range):
         high_action = min(high_motor_range) - angles["HM"]
-    high_motor.run_angle(speed=250, rotation_angle=high_action, wait=False)
+    high_motor.run_angle(speed=motor_speed, rotation_angle=high_action, wait=False)
 
     # Adjust low action to ensure it stays within range after being applied
     if angles["LM"] + low_action > max(low_motor_range):
         low_action = max(low_motor_range) - angles["LM"]
     elif angles["LM"] + low_action < min(low_motor_range):
         low_action = min(low_motor_range) - angles["LM"]
-    low_motor.run_angle(speed=250, rotation_angle=low_action, wait=False)
-    rotation_motor.run_angle(speed=250, rotation_angle=rotation_action, wait=False)
+    low_motor.run_angle(speed=motor_speed, rotation_angle=low_action, wait=False)
+    rotation_motor.run_angle(
+        speed=motor_speed, rotation_angle=rotation_action, wait=False
+    )
+
+    # Small delay to let motors arrive target angle
     wait(250)
 
+    # Sometimes low angle jumps out of range and cant move back this corrects those cases
+    if low_angle < 10:
+        low_motor.run_target(speed=200, target_angle=10)
+
+    # Read sensors to get current state of the robot
     rotation_angle = rotation_motor.angle()
     high_angle = high_motor.angle()
     grab_angle = grab_motor.angle()
     low_angle = low_motor.angle()
 
-    # sometimes low angle jumps out of range and cant move back this corrects those cases
-    if low_angle < 10:
-        low_motor.run_target(speed=200, target_angle=10)
-
-    # GM HM LM RM
+    # Send current state back to environment
     out_msg = ustruct.pack(
         "!ffff", grab_angle, high_angle, low_angle, normalize_angle(rotation_angle)
     )

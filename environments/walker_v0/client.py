@@ -6,8 +6,7 @@ import ustruct
 from micropython import kbd_intr
 from pybricks.hubs import InventorHub
 from pybricks.parameters import Axis, Direction, Port
-from pybricks.pupdevices import ColorSensor, Motor, UltrasonicSensor
-from pybricks.robotics import DriveBase
+from pybricks.pupdevices import Motor, UltrasonicSensor
 from pybricks.tools import wait
 from uselect import poll
 
@@ -15,17 +14,18 @@ from uselect import poll
 from usys import stdin, stdout
 
 kbd_intr(-1)
-
 hub = InventorHub()
 
-# Initialize the drive base.
+# Initialize and set the motors
 lf_motor = Motor(Port.D, Direction.COUNTERCLOCKWISE)
 lb_motor = Motor(Port.B, Direction.COUNTERCLOCKWISE)
 rf_motor = Motor(Port.C)
 rb_motor = Motor(Port.A)
 
+# Init additional sensor
 eyes = UltrasonicSensor(Port.E)
 
+# Setup poll
 keyboard = poll()
 keyboard.register(stdin)
 
@@ -59,22 +59,21 @@ def transform_range(value, old_min, old_max, new_min, new_max):
     return new_min + (value - old_min) * scale
 
 
-(lf_angle, rf_angle) = (lf_motor.angle(), rf_motor.angle())
-(lb_angle, rb_angle) = (lb_motor.angle(), rb_motor.angle())
+# Setting default values and ranges
 low_angle = -100  # 270
 high_angle = 0
 speed = 600
+
 while True:
 
     while not keyboard.poll(0):
         wait(1)
 
-    # Read action values for both motors
+    # Read action values for the motors
     data = stdin.buffer.read(16)  # Reading 16 bytes (4 floats)
-
     lf_value, lb_value, rf_value, rb_value = ustruct.unpack("!ffff", data)
 
-    # set motor angle. Range is [-180, 179] action outputs are [-1, 1]
+    # Apply actions. Motor angle range is [-180, 179] action outputs are [-1, 1] we transform the actions first.
     lb_motor.run_angle(
         speed=speed,
         rotation_angle=transform_range(lb_value, -1, 1, low_angle, high_angle),
@@ -96,24 +95,20 @@ while True:
         wait=False,
     )
 
-    a_x = hub.imu.acceleration(Axis.X)
     # Small delay to let motors arrive target angle
     wait(250)  # 250
-    # measure it before or after the wait? in between? two 200 wait times?
 
-    # get current state of the robot
+    # Read sensors to get current state of the robot
+    a_x = hub.imu.acceleration(Axis.X)
     (lf_angle, rf_angle) = (lf_motor.angle(), rf_motor.angle())
     (lb_angle, rb_angle) = (lb_motor.angle(), rb_motor.angle())
     (pitch, roll) = hub.imu.tilt()
-
     dist = eyes.distance()
 
     if umath.fabs(pitch) > 90 or umath.fabs(roll) > 120 or dist <= 40:
         hub.display.text(text="Help", on=500, off=50)
 
-    # send current state
-    # TODO: add current battery supply in mA for wandb logging
-    # print("Battery: ", hub.battery.current())
+    # Send current state back to environment
     out_msg = ustruct.pack(
         "!fffffff",
         normalize_angle(lf_angle),
