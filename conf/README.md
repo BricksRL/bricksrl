@@ -1,7 +1,7 @@
-# Configuration Details for TorchBricksRL Experiments
+# Configuration Details for BricksRL Experiments
 
 ## Overview
-This directory contains all the necessary configuration files to tailor your experiments using PyBricksRL. Configurations are managed using [Hydra](https://hydra.cc/), a powerful tool for configuring complex applications that allows for easy modification of parameters directly from the command line.
+This directory contains all the necessary configuration files to tailor your experiments using BricksRL. Configurations are managed using [Hydra](https://hydra.cc/), a powerful tool for configuring complex applications that allows for easy modification of parameters directly from the command line.
 
 ## Configuration Files
 - **config.yaml**: The base configuration for all experiments including what agent and environment to run. 
