@@ -1,4 +1,4 @@
-# TorchBricksRL
+# BricksRL
 
 ## Prerequisites
 <details>
@@ -15,11 +15,11 @@
 
 1. **Create a Conda environment:**
    ```bash
-   conda create --name torchbricksrl python=3.8
+   conda create --name bricksrl python=3.8
     ```
 2. **Activate the environment:**
    ```bash
-   conda activate torchbricksrl
+   conda activate bricksrl
     ```
 3. **Install PyTorch:**
    ```bash
