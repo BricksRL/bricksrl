@@ -1,14 +1,13 @@
 # Base Config to run all examples
 
 run_name: ""
-mode: "offline"
 verbose: 0
 
 device: "cuda"
-episodes: 250
+episodes: 200
 
 defaults:
   - _self_
   # random, bc, sac, td3
-  - agent: td3 
-  - env: roboarm-v0
+  - agent: droq 
+  - env: walker_sim-v0
