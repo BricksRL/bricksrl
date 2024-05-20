@@ -18,10 +18,9 @@ from environments.walker_mixed_v0.WalkerEnv import WalkerMixedEnv_v0
 from environments.walker_v0.WalkerEnv import WalkerEnv_v0
 from environments.walker_v0.WalkerEnvSim import WalkerEnvSim_v0
 from environments.walker_v1.WalkerEnv import WalkerEnv_v1
-from environments.walker_v2.WalkerEnv import WalkerEnv_v2
 
 
-VIDEO_LOGGING_ENVS = ["roboarm_mixed-v0", "walker_mixed-v0", "walker_mixed_v1"]
+VIDEO_LOGGING_ENVS = ["roboarm_mixed-v0", "walker_mixed-v0"]
 ALL_2WHEELER_ENVS = ["spinning-v0", "runaway-v0", "runaway-v1", "balance-v0"]
 ALL_WALKER_ENVS = [
     "walker-v0",
@@ -29,7 +28,6 @@ ALL_WALKER_ENVS = [
     "walker-v1",
     "walker-v2",
     "walker_mixed-v0",
-    "walker_mixed-v1",
 ]
 ALL_ROBOARM_ENVS = ["roboarm-v0", "roboarm_mixed-v0", "roboarm_sim-v0"]
 ALL_ENVS = ALL_2WHEELER_ENVS + ALL_WALKER_ENVS + ALL_ROBOARM_ENVS
@@ -119,17 +117,6 @@ def make(name="RunAway", env_conf=None):
             max_acc=env_conf.max_acceleration,
             reward_normalization_factor=env_conf.reward_normalization_factor,
             reward_clip=env_conf.reward_clip,
-            verbose=env_conf.verbose,
-            sleep_time=env_conf.sleep_time,
-        )
-    elif name == "walker-v2":
-        return WalkerEnv_v2(
-            max_episode_steps=env_conf.max_episode_steps,
-            max_acc=env_conf.max_acceleration,
-            max_distance=env_conf.max_distance,
-            reward_normalization_factor=env_conf.reward_normalization_factor,
-            reward_clip_acc=env_conf.reward_clip_acc,
-            use_acceleration_reward=env_conf.use_acceleration_reward,
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
         )
