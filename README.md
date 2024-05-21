@@ -1,5 +1,12 @@
 # BricksRL
 
+BricksRL allows the training of custom LEGO robots using deep reinforcement learning. By integrating [PyBricks](https://pybricks.com/) and [TorchRL](https://pytorch.org/rl/stable/index.html), it facilitates efficient real-world training via Bluetooth communication between LEGO hubs and a local computing device. 
+
+For additional information and building instructions for the robots, view the project page [BricksRL](https://sites.google.com/view/bricksrl/main).
+
+
+
+
 ## Prerequisites
 <details>
   <summary>Click me</summary>
@@ -103,7 +110,7 @@ Before running experiments, please review and modify the configuration settings 
 
 ### Robots
 
-Robots utilized for our experiments. Building instructions can be found [here]().
+Robots utilized for our experiments. Building instructions can be found [here](https://sites.google.com/view/bricksrl/building-instructions).
 
 | ![2wheeler](https://drive.google.com/uc?export=view&id=1IxqQ1VZchPZMNXyZnTULuNy53-LMYT6W) | ![Walker](https://drive.google.com/uc?export=view&id=1ImR0f1UNjC4sUHXWWg_D06eukrh-doW9) | ![RoboArm](https://drive.google.com/uc?export=view&id=1IYCJrl5rZBvOb6xKwbSUZqYrVwKjCpJH) | 
 |:--:|:--:|:--:|  
@@ -144,6 +151,4 @@ Robots utilized for our experiments. Building instructions can be found [here]()
 
 
 
-# Additional Info
-Code examples from PyBricks. Might be interesting as expert policies for offline RL. [GitHub Pybricks examples](https://github.com/pybricks/pybricks-projects/blob/master/sets/mindstorms-robot-inventor/main-models/gelo/gelo_basic.py)
 
