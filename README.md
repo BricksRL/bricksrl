@@ -133,6 +133,8 @@ Robots utilized for our experiments. Building instructions can be found [here](h
 <details>
   <summary>Click me</summary>
 
+Evaluation videos of the trained agents can be found [here](https://sites.google.com/view/bricksrl/main).
+
 ### 2Wheeler Results:
 
 <img src="https://drive.google.com/uc?export=view&id=1U2s_zKFJyHdb1EnetHSpmB7DHs9Tz-vG" width="500" height="300" alt="2Wheeler Results">
