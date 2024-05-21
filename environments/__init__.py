@@ -7,27 +7,20 @@ from torchrl.envs import (
     TransformedEnv,
 )
 
-from environments.balance_v0.BalanceEnv import BalanceEnv_v0
 from environments.roboarm_mixed_v0.RoboArmMixedEnv import RoboArmMixedEnv_v0
 from environments.roboarm_v0.RoboArmEnv import RoboArmEnv_v0
 from environments.roboarm_v0.RoboArmSim import RoboArmSimEnv_v0
 from environments.runaway_v0.RunAwayEnv import RunAwayEnv_v0
-from environments.runaway_v1.RunAwayEnv import RunAwayEnv_v1
 from environments.spinning_v0.SpinningEnv import SpinningEnv_v0
-from environments.walker_mixed_v0.WalkerEnv import WalkerMixedEnv_v0
 from environments.walker_v0.WalkerEnv import WalkerEnv_v0
 from environments.walker_v0.WalkerEnvSim import WalkerEnvSim_v0
-from environments.walker_v1.WalkerEnv import WalkerEnv_v1
 
 
 VIDEO_LOGGING_ENVS = ["roboarm_mixed-v0", "walker_mixed-v0"]
-ALL_2WHEELER_ENVS = ["spinning-v0", "runaway-v0", "runaway-v1", "balance-v0"]
+ALL_2WHEELER_ENVS = ["spinning-v0", "runaway-v0"]
 ALL_WALKER_ENVS = [
     "walker-v0",
     "walker_sim-v0",
-    "walker-v1",
-    "walker-v2",
-    "walker_mixed-v0",
 ]
 ALL_ROBOARM_ENVS = ["roboarm-v0", "roboarm_mixed-v0", "roboarm_sim-v0"]
 ALL_ENVS = ALL_2WHEELER_ENVS + ALL_WALKER_ENVS + ALL_ROBOARM_ENVS
@@ -79,20 +72,8 @@ def make(name="RunAway", env_conf=None):
             min_distance=env_conf.min_distance,
             verbose=env_conf.verbose,
         )
-    elif name == "runaway-v1":
-        return RunAwayEnv_v1(
-            max_episode_steps=env_conf.max_episode_steps,
-            min_distance=env_conf.min_distance,
-            verbose=env_conf.verbose,
-        )
     elif name == "spinning-v0":
         return SpinningEnv_v0(
-            max_episode_steps=env_conf.max_episode_steps,
-            sleep_time=env_conf.sleep_time,
-            verbose=env_conf.verbose,
-        )
-    elif name == "balance-v0":
-        return BalanceEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             sleep_time=env_conf.sleep_time,
             verbose=env_conf.verbose,
@@ -110,35 +91,6 @@ def make(name="RunAway", env_conf=None):
             low_action_angle=env_conf.low_action_angle,
             high_action_angle=env_conf.high_action_angle,
             verbose=env_conf.verbose,
-        )
-    elif name == "walker-v1":
-        return WalkerEnv_v1(
-            max_episode_steps=env_conf.max_episode_steps,
-            max_acc=env_conf.max_acceleration,
-            reward_normalization_factor=env_conf.reward_normalization_factor,
-            reward_clip=env_conf.reward_clip,
-            verbose=env_conf.verbose,
-            sleep_time=env_conf.sleep_time,
-        )
-    elif name == "walker_mixed-v0":
-        return WalkerMixedEnv_v0(
-            max_episode_steps=env_conf.max_episode_steps,
-            sleep_time=env_conf.sleep_time,
-            verbose=env_conf.verbose,
-            camera_id=env_conf.camera_id,
-            image_path=env_conf.image_path,
-            tracker_type=env_conf.tracker_type,
-            auto_obj_detection=env_conf.auto_obj_detection,
-        )
-    elif name == "walker_mixed-v1":
-        return WalkerMixedEnv_v0(
-            max_episode_steps=env_conf.max_episode_steps,
-            sleep_time=env_conf.sleep_time,
-            verbose=env_conf.verbose,
-            camera_id=env_conf.camera_id,
-            image_path=env_conf.image_path,
-            tracker_type=env_conf.tracker_type,
-            auto_obj_detection=env_conf.auto_obj_detection,
         )
     elif name == "roboarm-v0":
         return RoboArmEnv_v0(
