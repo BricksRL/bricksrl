@@ -8,6 +8,6 @@ episodes: 200
 
 defaults:
   - _self_
-  # random, bc, sac, td3
+  # random, sac, td3, droq
   - agent: sac 
-  - env: walker-v0
+  - env: roboarm_sim-v0

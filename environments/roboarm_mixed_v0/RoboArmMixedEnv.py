@@ -89,32 +89,29 @@ class RoboArmMixedEnv_v0(BaseEnv):
         self.camera = cv2.VideoCapture(int(camera_id))
         self._batch_size = torch.Size([1])
 
+        # Define action spec
         self.action_spec = BoundedTensorSpec(
-            low=-torch.ones((1, self.action_dim)),
-            high=torch.ones((1, self.action_dim)),
+            low=-1,
+            high=1,
             shape=(1, self.action_dim),
         )
 
         # Observation 3 motors (HM, LM, RM)
+        # Define observation spec
+        bounds = torch.tensor(
+            [
+                self.motor_ranges["HM"],
+                self.motor_ranges["LM"],
+                self.motor_ranges["RM"],
+            ]
+        )
+
+        low_bounds = bounds[:, 0].unsqueeze(0)
+        high_bounds = bounds[:, 1].unsqueeze(0)
+
         observation_spec = BoundedTensorSpec(
-            low=torch.tensor(
-                [
-                    [
-                        self.motor_ranges["HM"][0],
-                        self.motor_ranges["LM"][0],
-                        self.motor_ranges["RM"][0],
-                    ]
-                ]
-            ),
-            high=torch.tensor(
-                [
-                    [
-                        self.motor_ranges["HM"][1],
-                        self.motor_ranges["LM"][1],
-                        self.motor_ranges["RM"][1],
-                    ]
-                ]
-            ),
+            low=low_bounds,
+            high=high_bounds,
         )
         # get initial observation to define image observation spec
         ret, frame = self.camera.read()
@@ -122,7 +119,6 @@ class RoboArmMixedEnv_v0(BaseEnv):
             raise ValueError("Camera not available.")
         resized_frame = cv2.resize(frame, (64, 64))
         shape = resized_frame.shape
-        # img_dtype = frame.dtype
         image_observation_spec = BoundedTensorSpec(
             low=torch.zeros((1,) + shape, dtype=torch.uint8),
             high=torch.ones((1,) + shape, dtype=torch.uint8) * 255,
@@ -184,18 +180,18 @@ class RoboArmMixedEnv_v0(BaseEnv):
         # Convert to HSV
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        # Define range of green color in HSV to define those values and tune them use: https://github.com/BY571/python_webcam/blob/main/color_track_bar.py
+        # Define range of red color in HSV to define those values and tune them use: https://github.com/BY571/python_webcam/blob/main/color_track_bar.py
         lower_red = (135, 155, 86)
         upper_red = (179, 255, 255)
         red_mask = cv2.inRange(hsv, lower_red, upper_red)
 
-        # Find contours in the green mask
+        # Find contours in the red mask
         contours, _ = cv2.findContours(red_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         return contours
 
     def _draw_contours(self, frame, contours):
         for contour in contours:
-            # Optional: Draw green contours for visualization
+            # Optional: Draw red contours for visualization
             cv2.drawContours(frame, [contour], -1, (0, 0, 255), 2)
 
     def _draw_goal_circle(self, frame):

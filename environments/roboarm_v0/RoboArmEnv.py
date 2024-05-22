@@ -46,37 +46,33 @@ class RoboArmEnv_v0(BaseEnv):
         self.max_episode_steps = max_episode_steps
         self._batch_size = torch.Size([1])
 
+        # Define action spec
         self.action_spec = BoundedTensorSpec(
-            low=-torch.ones((1, self.action_dim)),
-            high=torch.ones((1, self.action_dim)),
+            low=-1,
+            high=1,
             shape=(1, self.action_dim),
         )
 
         self.goal_thresholds = np.array(
             [50]
-        )  # everythin below 20 is very good. 50 is still good!
+        )  # everythin below 20 is very good. 50 is good!
         # Observation 4 motors (GM, HM, LM, RM) + goal positions (GGM, GHM, GLM, GRM)
+        # Define observation spec
+        bounds = torch.tensor(
+            [
+                self.motor_ranges["GM"],
+                self.motor_ranges["HM"],
+                self.motor_ranges["LM"],
+                self.motor_ranges["RM"],
+            ]
+        )
+
+        low_bounds = bounds[:, 0].unsqueeze(0)
+        high_bounds = bounds[:, 1].unsqueeze(0)
+
         observation_spec = BoundedTensorSpec(
-            low=torch.tensor(
-                [
-                    [
-                        self.motor_ranges["GM"][0],
-                        self.motor_ranges["HM"][0],
-                        self.motor_ranges["LM"][0],
-                        self.motor_ranges["RM"][0],
-                    ]
-                ]
-            ),
-            high=torch.tensor(
-                [
-                    [
-                        self.motor_ranges["GM"][1],
-                        self.motor_ranges["HM"][1],
-                        self.motor_ranges["LM"][1],
-                        self.motor_ranges["RM"][1],
-                    ]
-                ]
-            ),
+            low=low_bounds,
+            high=high_bounds,
         )
 
         self.observation_spec = CompositeSpec(shape=(1,))
@@ -169,15 +165,11 @@ class RoboArmEnv_v0(BaseEnv):
         achieved_state: np.array,
         goal_state: np.array,
     ) -> Tuple[float, bool]:
-        """Reward function of walker.
-
-        Goal: Increase forward velocity, estimated from acceleration.
+        """Reward function of roboarm.
 
         Args:
-            state (np.ndarray): The current state.
-            action (np.ndarray): The action taken.
-            next_state (np.ndarray): The next state.
-            delta_t (float): The time step duration.
+            achieved_state (np.ndarray): The achieved state.
+            goal_state (np.ndarray): The goal state.
 
         Returns:
             Tuple[float, bool]: The reward received and a boolean indicating whether the episode is done.
