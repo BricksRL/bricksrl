@@ -36,13 +36,13 @@ class RunAwayEnv_v0(BaseEnv):
     """
 
     action_dim = 1  # control the wheel motors together
-    state_dim = (
-        5  # 5 sensors (left motor angle, right motor angle, pitch, roll, distance)
-    )
-    motor_angles = (0, 360)
-    roll_angles = (-90, 90)
-    pitch_angles = (-90, 90)
-    distance = (0, 2000)
+    # 5 sensors (left motor angle, right motor angle, pitch, roll, distance)
+    state_dim = 5
+
+    motor_angles = [0, 360]
+    roll_angles = [-90, 90]
+    pitch_angles = [-90, 90]
+    distance = [0, 2000]
     observation_key = "vec_observation"
     original_vec_observation_key = "original_vec_observation"
 
@@ -58,38 +58,34 @@ class RunAwayEnv_v0(BaseEnv):
         self.max_episode_steps = max_episode_steps
         self._batch_size = torch.Size([1])
 
+        # Define action spec
         self.action_spec = BoundedTensorSpec(
-            low=-torch.ones((1, self.action_dim)),
-            high=torch.ones((1, self.action_dim)),
+            low=-1,
+            high=1,
             shape=(1, self.action_dim),
         )
 
-        observation_spec = BoundedTensorSpec(
-            low=torch.tensor(
-                [
-                    [
-                        self.motor_angles[0],
-                        self.motor_angles[0],
-                        self.roll_angles[0],
-                        self.pitch_angles[0],
-                        self.distance[0],
-                    ]
-                ]
-            ),
-            high=np.array(
-                [
-                    [
-                        self.motor_angles[1],
-                        self.motor_angles[1],
-                        self.roll_angles[1],
-                        self.pitch_angles[1],
-                        self.distance[1],
-                    ]
-                ]
-            ),
+        # Define observation spec
+        bounds = torch.tensor(
+            [
+                self.motor_angles,
+                self.motor_angles,
+                self.roll_angles,
+                self.pitch_angles,
+                self.distance,
+            ]
         )
-        self.observation_spec = CompositeSpec(shape=(1,))
-        self.observation_spec.set(self.observation_key, observation_spec)
+
+        low_bounds = bounds[:, 0].unsqueeze(0)
+        high_bounds = bounds[:, 1].unsqueeze(0)
+
+        observation_spec = BoundedTensorSpec(
+            low=low_bounds,
+            high=high_bounds,
+        )
+        self.observation_spec = CompositeSpec(
+            {self.observation_key: observation_spec}, shape=(1,)
+        )
         self.verbose = verbose
         super().__init__(
             action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose

@@ -13,11 +13,11 @@ class WalkerEnvSim_v0(BaseSimEnv):
     """ """
 
     action_dim = 4  # (lf_value, lb_value, rf_value, rb_value)
-    # angles are in range [-180, 179]
+    # angles are in range [-179, 179]
     state_dim = 7  # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, acc_x)
 
-    motor_range = (-179, 179)
-    pitch_roll_range = (-50, 50)
+    motor_range = [-179, 179]
+    pitch_roll_range = [-50, 50]
     observation_key = "vec_observation"
     original_vec_observation_key = "original_vec_observation"
 
@@ -37,44 +37,38 @@ class WalkerEnvSim_v0(BaseSimEnv):
         self.high_action_angle = high_action_angle
         self.current_leg_angles = None
 
+        # Define action spec
         self.action_spec = BoundedTensorSpec(
-            low=-torch.ones((1, self.action_dim)),
-            high=torch.ones((1, self.action_dim)),
+            low=-1,
+            high=1,
             shape=(1, self.action_dim),
         )
 
-        max_acc_range = (-self.max_acc, self.max_acc)
+        max_acc_range = [-self.max_acc, self.max_acc]
+
+        # Define observation spec
+        bounds = torch.tensor(
+            [
+                self.motor_range,
+                self.motor_range,
+                self.motor_range,
+                self.motor_range,
+                self.pitch_roll_range,
+                self.pitch_roll_range,
+                max_acc_range,
+            ]
+        )
+        # Reshape bounds to (1, 7)
+        low_bounds = bounds[:, 0].unsqueeze(0)
+        high_bounds = bounds[:, 1].unsqueeze(0)
         observation_spec = BoundedTensorSpec(
-            low=torch.tensor(
-                [
-                    [
-                        self.motor_range[0],
-                        self.motor_range[0],
-                        self.motor_range[0],
-                        self.motor_range[0],
-                        self.pitch_roll_range[0],
-                        self.pitch_roll_range[0],
-                        max_acc_range[0],
-                    ]
-                ]
-            ),
-            high=torch.tensor(
-                [
-                    [
-                        self.motor_range[1],
-                        self.motor_range[1],
-                        self.motor_range[1],
-                        self.motor_range[1],
-                        self.pitch_roll_range[1],
-                        self.pitch_roll_range[1],
-                        max_acc_range[1],
-                    ]
-                ]
-            ),
+            low=low_bounds,
+            high=high_bounds,
         )
 
-        self.observation_spec = CompositeSpec(shape=(1,))
-        self.observation_spec.set(self.observation_key, observation_spec)
+        self.observation_spec = CompositeSpec(
+            {self.observation_key: observation_spec}, shape=(1,)
+        )
         super().__init__(
             action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
         )
@@ -128,8 +122,6 @@ class WalkerEnvSim_v0(BaseSimEnv):
     ) -> Tuple[float, bool]:
         """Reward function of walker.
 
-        Goal: Increase forward velocity, estimated from acceleration.
-
         Args:
             action (np.ndarray): The action taken.
             next_state (np.ndarray): The next state.
@@ -174,7 +166,6 @@ class WalkerEnvSim_v0(BaseSimEnv):
         lb_rb_180_reward = -(180 - angular_difference(lb_angle, rb_angle)) / 180
 
         if self.verbose:
-            # TODO: maybe we want add those values as an info dict to the env step return
             print("action_reward", action_reward)
             # print("action_std_reward", action_std_reward)
             print("lf_rb_diff_reward", lf_rb_diff_reward)

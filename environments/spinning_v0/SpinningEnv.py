@@ -29,12 +29,12 @@ class SpinningEnv_v0(BaseEnv):
     """
 
     action_dim = 2  # to control the wheel motors independently
-    state_dim = 5  # 5 sensors (left,right,pitch,roll, rotation_velocity) + 1 direction (left or right)
+    state_dim = 5  # 5 sensors (left, right, pitch, roll, rotation_velocity) + 1 direction (left or right)
 
-    motor_angles = (0, 360)
-    pitch_angles = (-90, 90)
-    roll_angles = (-90, 90)
-    rotation_velocity = (-100, 100)  # adapt to real values
+    motor_angles = [0, 360]
+    pitch_angles = [-90, 90]
+    roll_angles = [-90, 90]
+    rotation_velocity = [-100, 100]  # adapt to real values
     observation_key = "vec_observation"
     original_vec_observation_key = "original_vec_observation"
 
@@ -48,40 +48,35 @@ class SpinningEnv_v0(BaseEnv):
         self._batch_size = torch.Size([1])
         self.max_episode_steps = max_episode_steps
 
+        # Define action spec
         self.action_spec = BoundedTensorSpec(
-            low=-torch.ones((1, self.action_dim)),
-            high=torch.ones((1, self.action_dim)),
+            low=-1,
+            high=1,
             shape=(1, self.action_dim),
         )
 
-        observation_spec = BoundedTensorSpec(
-            low=torch.tensor(
-                [
-                    [
-                        self.motor_angles[0],
-                        self.motor_angles[0],
-                        self.pitch_angles[0],
-                        self.roll_angles[0],
-                        self.rotation_velocity[0],
-                        0,
-                    ]
-                ]
-            ),
-            high=torch.tensor(
-                [
-                    [
-                        self.motor_angles[1],
-                        self.motor_angles[1],
-                        self.pitch_angles[1],
-                        self.roll_angles[1],
-                        self.rotation_velocity[1],
-                        1,
-                    ]
-                ]
-            ),
+        # Define observation spec
+        bounds = torch.tensor(
+            [
+                self.motor_angles,
+                self.motor_angles,
+                self.pitch_angles,
+                self.roll_angles,
+                self.rotation_velocity,
+                [0, 1],
+            ]
         )
-        self.observation_spec = CompositeSpec(shape=(1,))
-        self.observation_spec.set(self.observation_key, observation_spec)
+        low_bounds = bounds[:, 0].unsqueeze(0)
+        high_bounds = bounds[:, 1].unsqueeze(0)
+
+        observation_spec = BoundedTensorSpec(
+            low=low_bounds,
+            high=high_bounds,
+        )
+        self.observation_spec = CompositeSpec(
+            {self.observation_key: observation_spec}, shape=(1,)
+        )
+
         super().__init__(
             action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
         )
