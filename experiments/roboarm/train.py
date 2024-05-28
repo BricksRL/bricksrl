@@ -41,7 +41,7 @@ def run(cfg: DictConfig) -> None:
     # initialize wandb
     wandb.init(project=project_name)
     wandb.config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
-    wandb.watch(agent.actor, log_freq=1) if agent.actor else None
+    # wandb.watch(agent.actor, log_freq=1) if agent.actor else None
 
     # prefill buffer with random actions
     prefill_buffer(
