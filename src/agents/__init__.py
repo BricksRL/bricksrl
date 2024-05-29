@@ -1,9 +1,10 @@
 from src.agents.behavior_cloning import BehavioralCloningAgent
+from src.agents.llm import OpenAILLMAgent
 from src.agents.random import RandomAgent
 from src.agents.sac import SACAgent
 from src.agents.td3 import TD3Agent
 
-all_agents = ["td3", "sac", "bc", "random"]
+all_agents = ["td3", "sac", "bc", "random", "openaillm"]
 
 
 def get_agent(action_spec, state_spec, cfg):
@@ -30,6 +31,13 @@ def get_agent(action_spec, state_spec, cfg):
         )
     elif cfg.agent.name == "random":
         agent = RandomAgent(
+            action_spec=action_spec,
+            state_spec=state_spec,
+            agent_config=cfg.agent,
+            device=cfg.device,
+        )
+    elif cfg.agent.name == "openaillm":
+        agent = OpenAILLMAgent(
             action_spec=action_spec,
             state_spec=state_spec,
             agent_config=cfg.agent,

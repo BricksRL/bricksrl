@@ -60,6 +60,10 @@ def run(cfg: DictConfig) -> None:
                 step_start_time = time.time()
                 td = agent.get_eval_action(td)
                 actions.append(td.get("action").cpu().numpy())
+                obs = td.get("vec_observation").cpu()
+                act = td.get("action").cpu()
+                print(f"obs: {obs}")
+                print(f"act: {act}")
                 td = env.step(td)
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)
