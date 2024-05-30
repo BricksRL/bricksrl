@@ -1,10 +1,11 @@
 from src.agents.behavior_cloning import BehavioralCloningAgent
+from src.agents.cql import CQLAgent
 from src.agents.iql import IQLAgent
 from src.agents.random import RandomAgent
 from src.agents.sac import SACAgent
 from src.agents.td3 import TD3Agent
 
-all_agents = ["td3", "sac", "bc", "iql", "random"]
+all_agents = ["td3", "sac", "bc", "iql", "cql", "random"]
 
 
 def get_agent(action_spec, state_spec, cfg):
@@ -38,6 +39,13 @@ def get_agent(action_spec, state_spec, cfg):
         )
     elif cfg.agent.name == "iql":
         agent = IQLAgent(
+            action_spec=action_spec,
+            state_spec=state_spec,
+            agent_config=cfg.agent,
+            device=cfg.device,
+        )
+    elif cfg.agent.name == "cql":
+        agent = CQLAgent(
             action_spec=action_spec,
             state_spec=state_spec,
             agent_config=cfg.agent,
