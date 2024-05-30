@@ -3,7 +3,7 @@ preprompt_dir: llm_data/preprompts/chatgpt_walker_v0.txt
 openai_key: /home/sebastian/Documents/openai_key.txt
 model: "gpt-3.5-turbo"
 max_history_len: 15
-num_actions: 4
+num_actions: 6
 # not used for random agent
 batch_size: 256
 num_updates: 2500
