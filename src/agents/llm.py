@@ -30,41 +30,6 @@ class OpenAILLMAgent(BaseAgent):
     def eval(self):
         """Sets the agent to evaluation mode."""
 
-    # @torch.no_grad()
-    # def get_action(self, tensordict: TensorDictBase):
-    #     """Sample random actions from a uniform distribution"""
-
-    #     observation = [tensordict.get(i) for i in self.observation_keys]
-    #     # TODO: maybe we want to predict the next x actions instead of just one
-    #     self.communication_history.append(
-    #         {
-    #             "role": "user",
-    #             "content": f"The current observation is: {observation}. \nPlease provide the next action as a tuple (leftfront_value, leftback_value, rightfront_value, rightback_value), rounded to three decimal places. Only output the action tuple directly:",
-    #         }
-    #     )
-    #     response = self.client.chat.completions.create(
-    #         model=self.model,
-    #         messages=self.communication_history,
-    #     )
-
-    #     content = response.choices[0].message.content
-    #     # Add the assistant's response to the conversation history
-    #     self.communication_history.append({"role": "assistant", "content": content})
-    #     action_tuple = eval(content)
-    #     if (
-    #         type(action_tuple) == tuple
-    #         and len(action_tuple) == self.action_spec.shape[-1]
-    #     ):
-    #         print(f"Action taken: {action_tuple}")
-    #         tensordict.set("action", torch.tensor(action_tuple).unsqueeze(0))
-    #     else:
-    #         raise ValueError("The action must be a tuple of the correct shape")
-
-    #     if len(self.communication_history) > self.max_history_len:
-    #         del self.communication_history[1]
-
-    #     return tensordict
-
     @torch.no_grad()
     def get_action(self, tensordict: TensorDictBase):
         """Sample the next x actions from the model"""
@@ -73,7 +38,7 @@ class OpenAILLMAgent(BaseAgent):
             self.communication_history.append(
                 {
                     "role": "user",
-                    "content": f"The current observation is: {observation}. \nPlease provide the next {self.num_actions} sequential actions as a list of tuples (leftfront_value, leftback_value, rightfront_value, rightback_value), rounded to three decimal places. Only output the action tuples directly:",
+                    "content": f"The current observation is: {observation}.\nPlease provide the next {self.num_actions} sequential actions as a list of tuples (leftfront_value, leftback_value, rightfront_value, rightback_value), rounded to three decimal places. Only output the action tuples directly:",
                 }
             )
             response = self.client.chat.completions.create(
