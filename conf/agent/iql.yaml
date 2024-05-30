@@ -1,0 +1,20 @@
+name: iql
+lr: 3e-4
+batch_size: 256
+num_updates: 1
+prefill_episodes: 10
+
+num_cells: 256
+gamma: 0.99
+soft_update_eps: 0.995
+loss_function: l2
+temperature: 1.0
+expectile: 0.5
+
+normalization: None
+dropout: 0.0
+
+prb: 0
+buffer_size: 1000000
+pretrain: False
+reset_params: False

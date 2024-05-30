@@ -56,6 +56,114 @@ def get_critic(observation_keys, agent_config):
         raise NotImplementedError("Critic for this observation space not implemented")
 
 
+def get_value_operator(observation_keys, agent_config):
+    if (
+        "vec_observation" in observation_keys
+        and not "image_observation" in observation_keys
+    ):
+        return get_vec_value(
+            in_keys=observation_keys,
+            num_cells=[agent_config.num_cells, agent_config.num_cells],
+            out_features=1,
+            activation_class=nn.ReLU,
+            normalization=agent_config.normalization,
+            dropout=agent_config.dropout,
+        )
+    elif (
+        "image_observation" in observation_keys
+        and "vec_observation" in observation_keys
+    ):
+        return get_mixed_value(
+            vec_in_keys="vec_observation",
+            img_in_keys="image_observation",
+            num_cells=[agent_config.num_cells, agent_config.num_cells],
+            out_features=1,
+            activation_class=nn.ReLU,
+            normalization=agent_config.normalization,
+            dropout=agent_config.dropout,
+        )
+
+
+def get_vec_value(
+    in_keys=["observation"],
+    num_cells=[256, 256],
+    out_features=1,
+    activation_class=nn.ReLU,
+    normalization="None",
+    dropout=0.0,
+):
+    """Returns a critic network"""
+    normalization = get_normalization(normalization)
+    qvalue_net = MLP(
+        num_cells=num_cells,
+        out_features=out_features,
+        activation_class=activation_class,
+        norm_class=normalization,
+        norm_kwargs={"normalized_shape": num_cells[-1]} if normalization else None,
+        dropout=dropout,
+    )
+
+    qvalue = ValueOperator(
+        in_keys=in_keys,
+        module=qvalue_net,
+    )
+    return qvalue
+
+
+def get_mixed_value(
+    vec_in_keys,
+    img_in_keys,
+    num_cells=[256, 256],
+    out_features=1,
+    activation_class=nn.ReLU,
+    normalization="None",
+    dropout=0.0,
+):
+    normalization = get_normalization(normalization)
+    # image encoder
+    cnn = ConvNet(
+        activation_class=activation_class,
+        num_cells=[32, 64, 64],
+        kernel_sizes=[8, 4, 3],
+        strides=[4, 2, 1],
+    )
+    cnn_output = cnn(torch.ones((3, 64, 64)))
+    mlp = MLP(
+        in_features=cnn_output.shape[-1],
+        activation_class=activation_class,
+        out_features=128,
+        num_cells=[256],
+    )
+    image_encoder = SafeModule(
+        torch.nn.Sequential(cnn, mlp),
+        in_keys=[img_in_keys],
+        out_keys=["image_embedding"],
+    )
+
+    # vector_obs encoder
+    mlp = MLP(
+        activation_class=activation_class,
+        out_features=32,
+        num_cells=[128],
+    )
+    vector_obs_encoder = SafeModule(
+        mlp, in_keys=[vec_in_keys], out_keys=["vec_obs_embedding"]
+    )
+
+    # output head
+    mlp = MLP(
+        activation_class=torch.nn.ReLU,
+        out_features=out_features,
+        num_cells=num_cells,
+        norm_class=normalization,
+        norm_kwargs={"normalized_shape": num_cells[-1]} if normalization else None,
+        dropout=dropout,
+    )
+    v_head = ValueOperator(mlp, ["image_embedding", "vec_obs_embedding"])
+    # model
+    return SafeSequential(image_encoder, vector_obs_encoder, v_head)
+
+
 def get_vec_critic(
     in_keys=["observation"],
     num_cells=[256, 256],
