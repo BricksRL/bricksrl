@@ -69,17 +69,13 @@ def create_transition_td(
 def logout(agent):
     # TODO save model or training data
     x = input("Do you want to save the model? (y/n)")
-    save_dict = {}
     if x == "y":
-        agent_dict = agent.get_agent_statedict()
-        save_dict.update(agent_dict)
+        save_name = input("Enter the name of the file to save: ")
+        torch.save(agent.get_agent_statedict(), save_name + ".pth")
     x = input("Do you want to save the replay buffer? (y/n)")
     if x == "y":
-        buffer_dict = agent.replay_buffer.state_dict()
-        save_dict.update(buffer_dict)
-    if len(save_dict) > 0:
         save_name = input("Enter the name of the file to save: ")
-        torch.save(save_dict, save_name + ".pth")
+        torch.save(agent.replay_buffer.state_dict(), save_name + ".pth")
 
 
 def login(agent):
