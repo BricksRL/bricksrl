@@ -16,7 +16,7 @@ if project_root not in sys.path:
 
 from environments import make_env, VIDEO_LOGGING_ENVS
 from src.agents import get_agent
-from src.utils import create_video_from_images, login, setup_check
+from src.utils import create_video_from_images, login, logout, setup_check
 
 
 @hydra.main(version_base=None, config_path=project_root + "/conf", config_name="config")
@@ -62,6 +62,7 @@ def run(cfg: DictConfig) -> None:
                     image_caputres.append(
                         td.get(("next", "original_image")).cpu().numpy()
                     )
+                agent.add_experience(td)
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)
                 done = td.get(("next", "done"), False)
@@ -102,6 +103,7 @@ def run(cfg: DictConfig) -> None:
     except KeyboardInterrupt:
         print("Evaluation interrupted by user.")
 
+    logout(agent)
     env.close()
 
 
