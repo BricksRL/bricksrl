@@ -1,10 +1,12 @@
 import numpy as np
 import tensordict as td
 import torch
+from tensordict import TensorDictBase
 from torch import nn, optim
 from torchrl.data import BoundedTensorSpec, TensorDictReplayBuffer
 
 from torchrl.data.replay_buffers.storages import LazyMemmapStorage
+from torchrl.envs.utils import ExplorationType, set_exploration_type
 
 from src.agents.base import BaseAgent
 from src.networks.networks import get_deterministic_actor, get_stochastic_actor
@@ -27,29 +29,19 @@ class BehavioralCloningAgent(BaseAgent):
 
         if agent_config.policy_type == "deterministic":
             self.actor = get_deterministic_actor(
-                action_spec,
-                in_keys=["observation"],
-                num_cells=[agent_config.num_cells, agent_config.num_cells],
-                activation_class=nn.ReLU,
-                normalization=agent_config.normalization,
-                dropout=agent_config.dropout,
+                self.observation_keys, action_spec, agent_config
             )
             self.pretrain = self.pretrain_deter
         elif agent_config.policy_type == "stochastic":
             self.actor = get_stochastic_actor(
-                action_spec,
-                in_keys=["observation"],
-                num_cells=[agent_config.num_cells, agent_config.num_cells],
-                activation_class=nn.ReLU,
-                normalization=agent_config.normalization,
-                dropout=agent_config.dropout,
+                self.observation_keys, action_spec, agent_config
             )
             self.pretrain = self.pretrain_stoch
         else:
             raise ValueError(
                 "policy_type not recognized, choose deterministic or stochastic"
             )
-
+        self.actor.to(device)
         # initialize networks
         self.init_nets([self.actor])
 
@@ -58,12 +50,12 @@ class BehavioralCloningAgent(BaseAgent):
         )
 
         # create replay buffer
-        self.offline_data_path = agent_config.offline_data_path
+        self.offline_data_path = None
         self.replay_buffer = self.create_replay_buffer()
 
         # general stats
         self.collected_transitions = 0
-        self.do_pretrain = True
+        self.do_pretrain = False
         self.episodes = 0
 
     def get_agent_statedict(self):
@@ -89,15 +81,16 @@ class BehavioralCloningAgent(BaseAgent):
         except:
             raise ValueError("Replay Buffer not loaded")
 
-    def load_offline_data(self, path):
-        """load offline data"""
-        # TODO: cleanup!
-        try:
-            data = np.load(path, allow_pickle=True).item()
-        except:
-            raise ValueError("Cannot load offline data, check path!")
+    def eval(self):
+        """Sets the agent to evaluation mode."""
+        self.actor.eval()
 
-        return td.TensorDict(data, batch_size=len(data["observations"]))
+    @torch.no_grad()
+    def get_eval_action(self, td: TensorDictBase) -> TensorDictBase:
+        """Get eval action from actor network"""
+        with set_exploration_type(ExplorationType.MODE):
+            out_td = self.actor(td.to(self.device))
+        return out_td
 
     def create_replay_buffer(
         self,
@@ -119,12 +112,6 @@ class BehavioralCloningAgent(BaseAgent):
             ),
             batch_size=batch_size,
         )
-
-        # load offline data
-        if self.offline_data_path is not None:
-            offline_data = self.load_offline_data(self.offline_data_path)
-
-        replay_buffer.extend(offline_data)
 
         return replay_buffer
 
@@ -150,7 +137,7 @@ class BehavioralCloningAgent(BaseAgent):
         for i in range(num_updates):
             batch = self.replay_buffer.sample(batch_size)
             input_td = td.TensorDict(
-                {"observation": batch["observations"].float()}, batch_size=(256)
+                {"observation": batch["vec_observations"].float()}, batch_size=(256)
             )
             dist = self.actor.get_dist(input_td)
             loss = -dist.log_prob(batch["actions"]).mean()
@@ -166,7 +153,7 @@ class BehavioralCloningAgent(BaseAgent):
 
         for i in range(num_updates):
             batch = self.replay_buffer.sample(batch_size)
-            pred, _ = self.actor(batch["observations"].float())
+            pred, _ = self.actor(batch["vec_observations"].float())
             loss = torch.mean((pred - batch["actions"]) ** 2)
             self.optimizer.zero_grad()
             loss.backward()
@@ -177,4 +164,15 @@ class BehavioralCloningAgent(BaseAgent):
 
     def train(self, batch_size=64, num_updates=1):
         """Train the agent"""
-        return {}
+        log_data = {}
+
+        for i in range(num_updates):
+            batch = self.replay_buffer.sample(batch_size).to(self.device)
+            orig_action = batch.get("action").clone()
+            out_dict = self.actor(batch)
+            loss = torch.mean((out_dict.get("action") - orig_action) ** 2)
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+            log_data.update({"loss": loss})
+        return log_data
