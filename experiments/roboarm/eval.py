@@ -85,14 +85,14 @@ def run(cfg: DictConfig) -> None:
             }
             if env_name == "roboarm-v0" or env_name == "roboarm_sim-v0":
                 achieved_state = td.get(env.original_observation_key).cpu().numpy()
-                error = np.sum(
+                final_error = np.sum(
                     np.abs(
                         env.shortest_angular_distance_vectorized(
                             goal_state, achieved_state
                         )
                     )
                 )
-                log_dict["final_error"] = error
+                log_dict["final_error"] = final_error
 
             wandb.log(log_dict)
             if env_name in VIDEO_LOGGING_ENVS:
