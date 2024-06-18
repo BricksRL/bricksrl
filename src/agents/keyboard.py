@@ -20,8 +20,8 @@ class KeyboardAgent(BaseAgent):
         self.key_action_mapping = {
             "a": [-0.15, 0, 0, 0],  # Rotate motor -30
             "d": [0.15, 0, 0, 0],  # Rotate motor +30
-            "s": [0, -0.25, 0, 0],  # Low motor -10
-            "w": [0, 0.25, 0, 0],  # Low motor +10
+            "s": [0, -0.20, 0, 0],  # Low motor -10
+            "w": [0, 0.20, 0, 0],  # Low motor +10
             "q": [0, 0, -0.25, 0],  # High motor -15
             "e": [0, 0, 0.25, 0],  # High motor +15
             "f": [0, 0, 0, -0.25],  # Grab motor -10
