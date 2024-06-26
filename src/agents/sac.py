@@ -79,7 +79,6 @@ class SACAgent(BaseAgent):
         # general stats
         self.collected_transitions = 0
         self.total_updates = 0
-        self.do_pretrain = agent_config.pretrain
 
     def get_agent_statedict(self):
         """Save agent"""
@@ -183,18 +182,6 @@ class SACAgent(BaseAgent):
         """Add experience to replay buffer"""
         self.replay_buffer.extend(transition)
         self.collected_transitions += 1
-
-    def pretrain(self, wandb, batch_size=64, num_updates=1):
-        """Pretrain the agent with simple behavioral cloning"""
-        # TODO: implement pretrain for testing
-        # for i in range(num_updates):
-        #     batch = self.replay_buffer.sample(batch_size)
-        #     pred, _ = self.actor(batch["observations"].float())
-        #     loss = torch.mean((pred - batch["actions"]) ** 2)
-        #     self.optimizer.zero_grad()
-        #     loss.backward()
-        #     self.optimizer.step()
-        #     wandb.log({"pretrain/loss": loss.item()})
 
     def train(self, batch_size=64, num_updates=1):
         """Train the agent"""
