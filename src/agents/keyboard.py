@@ -89,28 +89,16 @@ class KeyboardAgent(BaseAgent):
         prefetch=3,
     ):
         """Create replay buffer"""
-        if prb:
-            replay_buffer = TensorDictPrioritizedReplayBuffer(
-                alpha=0.7,
-                beta=0.5,
-                pin_memory=False,
-                prefetch=1,
-                storage=LazyTensorStorage(
-                    buffer_size,
-                    device=device,
-                ),
-            )
-        else:
-            replay_buffer = TensorDictReplayBuffer(
-                pin_memory=False,
-                prefetch=prefetch,
-                storage=LazyMemmapStorage(
-                    buffer_size,
-                    scratch_dir=buffer_scratch_dir,
-                    device=device,
-                ),
-                batch_size=batch_size,
-            )
+        replay_buffer = TensorDictReplayBuffer(
+            pin_memory=False,
+            prefetch=prefetch,
+            storage=LazyMemmapStorage(
+                buffer_size,
+                scratch_dir=buffer_scratch_dir,
+                device=device,
+            ),
+            batch_size=batch_size,
+        )
         return replay_buffer
 
     @torch.no_grad()
