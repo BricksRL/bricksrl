@@ -11,7 +11,6 @@ class RandomAgent(BaseAgent):
         )
 
         self.actor = None
-        self.do_pretrain = False
         self.replay_buffer = {}
 
     def eval(self):

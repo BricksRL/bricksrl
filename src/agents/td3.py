@@ -143,7 +143,6 @@ class TD3Agent(BaseAgent):
                 prefetch=1,
                 storage=LazyTensorStorage(
                     buffer_size,
-                    device=device,
                 ),
             )
         else:
@@ -153,10 +152,10 @@ class TD3Agent(BaseAgent):
                 storage=LazyMemmapStorage(
                     buffer_size,
                     scratch_dir=buffer_scratch_dir,
-                    device=device,
                 ),
                 batch_size=batch_size,
             )
+        replay_buffer.append_transform(lambda x: x.to(device))
         return replay_buffer
 
     def td_preprocessing(self, td: TensorDictBase) -> TensorDictBase:
