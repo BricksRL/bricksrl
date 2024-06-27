@@ -9,3 +9,4 @@ tqdm==4.66.1
 pytest==8.0.2
 ufmt
 pre-commit
+numpy==1.24.1
