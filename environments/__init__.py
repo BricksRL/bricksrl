@@ -1,7 +1,9 @@
+import numpy as np
 from torchrl.envs import (
     CatFrames,
     Compose,
     DoubleToFloat,
+    ObservationNorm,
     RewardSum,
     ToTensorImage,
     TransformedEnv,
@@ -54,8 +56,17 @@ def make_env(config):
         # env = ActionFilterWrapper(
         #     env, current_action_influence=config.env.action_filter
         # )
-    if "image_observation" in observation_keys:
-        transforms.append(ToTensorImage(in_keys=["image_observation"], from_int=True))
+    normalize_keys = ["observation", "goal_observation"]
+    obs_ranges = np.array(list(env.observation_ranges.values()))
+    obs_mean = obs_ranges.mean(axis=-1)  # mean of min and max
+    obs_std = obs_ranges.std(axis=-1)  # std of min and max
+    transforms.append(
+        ObservationNorm(
+            in_keys=normalize_keys, loc=obs_mean, scale=obs_std, standard_normal=True
+        )
+    )
+    if "pixels" in observation_keys:
+        transforms.append(ToTensorImage(in_keys=["pixels"], from_int=True))
 
     env = TransformedEnv(env, Compose(*transforms))
 
