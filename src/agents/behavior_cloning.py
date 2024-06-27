@@ -63,7 +63,6 @@ class BehavioralCloningAgent(BaseAgent):
 
         # general stats
         self.collected_transitions = 0
-        self.do_pretrain = True
         self.episodes = 0
 
     def get_agent_statedict(self):
