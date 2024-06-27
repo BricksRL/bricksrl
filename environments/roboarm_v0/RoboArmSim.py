@@ -15,17 +15,15 @@ class RoboArmSimEnv_v0(BaseSimEnv):
 
     state_dim = 4  # (GM, HM, LM, RM)
 
-    motor_ranges = {
+    observation_ranges = {
         "GM": (-148, -44),
         "HM": (-150, 10),
         "LM": (10, 70),
         "RM": (-180, 179),
     }
 
-    observation_key = "vec_observation"
-    goal_observation_key = "goal_state"
-    original_observation_key = "original_state"
-    original_goal_observation_key = "original_goal_state"
+    observation_key = "observation"
+    goal_observation_key = "goal_observation"
 
     def __init__(
         self,
@@ -60,10 +58,10 @@ class RoboArmSimEnv_v0(BaseSimEnv):
         # Define observation spec
         bounds = torch.tensor(
             [
-                self.motor_ranges["GM"],
-                self.motor_ranges["HM"],
-                self.motor_ranges["LM"],
-                self.motor_ranges["RM"],
+                self.observation_ranges["GM"],
+                self.observation_ranges["HM"],
+                self.observation_ranges["LM"],
+                self.observation_ranges["RM"],
             ]
         )
 
@@ -82,21 +80,6 @@ class RoboArmSimEnv_v0(BaseSimEnv):
             action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
         )
 
-    def normalize_state(self, state: np.ndarray, key: str) -> torch.Tensor:
-        """
-        Normalize the state to be processed by the agent.
-
-        Args:
-            state (np.ndarray): The state to be normalized.
-
-        Returns:
-            torch.Tensor: The normalized state.
-        """
-        state = (torch.from_numpy(state) - self.observation_spec[key].space.low) / (
-            self.observation_spec[key].space.high - self.observation_spec[key].space.low
-        )
-        return state
-
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
         """
         Reset the environment and return the initial state.
@@ -107,21 +90,16 @@ class RoboArmSimEnv_v0(BaseSimEnv):
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
 
-        observation = self.observation_spec[self.observation_key].rand().numpy()
+        observation = self.observation_spec[self.observation_key].rand()
         self.current_position = observation
-        norm_obs = self.normalize_state(observation, self.observation_key)
         # sample random goal state
-        goal_state = self.observation_spec[self.goal_observation_key].rand().numpy()
-        norm_goal = self.normalize_state(goal_state, self.goal_observation_key)
+        self.goal_observation = self.observation_spec[self.goal_observation_key].rand()
 
         return TensorDict(
             {
-                self.observation_key: norm_obs.float(),
-                self.goal_observation_key: norm_goal.float(),
-                self.original_observation_key: torch.from_numpy(observation).float(),
-                self.original_goal_observation_key: torch.from_numpy(
-                    goal_state
-                ).float(),
+                self.observation_key: observation,
+                self.goal_observation_key: self.goal_observation,
+                "error": torch.tensor([0.0]).float(),
             },
             batch_size=[1],
         )
@@ -159,7 +137,6 @@ class RoboArmSimEnv_v0(BaseSimEnv):
     def reward(
         self,
         achieved_state: np.array,
-        goal_state: np.array,
     ) -> Tuple[float, bool]:
         """Reward function of roboarm.
 
@@ -170,11 +147,11 @@ class RoboArmSimEnv_v0(BaseSimEnv):
         Returns:
             Tuple[float, bool]: The reward received and a boolean indicating whether the episode is done.
         """
-
+        goal_observation = self.goal_observation.numpy()
         done = False
         if self.reward_signal == "dense":
             angle_deltas = self.shortest_angular_distance_vectorized(
-                goal_state, achieved_state
+                goal_observation, achieved_state
             )
             error = np.sum(np.abs(angle_deltas))
             reward = -error / 100
@@ -182,7 +159,7 @@ class RoboArmSimEnv_v0(BaseSimEnv):
                 done = True
         elif self.reward_signal == "sparse":
             angle_deltas = self.shortest_angular_distance_vectorized(
-                goal_state, achieved_state
+                goal_observation, achieved_state
             )
             error = np.sum(np.abs(angle_deltas))
             if np.all(error <= self.goal_thresholds):
@@ -194,7 +171,7 @@ class RoboArmSimEnv_v0(BaseSimEnv):
         else:
             raise ValueError("Reward signal must be dense or sparse.")
 
-        return reward, done
+        return reward, done, error
 
     @staticmethod
     def transform_range(value, old_min, old_max, new_min, new_max):
@@ -245,18 +222,22 @@ class RoboArmSimEnv_v0(BaseSimEnv):
         ) = self.current_position.squeeze()
 
         if not (
-            current_grab_angle + grab_action > max(self.motor_ranges["GM"])
-        ) and not (current_grab_angle + grab_action < min(self.motor_ranges["GM"])):
+            current_grab_angle + grab_action > max(self.observation_ranges["GM"])
+        ) and not (
+            current_grab_angle + grab_action < min(self.observation_ranges["GM"])
+        ):
             current_grab_angle += grab_action
 
         if not (
-            current_high_angle + high_action > max(self.motor_ranges["HM"])
-        ) and not (current_high_angle + high_action < min(self.motor_ranges["HM"])):
+            current_high_angle + high_action > max(self.observation_ranges["HM"])
+        ) and not (
+            current_high_angle + high_action < min(self.observation_ranges["HM"])
+        ):
             current_high_angle += high_action
 
-        if not (current_low_angle + low_action > max(self.motor_ranges["LM"])) and not (
-            current_low_angle + low_action < min(self.motor_ranges["LM"])
-        ):
+        if not (
+            current_low_angle + low_action > max(self.observation_ranges["LM"])
+        ) and not (current_low_angle + low_action < min(self.observation_ranges["LM"])):
             current_low_angle += low_action
 
         current_rotation_angle += rotation_action
@@ -270,7 +251,8 @@ class RoboArmSimEnv_v0(BaseSimEnv):
                     current_low_angle,
                     current_rotation_angle,
                 ]
-            ]
+            ],
+            dtype=np.float32,
         )
         return self.current_position
 
@@ -280,30 +262,19 @@ class RoboArmSimEnv_v0(BaseSimEnv):
         action = tensordict.get("action").cpu().numpy().squeeze()
 
         next_observation = self.apply_action(action)
-        goal_state = tensordict.get(self.original_goal_observation_key).cpu().numpy()
 
         # calc reward and done
-        reward, done = self.reward(
+        reward, done, error = self.reward(
             achieved_state=next_observation,
-            goal_state=goal_state,
         )
 
         next_tensordict = TensorDict(
             {
-                self.observation_key: self.normalize_state(
-                    next_observation, self.observation_key
-                ).float(),
-                self.original_observation_key: torch.from_numpy(
-                    next_observation
-                ).float(),
-                self.goal_observation_key: tensordict.get(
-                    self.goal_observation_key
-                ).float(),
-                self.original_goal_observation_key: tensordict.get(
-                    self.original_goal_observation_key
-                ).float(),
+                self.observation_key: next_observation,
+                self.goal_observation_key: self.goal_observation,
                 "reward": torch.tensor([reward]).float(),
                 "done": torch.tensor([done]).bool(),
+                "error": torch.tensor([error]).float(),
             },
             batch_size=[1],
         )

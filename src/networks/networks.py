@@ -27,10 +27,7 @@ def get_normalization(normalization):
 
 
 def get_critic(observation_keys, agent_config):
-    if (
-        "vec_observation" in observation_keys
-        and not "image_observation" in observation_keys
-    ):
+    if "observation" in observation_keys and not "pixels" in observation_keys:
         return get_vec_critic(
             in_keys=observation_keys,
             num_cells=[agent_config.num_cells, agent_config.num_cells],
@@ -39,13 +36,10 @@ def get_critic(observation_keys, agent_config):
             normalization=agent_config.normalization,
             dropout=agent_config.dropout,
         )
-    elif (
-        "image_observation" in observation_keys
-        and "vec_observation" in observation_keys
-    ):
+    elif "pixels" in observation_keys and "observation" in observation_keys:
         return get_mixed_critic(
-            vec_in_keys="vec_observation",
-            img_in_keys="image_observation",
+            vec_in_keys="observation",
+            img_in_keys="pixels",
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             out_features=1,
             activation_class=nn.ReLU,
@@ -137,10 +131,7 @@ def get_mixed_critic(
 
 
 def get_deterministic_actor(observation_keys, action_spec, agent_config):
-    if (
-        "vec_observation" in observation_keys
-        and not "image_observation" in observation_keys
-    ):
+    if "observation" in observation_keys and not "pixels" in observation_keys:
         return get_vec_deterministic_actor(
             action_spec=action_spec,
             in_keys=observation_keys,
@@ -148,10 +139,7 @@ def get_deterministic_actor(observation_keys, action_spec, agent_config):
             activation_class=nn.ReLU,
         )
 
-    elif (
-        "image_observation" in observation_keys
-        and "vec_observation" in observation_keys
-    ):
+    elif "pixels" in observation_keys and "observation" in observation_keys:
         return get_mixed_deterministic_actor(
             vec_in_keys="vec_observation",
             img_in_keys="image_observation",
@@ -268,10 +256,7 @@ def get_mixed_deterministic_actor(
 
 
 def get_stochastic_actor(observation_keys, action_spec, agent_config):
-    if (
-        "vec_observation" in observation_keys
-        and not "image_observation" in observation_keys
-    ):
+    if "observation" in observation_keys and not "pixels" in observation_keys:
         return get_vec_stochastic_actor(
             action_spec,
             in_keys=observation_keys,
@@ -280,14 +265,11 @@ def get_stochastic_actor(observation_keys, action_spec, agent_config):
             dropout=agent_config.dropout,
             activation_class=nn.ReLU,
         )
-    elif (
-        "image_observation" in observation_keys
-        and "vec_observation" in observation_keys
-    ):
+    elif "pixels" in observation_keys and "observation" in observation_keys:
         return get_mixed_stochastic_actor(
             action_spec,
-            vec_in_keys="vec_observation",
-            img_in_keys="image_observation",
+            vec_in_keys="observation",
+            img_in_keys="pixels",
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             normalization=agent_config.normalization,
             dropout=agent_config.dropout,

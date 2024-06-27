@@ -40,32 +40,6 @@ def tensordict2dict(td: TensorDictBase) -> dict:
     return {k: v.item() for k, v in td.items()}
 
 
-def create_transition_td(
-    observation: np.array,
-    action: np.array,
-    reward: np.array,
-    next_observation: np.array,
-    done: np.array,
-    batch_size: int = 1,
-):
-    """Create a TensorDict from a transition tuple."""
-    obs_t = torch.from_numpy(observation).float()[None, :]
-    action_t = torch.from_numpy(action).float()[None, :]
-    reward_t = torch.from_numpy(reward).float()[None, :]
-    next_obs_t = torch.from_numpy(next_observation).float()[None, :]
-    done_t = torch.from_numpy(done).bool()[None, :]
-
-    return td.TensorDict(
-        {
-            "observation": obs_t,
-            "action": action_t,
-            "reward": reward_t,
-            "next": {"observation": next_obs_t, "reward": reward_t, "done": done_t},
-        },
-        batch_size=batch_size,
-    )
-
-
 def logout(agent):
     # TODO save model or training data
     x = input("Do you want to save the model? (y/n)")
