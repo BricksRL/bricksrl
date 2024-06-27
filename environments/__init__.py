@@ -56,7 +56,7 @@ def make_env(config):
         # env = ActionFilterWrapper(
         #     env, current_action_influence=config.env.action_filter
         # )
-    normalize_keys = ["observation", "goal_observation"]
+    normalize_keys = [key for key in observation_keys if key != "pixels"]
     obs_ranges = np.array(list(env.observation_ranges.values()))
     obs_mean = obs_ranges.mean(axis=-1)  # mean of min and max
     obs_std = obs_ranges.std(axis=-1)  # std of min and max
