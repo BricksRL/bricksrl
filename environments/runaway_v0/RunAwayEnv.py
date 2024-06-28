@@ -1,8 +1,8 @@
 import time
+from typing import Tuple
 
 import numpy as np
 import torch
-
 from environments.base.base_env import BaseEnv
 from tensordict import TensorDict, TensorDictBase
 from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec
@@ -23,28 +23,21 @@ class RunAwayEnv_v0(BaseEnv):
         sleep_time (float): The time to wait between sending actions and receiving the next state. Defaults to 0.2.
         verbose (bool): Whether to print verbose information during the environment's execution. Defaults to False.
 
-    Attributes:
-        action_space (gym.spaces.Box): The continuous action space in the range [-1, 1].
-        observation_space (gym.spaces.Box): The state space consisting of 4 sensor readings and the distance to the wall.
-
-    Methods:
-        sample_random_action(): Samples a random action from the action space.
-        normalize_state(state: np.ndarray) -> np.ndarray: Normalizes and clips the state to be compatible with the agent.
-        reset() -> np.ndarray: Resets the environment and returns the initial state.
-        reward(state: np.ndarray, action: np.ndarray, next_state: np.ndarray) -> Tuple[float, bool]: Calculates the reward based on the change in distance to the wall.
-        step(action: np.ndarray) -> Tuple[np.ndarray, float, bool, dict]: Performs the given action and returns the next state, reward, and done status.
     """
 
     action_dim = 1  # control the wheel motors together
     # 5 sensors (left motor angle, right motor angle, pitch, roll, distance)
     state_dim = 5
 
-    motor_angles = [0, 360]
-    roll_angles = [-90, 90]
-    pitch_angles = [-90, 90]
-    distance = [0, 2000]
-    observation_key = "vec_observation"
-    original_vec_observation_key = "original_vec_observation"
+    observation_ranges = {
+        "left_motor_angles": [0, 360],
+        "right_motor_angles": [0, 360],
+        "roll_angle": [-90, 90],
+        "pitch_angle": [-90, 90],
+        "distance": [0, 2000],
+    }
+
+    observation_key = "observation"
 
     def __init__(
         self,
@@ -68,11 +61,11 @@ class RunAwayEnv_v0(BaseEnv):
         # Define observation spec
         bounds = torch.tensor(
             [
-                self.motor_angles,
-                self.motor_angles,
-                self.roll_angles,
-                self.pitch_angles,
-                self.distance,
+                self.observation_ranges["left_motor_angles"],
+                self.observation_ranges["right_motor_angles"],
+                self.observation_ranges["roll_angle"],
+                self.observation_ranges["pitch_angle"],
+                self.observation_ranges["distance"],
             ]
         )
 
@@ -91,25 +84,6 @@ class RunAwayEnv_v0(BaseEnv):
             action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
         )
 
-    def normalize_state(self, state: np.ndarray) -> torch.Tensor:
-        """
-        Normalize the state to be processed by the agent.
-
-        Args:
-            state (np.ndarray): The state to be normalized.
-
-        Returns:
-            torch.Tensor: The normalized state.
-        """
-        state = (
-            torch.from_numpy(state)
-            - self.observation_spec[self.observation_key].space.low
-        ) / (
-            self.observation_spec[self.observation_key].space.high
-            - self.observation_spec[self.observation_key].space.low
-        )
-        return state
-
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
         """
         Reset the environment and return the initial state.
@@ -126,18 +100,16 @@ class RunAwayEnv_v0(BaseEnv):
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
         observation = self.read_from_hub()
-        norm_observation = self.normalize_state(observation)
+        self.distance = observation[:, -1]
         return TensorDict(
             {
-                self.observation_key: norm_observation.float(),
-                self.original_vec_observation_key: torch.from_numpy(
-                    observation
-                ).float(),  # for reward calc
+                self.observation_key: torch.tensor(observation, dtype=torch.float32),
+                "distance": torch.tensor([self.distance]).float(),
             },
             batch_size=[1],
         )
 
-    def reward(self, state, next_state) -> TensorDictBase:
+    def reward(self, next_observation: np.array) -> Tuple[float, bool]:
         """Reward function of RunAwayEnv.
 
         Goal: Increase distance measured by ultrasonic sensor aka.
@@ -146,50 +118,46 @@ class RunAwayEnv_v0(BaseEnv):
         """
         done = False
 
-        if (
-            next_state[:, -1] <= self.min_distance
-        ):  # too close to the wall break episode
-            reward = -10.0
+        current_distance = next_observation[:, -1]
+        if current_distance <= self.min_distance:  # too close to the wall break episode
             done = True
-        elif next_state[:, -1] < state[:, -1]:
+            reward = 0.0
+        elif current_distance < self.distance:
             reward = -1.0
-        elif next_state[:, -1] > state[:, -1]:
+        elif current_distance > self.distance:
             reward = 1.0
         else:
             reward = 0.0
-        if state[:, -1] >= 2000:
+        if self.distance >= 2000:
             done = True
-
-        if state[:, -1] <= 100:
-            done = True
+        self.distance = current_distance
         return reward, done
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         """ """
         # Send action to hub to receive next state
         self.send_to_hub(tensordict.get("action").cpu().numpy().squeeze(0))
-        time.sleep(
-            self.sleep_time
-        )  # we need to wait some time for sensors to read and to
+        time.sleep(self.sleep_time)  # wait some time for sensors to read and to
+
         # receive the next state
         next_observation = self.read_from_hub()
-        next_tensordict = TensorDict(
-            {
-                self.observation_key: self.normalize_state(next_observation).float(),
-                self.original_vec_observation_key: torch.from_numpy(
-                    next_observation
-                ).float(),  # for reward calc
-            },
-            batch_size=[1],
-            device=tensordict.device,
-        )
+
         # calc reward and done
         reward, done = self.reward(
-            state=tensordict.get(self.original_vec_observation_key),
-            next_state=next_tensordict.get(self.original_vec_observation_key),
+            next_observation=next_observation,
         )
-        next_tensordict.set("reward", torch.tensor([reward]).float())
-        next_tensordict.set("done", torch.tensor([done]).bool())
+
+        next_tensordict = TensorDict(
+            {
+                self.observation_key: torch.tensor(
+                    next_observation, dtype=torch.float32
+                ),
+                "reward": torch.tensor([reward]).float(),
+                "done": torch.tensor([done]).bool(),
+                "distance": torch.tensor([self.distance]).float(),
+            },
+            batch_size=[1],
+        )
 
         # increment episode step counter
         self.episode_step_iter += 1
