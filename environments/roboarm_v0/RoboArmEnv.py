@@ -107,6 +107,7 @@ class RoboArmEnv_v0(BaseEnv):
                 self.goal_observation_key: torch.tensor(
                     self.goal_observation, dtype=torch.float32
                 ),
+                "error": torch.tensor([0]).float(),
             },
             batch_size=[1],
         )
@@ -178,7 +179,7 @@ class RoboArmEnv_v0(BaseEnv):
         else:
             raise ValueError("Reward signal must be dense or sparse.")
 
-        return reward, done
+        return reward, done, error
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         """ """
@@ -192,7 +193,7 @@ class RoboArmEnv_v0(BaseEnv):
         next_observation = self.read_from_hub()
 
         # calc reward and done
-        reward, done = self.reward(
+        reward, done, error = self.reward(
             achieved_state=next_observation,
         )
 
@@ -206,6 +207,7 @@ class RoboArmEnv_v0(BaseEnv):
                 ),
                 "reward": torch.tensor([reward]).float(),
                 "done": torch.tensor([done]).bool(),
+                "error": torch.tensor([error]).float(),
             },
             batch_size=[1],
         )
