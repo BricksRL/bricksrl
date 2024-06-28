@@ -27,12 +27,18 @@ class WalkerEnv_v0(BaseEnv):
     action_dim = 4  # (lf_value, lb_value, rf_value, rb_value)
     # angles are in range [-179, 179]
     state_dim = 7  # (lf_angle, rf_angle, lb_angle, rb_angle, pitch, roll, acc_x)
-    max_acc = 3000
-    motor_range = [-179, 179]
-    pitch_roll_range = [-50, 50]
 
-    observation_key = "vec_observation"
-    original_vec_observation_key = "original_vec_observation"
+    observation_ranges = {
+        "lf_angle": [-179, 179],
+        "rf_angle": [-179, 179],
+        "lb_angle": [-179, 179],
+        "rb_angle": [-179, 179],
+        "pitch": [-50, 50],
+        "roll": [-50, 50],
+        "acc_x": [-3000, 3000],
+    }
+
+    observation_key = "observation"
 
     def __init__(
         self,
@@ -41,7 +47,6 @@ class WalkerEnv_v0(BaseEnv):
         verbose: bool = False,
     ):
         self.sleep_time = sleep_time
-        self.max_acc = 3000
         self._batch_size = torch.Size([1])
         self.max_episode_steps = max_episode_steps
 
@@ -52,18 +57,16 @@ class WalkerEnv_v0(BaseEnv):
             shape=(1, self.action_dim),
         )
 
-        max_acc_range = [-self.max_acc, self.max_acc]
-
         # Define observation spec
         bounds = torch.tensor(
             [
-                self.motor_range,
-                self.motor_range,
-                self.motor_range,
-                self.motor_range,
-                self.pitch_roll_range,
-                self.pitch_roll_range,
-                max_acc_range,
+                self.observation_ranges["lf_angle"],
+                self.observation_ranges["rf_angle"],
+                self.observation_ranges["lb_angle"],
+                self.observation_ranges["rb_angle"],
+                self.observation_ranges["pitch"],
+                self.observation_ranges["roll"],
+                self.observation_ranges["acc_x"],
             ]
         )
         # Reshape bounds to (1, 7)
@@ -83,25 +86,6 @@ class WalkerEnv_v0(BaseEnv):
             action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
         )
 
-    def normalize_state(self, state: np.ndarray) -> torch.Tensor:
-        """
-        Normalize the state to be processed by the agent.
-
-        Args:
-            state (np.ndarray): The state to be normalized.
-
-        Returns:
-            torch.Tensor: The normalized state.
-        """
-        state = (
-            torch.from_numpy(state)
-            - self.observation_spec[self.observation_key].space.low
-        ) / (
-            self.observation_spec[self.observation_key].space.high
-            - self.observation_spec[self.observation_key].space.low
-        )
-        return state
-
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
         """
         Reset the environment and return the initial state.
@@ -119,14 +103,9 @@ class WalkerEnv_v0(BaseEnv):
         time.sleep(self.sleep_time)
         observation = self.read_from_hub()
 
-        self.dt = time.time()
-        norm_observation = self.normalize_state(observation)
         return TensorDict(
             {
-                self.observation_key: norm_observation.float(),
-                self.original_vec_observation_key: torch.from_numpy(
-                    observation
-                ).float(),
+                self.observation_key: torch.tensor(observation, dtype=torch.float32),
             },
             batch_size=[1],
         )
@@ -204,15 +183,10 @@ class WalkerEnv_v0(BaseEnv):
         # Send action to hub to receive next state
         action = tensordict.get("action").cpu().numpy().squeeze()
         self.send_to_hub(action)
-        time.sleep(
-            self.sleep_time
-        )  # we need to wait some time for sensors to read and to
+        time.sleep(self.sleep_time)  # wait some time for sensors to read and to
         # receive the next state
         next_observation = self.read_from_hub()
 
-        # receive the next state
-        current_time = time.time()
-        delta_t = current_time - self.dt
         # calc reward and done
         reward, done = self.reward(
             action=action,
@@ -220,10 +194,9 @@ class WalkerEnv_v0(BaseEnv):
         )
         next_tensordict = TensorDict(
             {
-                self.observation_key: self.normalize_state(next_observation).float(),
-                self.original_vec_observation_key: torch.from_numpy(
-                    next_observation
-                ).float(),
+                self.observation_key: torch.tensor(
+                    next_observation, dtype=torch.float32
+                ),
                 "reward": torch.tensor([reward]).float(),
                 "done": torch.tensor([done]).bool(),
             },
