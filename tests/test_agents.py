@@ -1,7 +1,7 @@
 import pytest
 import torch
 from environments.dummy.mixed_obs_dummy import MixedObsDummyEnv
-from environments.dummy.vec_obs_dummy import VecObsDummyEnv, VecGoalObsDummyEnv
+from environments.dummy.vec_obs_dummy import VecGoalObsDummyEnv, VecObsDummyEnv
 from hydra import compose, initialize
 from src.agents import get_agent
 from torchrl.envs import Compose, ToTensorImage, TransformedEnv
@@ -22,7 +22,7 @@ def get_env(env):
     if env == "mixed":
         env = MixedObsDummyEnv()
         env = TransformedEnv(
-            env, Compose(ToTensorImage(in_keys=["image_observation"], from_int=True))
+            env, Compose(ToTensorImage(in_keys=["pixels"], from_int=True))
         )
     elif env == "vec":
         env = VecObsDummyEnv()

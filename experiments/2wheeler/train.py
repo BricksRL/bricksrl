@@ -96,7 +96,7 @@ def run(cfg: DictConfig) -> None:
                 "mean_action": np.mean(actions),
             }
             if cfg.env.name == "runaway-v0":
-                log_dict.update({"distance": td.get("original_vec_observation")[0][-1]})
+                log_dict.update({"distance": td.get("distance")})
 
             log_dict.update(tensordict2dict(loss_info))
             wandb.log(log_dict)

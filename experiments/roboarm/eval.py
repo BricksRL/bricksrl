@@ -49,9 +49,7 @@ def run(cfg: DictConfig) -> None:
             ep_steps = 0
             total_step_times = []
             if env_name in VIDEO_LOGGING_ENVS:
-                image_caputres = [td.get("original_image").numpy()]
-            if env_name == "roboarm-v0" or env_name == "roboarm_sim-v0":
-                goal_state = td.get(env.original_goal_observation_key).cpu().numpy()
+                image_caputres = [td.get("original_pixels").numpy()]
             print("Start new evaluation...", flush=True)
             while not done and not truncated:
                 ep_steps += 1
@@ -60,7 +58,7 @@ def run(cfg: DictConfig) -> None:
                 td = env.step(td)
                 if env_name in VIDEO_LOGGING_ENVS:
                     image_caputres.append(
-                        td.get(("next", "original_image")).cpu().numpy()
+                        td.get(("next", "original_pixels")).cpu().numpy()
                     )
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)
@@ -83,15 +81,8 @@ def run(cfg: DictConfig) -> None:
                 "done": done.float(),
             }
             if env_name == "roboarm-v0" or env_name == "roboarm_sim-v0":
-                achieved_state = td.get(env.original_observation_key).cpu().numpy()
-                error = np.sum(
-                    np.abs(
-                        env.shortest_angular_distance_vectorized(
-                            goal_state, achieved_state
-                        )
-                    )
-                )
-                log_dict["final_error"] = error
+                final_error = td.get(("error")).item()
+                log_dict.update({"final_error": final_error})
 
             wandb.log(log_dict)
             if env_name in VIDEO_LOGGING_ENVS:

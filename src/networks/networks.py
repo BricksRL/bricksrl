@@ -27,10 +27,7 @@ def get_normalization(normalization):
 
 
 def get_critic(observation_keys, agent_config):
-    if (
-        "vec_observation" in observation_keys
-        and not "image_observation" in observation_keys
-    ):
+    if "observation" in observation_keys and not "pixels" in observation_keys:
         return get_vec_critic(
             in_keys=observation_keys,
             num_cells=[agent_config.num_cells, agent_config.num_cells],
@@ -39,13 +36,10 @@ def get_critic(observation_keys, agent_config):
             normalization=agent_config.normalization,
             dropout=agent_config.dropout,
         )
-    elif (
-        "image_observation" in observation_keys
-        and "vec_observation" in observation_keys
-    ):
+    elif "pixels" in observation_keys and "observation" in observation_keys:
         return get_mixed_critic(
-            vec_in_keys="vec_observation",
-            img_in_keys="image_observation",
+            vec_in_keys="observation",
+            img_in_keys="pixels",
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             out_features=1,
             activation_class=nn.ReLU,
@@ -109,7 +103,7 @@ def get_mixed_critic(
     image_encoder = SafeModule(
         torch.nn.Sequential(cnn, mlp),
         in_keys=[img_in_keys],
-        out_keys=["image_embedding"],
+        out_keys=["pixel_embedding"],
     )
 
     # vector_obs encoder
@@ -119,7 +113,7 @@ def get_mixed_critic(
         num_cells=[128],
     )
     vector_obs_encoder = SafeModule(
-        mlp, in_keys=[vec_in_keys], out_keys=["vec_obs_embedding"]
+        mlp, in_keys=[vec_in_keys], out_keys=["obs_embedding"]
     )
 
     # output head
@@ -131,16 +125,13 @@ def get_mixed_critic(
         norm_kwargs={"normalized_shape": num_cells[-1]} if normalization else None,
         dropout=dropout,
     )
-    v_head = ValueOperator(mlp, ["image_embedding", "vec_obs_embedding", "action"])
+    v_head = ValueOperator(mlp, ["pixel_embedding", "obs_embedding", "action"])
     # model
     return SafeSequential(image_encoder, vector_obs_encoder, v_head)
 
 
 def get_deterministic_actor(observation_keys, action_spec, agent_config):
-    if (
-        "vec_observation" in observation_keys
-        and not "image_observation" in observation_keys
-    ):
+    if "observation" in observation_keys and not "pixels" in observation_keys:
         return get_vec_deterministic_actor(
             action_spec=action_spec,
             in_keys=observation_keys,
@@ -148,13 +139,10 @@ def get_deterministic_actor(observation_keys, action_spec, agent_config):
             activation_class=nn.ReLU,
         )
 
-    elif (
-        "image_observation" in observation_keys
-        and "vec_observation" in observation_keys
-    ):
+    elif "pixels" in observation_keys and "observation" in observation_keys:
         return get_mixed_deterministic_actor(
-            vec_in_keys="vec_observation",
-            img_in_keys="image_observation",
+            vec_in_keys="observation",
+            img_in_keys="pixels",
             action_spec=action_spec,
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             activation_class=nn.ReLU,
@@ -229,7 +217,7 @@ def get_mixed_deterministic_actor(
     image_encoder = SafeModule(
         torch.nn.Sequential(cnn, mlp),
         in_keys=[img_in_keys],
-        out_keys=["image_embedding"],
+        out_keys=["pixel_embedding"],
     )
 
     # vector_obs encoder
@@ -239,7 +227,7 @@ def get_mixed_deterministic_actor(
         num_cells=[128],
     )
     vector_obs_encoder = SafeModule(
-        mlp, in_keys=[vec_in_keys], out_keys=["vector_obs_embedding"]
+        mlp, in_keys=[vec_in_keys], out_keys=["obs_embedding"]
     )
 
     # output head
@@ -251,9 +239,7 @@ def get_mixed_deterministic_actor(
         norm_kwargs={"normalized_shape": num_cells[-1]} if normalization else None,
         dropout=dropout,
     )
-    combined = SafeModule(
-        mlp, ["image_embedding", "vector_obs_embedding"], out_keys=["param"]
-    )
+    combined = SafeModule(mlp, ["pixel_embedding", "obs_embedding"], out_keys=["param"])
     out_module = TanhModule(
         in_keys=["param"],
         out_keys=["action"],
@@ -268,10 +254,7 @@ def get_mixed_deterministic_actor(
 
 
 def get_stochastic_actor(observation_keys, action_spec, agent_config):
-    if (
-        "vec_observation" in observation_keys
-        and not "image_observation" in observation_keys
-    ):
+    if "observation" in observation_keys and not "pixels" in observation_keys:
         return get_vec_stochastic_actor(
             action_spec,
             in_keys=observation_keys,
@@ -280,14 +263,11 @@ def get_stochastic_actor(observation_keys, action_spec, agent_config):
             dropout=agent_config.dropout,
             activation_class=nn.ReLU,
         )
-    elif (
-        "image_observation" in observation_keys
-        and "vec_observation" in observation_keys
-    ):
+    elif "pixels" in observation_keys and "observation" in observation_keys:
         return get_mixed_stochastic_actor(
             action_spec,
-            vec_in_keys="vec_observation",
-            img_in_keys="image_observation",
+            vec_in_keys="observation",
+            img_in_keys="pixels",
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             normalization=agent_config.normalization,
             dropout=agent_config.dropout,
@@ -318,8 +298,8 @@ def get_vec_stochastic_actor(
 
     dist_class = TanhNormal
     dist_kwargs = {
-        "min": action_spec.space.low,
-        "max": action_spec.space.high,
+        "low": action_spec.space.low,
+        "high": action_spec.space.high,
         "tanh_loc": False,
     }
     actor_extractor = NormalParamExtractor(
@@ -378,7 +358,7 @@ def get_mixed_stochastic_actor(
     image_encoder = SafeModule(
         torch.nn.Sequential(cnn, mlp),
         in_keys=[img_in_keys],
-        out_keys=["image_embedding"],
+        out_keys=["pixel_embedding"],
     )
 
     # vector_obs encoder
@@ -388,7 +368,7 @@ def get_mixed_stochastic_actor(
         num_cells=[128],
     )
     vector_obs_encoder = SafeModule(
-        mlp, in_keys=[vec_in_keys], out_keys=["vector_obs_embedding"]
+        mlp, in_keys=[vec_in_keys], out_keys=["obs_embedding"]
     )
 
     # output head
@@ -402,7 +382,7 @@ def get_mixed_stochastic_actor(
     )
     actor_module = SafeModule(
         mlp,
-        in_keys=["image_embedding", "vector_obs_embedding"],
+        in_keys=["pixel_embedding", "obs_embedding"],
         out_keys=["params"],
     )
     actor_extractor = NormalParamExtractor(
@@ -424,8 +404,8 @@ def get_mixed_stochastic_actor(
 
     dist_class = TanhNormal
     dist_kwargs = {
-        "min": action_spec.space.low,
-        "max": action_spec.space.high,
+        "low": action_spec.space.low,
+        "high": action_spec.space.high,
         "tanh_loc": False,
     }
     actor = ProbabilisticActor(
