@@ -49,7 +49,7 @@ def run(cfg: DictConfig) -> None:
             ep_steps = 0
             total_step_times = []
             if env_name in VIDEO_LOGGING_ENVS:
-                image_caputres = [td.get("original_image").numpy()]
+                image_caputres = [td.get("original_pixels").numpy()]
             print("Start new evaluation...", flush=True)
             while not done and not truncated:
                 ep_steps += 1
@@ -58,7 +58,7 @@ def run(cfg: DictConfig) -> None:
                 td = env.step(td)
                 if env_name in VIDEO_LOGGING_ENVS:
                     image_caputres.append(
-                        td.get(("next", "original_image")).cpu().numpy()
+                        td.get(("next", "original_pixels")).cpu().numpy()
                     )
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)

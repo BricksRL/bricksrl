@@ -125,8 +125,8 @@ class RoboArmMixedEnv_v0(BaseEnv):
         )
 
         self.observation_spec = CompositeSpec(shape=(1,))
-        self.observation_spec.set(self.vec_observation_key, observation_spec)
-        self.observation_spec.set(self.image_observation_key, image_observation_spec)
+        self.observation_spec.set(self.observation_key, observation_spec)
+        self.observation_spec.set(self.pixels_observation_key, image_observation_spec)
 
         self.goal_positions = self.init_camera_position()
 
