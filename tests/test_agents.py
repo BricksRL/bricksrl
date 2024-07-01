@@ -44,6 +44,12 @@ def test_random_agent(env, device):
     with initialize(config_path="../conf"):
         cfg = compose(config_name="config")
 
+    if torch.cuda.is_available() and device == "cuda":
+        device = "cuda"
+    else:
+        device = "cpu"
+    with initialize(config_path="../conf"):
+        cfg = compose(config_name="config", overrides=["device=" + device])
     # Test data collection
     env = get_env(env)
     agent, _ = get_agent(env.action_spec, env.observation_spec, cfg)
