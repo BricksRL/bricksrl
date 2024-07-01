@@ -122,10 +122,10 @@ class SACAgent(BaseAgent):
         td.pop("scale")
         td.pop("loc")
         td.pop("params")
-        if "vector_obs_embedding" in td.keys():
-            td.pop("vector_obs_embedding")
-        if "image_embedding" in td.keys():
-            td.pop("image_embedding")
+        if "obs_embedding" in td.keys():
+            td.pop("obs_embedding")
+        if "pixel_embedding" in td.keys():
+            td.pop("pixel_embedding")
 
     def create_replay_buffer(
         self,

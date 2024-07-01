@@ -11,7 +11,6 @@ from torchrl.envs.utils import step_mdp
 def collection_round(env, agent, max_steps=1000):
     td = env.reset()
     for _ in range(max_steps):
-        print(td)
         td = agent.get_action(td)
         td = env.step(td)
         agent.add_experience(td)
@@ -45,6 +44,12 @@ def test_random_agent(env, device):
     with initialize(config_path="../conf"):
         cfg = compose(config_name="config")
 
+    if torch.cuda.is_available() and device == "cuda":
+        device = "cuda"
+    else:
+        device = "cpu"
+    with initialize(config_path="../conf"):
+        cfg = compose(config_name="config", overrides=["device=" + device])
     # Test data collection
     env = get_env(env)
     agent, _ = get_agent(env.action_spec, env.observation_spec, cfg)

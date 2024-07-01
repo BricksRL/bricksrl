@@ -161,10 +161,10 @@ class TD3Agent(BaseAgent):
     def td_preprocessing(self, td: TensorDictBase) -> TensorDictBase:
         # TODO not ideal to have this here
         td.pop("param")
-        if "vector_obs_embedding" in td.keys():
-            td.pop("vector_obs_embedding")
-        if "image_embedding" in td.keys():
-            td.pop("image_embedding")
+        if "obs_embedding" in td.keys():
+            td.pop("obs_embedding")
+        if "pixel_embedding" in td.keys():
+            td.pop("pixel_embedding")
 
     def eval(self):
         """Sets the agent to evaluation mode."""
@@ -184,7 +184,7 @@ class TD3Agent(BaseAgent):
         """Get eval action from actor network"""
         with set_exploration_type(ExplorationType.MODE):
             out_td = self.actor(td.to(self.device))
-        self.td_preprocessing(out_td)
+        # self.td_preprocessing(out_td)
         return out_td
 
     def add_experience(self, transition: td.TensorDict):

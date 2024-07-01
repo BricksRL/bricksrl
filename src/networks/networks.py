@@ -298,8 +298,8 @@ def get_vec_stochastic_actor(
 
     dist_class = TanhNormal
     dist_kwargs = {
-        "low": action_spec.space.low,
-        "high": action_spec.space.high,
+        "min": action_spec.space.low,
+        "max": action_spec.space.high,
         "tanh_loc": False,
     }
     actor_extractor = NormalParamExtractor(
@@ -404,8 +404,8 @@ def get_mixed_stochastic_actor(
 
     dist_class = TanhNormal
     dist_kwargs = {
-        "low": action_spec.space.low,
-        "high": action_spec.space.high,
+        "min": action_spec.space.low,
+        "max": action_spec.space.high,
         "tanh_loc": False,
     }
     actor = ProbabilisticActor(
