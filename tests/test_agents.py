@@ -11,7 +11,6 @@ from torchrl.envs.utils import step_mdp
 def collection_round(env, agent, max_steps=1000):
     td = env.reset()
     for _ in range(max_steps):
-        print(td)
         td = agent.get_action(td)
         td = env.step(td)
         agent.add_experience(td)
