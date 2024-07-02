@@ -1,6 +1,6 @@
 # BricksRL
 
-![Tests](https://github.com/BricksRL/bricksrl/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/BricksRL/bricksrl/actions/workflows/ci.yaml/badge.svg?branch=main)
 ![Python](https://img.shields.io/badge/python-3.8%20%7C%203.9-blue)
 [![arXiv](https://img.shields.io/badge/arXiv-2406.17490-b31b1b.svg)](https://arxiv.org/abs/2406.17490)
 [![Website](https://img.shields.io/badge/Website-Visit%20Now-blue)](https://bricksrl.github.io/ProjectPage/)
