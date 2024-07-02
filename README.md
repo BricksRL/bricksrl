@@ -1,5 +1,10 @@
 # BricksRL
 
+![Tests](https://github.com/your-org/your-repo/actions/workflows/tests.yml/badge.svg)
+[![arXiv](https://img.shields.io/badge/arXiv-2406.17490-b31b1b.svg)](https://arxiv.org/abs/2406.17490)
+[![Website](https://img.shields.io/badge/Website-Visit%20Now-blue)](https://bricksrl.github.io/ProjectPage/)
+
+
 BricksRL allows the training of custom LEGO robots using deep reinforcement learning. By integrating [PyBricks](https://pybricks.com/) and [TorchRL](https://pytorch.org/rl/stable/index.html), it facilitates efficient real-world training via Bluetooth communication between LEGO hubs and a local computing device. Check out our [paper](https://arxiv.org/abs/2406.17490)!
 
 For additional information and building instructions for the robots, view the project page [BricksRL](https://bricksrl.github.io/ProjectPage/).
