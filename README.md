@@ -1,7 +1,7 @@
 # BricksRL
 
 ![Tests](https://github.com/your-org/your-repo/actions/workflows/tests.yml/badge.svg)
-[![arXiv](https://img.shields.io/badge/arXiv-2301.00000-b31b1b.svg)](https://arxiv.org/abs/2406.17490)
+[![arXiv](https://img.shields.io/badge/arXiv-2406.17490-b31b1b.svg)](https://arxiv.org/abs/2406.17490)
 [![Website](https://img.shields.io/badge/Website-Visit%20Now-blue)](https://bricksrl.github.io/ProjectPage/)
 
 
