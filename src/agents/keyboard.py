@@ -29,10 +29,10 @@ class KeyboardAgent(BaseAgent):
         }
         self.current_action = None
         self.setup_key_listener()
-
+        self.buffer_batch_size = agent_config.batch_size
         # Define Replay Buffer
         self.replay_buffer = self.create_replay_buffer(
-            batch_size=agent_config.batch_size,
+            batch_size=self.buffer_batch_size,
             prb=False,
             buffer_size=agent_config.buffer_size,
             device=device,
@@ -69,7 +69,12 @@ class KeyboardAgent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            self.replay_buffer.load_state_dict(torch.load(path))
+            self.replay_buffer.load(path)
+            if self.replay_buffer._batch_size != self.buffer_batch_size:
+                Warning(
+                    "Batch size of the loaded replay buffer is different from the agent's config batch size! Rewriting the batch size to match the agent's config batch size."
+                )
+                self.replay_buffer._batch_size = self.buffer_batch_size
             print("Replay Buffer loaded")
             print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
         except:
@@ -84,7 +89,7 @@ class KeyboardAgent(BaseAgent):
         batch_size=256,
         prb=False,
         buffer_size=100000,
-        buffer_scratch_dir=None,
+        buffer_scratch_dir="./scratch",
         device="cpu",
         prefetch=3,
     ):
@@ -95,10 +100,10 @@ class KeyboardAgent(BaseAgent):
             storage=LazyMemmapStorage(
                 buffer_size,
                 scratch_dir=buffer_scratch_dir,
-                device=device,
             ),
             batch_size=batch_size,
         )
+        replay_buffer.append_transform(lambda x: x.to(device))
         return replay_buffer
 
     @torch.no_grad()
@@ -111,11 +116,11 @@ class KeyboardAgent(BaseAgent):
 
     @torch.no_grad()
     def get_eval_action(self, td: TensorDictBase) -> TensorDictBase:
-        """Get eval action from actor network"""
-        with set_exploration_type(ExplorationType.MODE):
-            out_td = self.actor(td.to(self.device))
-        self.td_preprocessing(out_td)
-        return out_td
+        """Get action from actor network or keyboard"""
+        while self.current_action is None:
+            time.sleep(0.01)  # Add a small sleep to avoid blocking
+        td.set("action", torch.tensor(self.current_action).float().unsqueeze(0))
+        return td
 
     def add_experience(self, transition: td.TensorDict):
         """Add experience to replay buffer"""

@@ -79,7 +79,7 @@ def logout(agent):
         save_dict.update(buffer_dict)
     if len(save_dict) > 0:
         save_name = input("Enter the name of the file to save: ")
-        torch.save(save_dict, save_name + ".pth")
+        agent.replay_buffer.dump(save_name)
 
 
 def login(agent):
