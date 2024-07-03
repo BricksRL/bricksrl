@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from torchrl.envs import (
     CatFrames,
     Compose,
@@ -10,6 +11,7 @@ from torchrl.envs import (
 )
 
 from environments.roboarm_mixed_v0.RoboArmMixedEnv import RoboArmMixedEnv_v0
+from environments.roboarm_pickplace_v0.RoboArmPickPlaceEnv import RoboArmPickPlaceEnv_v0
 from environments.roboarm_v0.RoboArmEnv import RoboArmEnv_v0
 from environments.roboarm_v0.RoboArmSim import RoboArmSimEnv_v0
 from environments.runaway_v0.RunAwayEnv import RunAwayEnv_v0
@@ -17,14 +19,18 @@ from environments.spinning_v0.SpinningEnv import SpinningEnv_v0
 from environments.walker_v0.WalkerEnv import WalkerEnv_v0
 from environments.walker_v0.WalkerEnvSim import WalkerEnvSim_v0
 
-
 VIDEO_LOGGING_ENVS = ["roboarm_mixed-v0", "walker_mixed-v0"]
 ALL_2WHEELER_ENVS = ["spinning-v0", "runaway-v0"]
 ALL_WALKER_ENVS = [
     "walker-v0",
     "walker_sim-v0",
 ]
-ALL_ROBOARM_ENVS = ["roboarm-v0", "roboarm_mixed-v0", "roboarm_sim-v0"]
+ALL_ROBOARM_ENVS = [
+    "roboarm-v0",
+    "roboarm_mixed-v0",
+    "roboarm_sim-v0",
+    "roboarm_pickplace-v0",
+]
 ALL_ENVS = ALL_2WHEELER_ENVS + ALL_WALKER_ENVS + ALL_ROBOARM_ENVS
 
 
@@ -125,6 +131,14 @@ def make(name="RunAway", env_conf=None):
             reward_signal=env_conf.reward_signal,
             camera_id=env_conf.camera_id,
             goal_radius=env_conf.goal_radius,
+        )
+    elif name == "roboarm_pickplace-v0":
+        return RoboArmPickPlaceEnv_v0(
+            max_episode_steps=env_conf.max_episode_steps,
+            sleep_time=env_conf.sleep_time,
+            verbose=env_conf.verbose,
+            reward_signal=env_conf.reward_signal,
+            camera_id=env_conf.camera_id,
         )
     else:
         print("Environment not found")

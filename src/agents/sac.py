@@ -52,14 +52,13 @@ class SACAgent(BaseAgent):
 
         self.batch_size = agent_config.batch_size
         # Define Replay Buffer
+        self.buffer_batch_size = agent_config.batch_size
         self.replay_buffer = self.create_replay_buffer(
             batch_size=self.batch_size,
             prb=agent_config.prb,
             buffer_size=agent_config.buffer_size,
-            device=device,
             buffer_scratch_dir="/tmp",
         )
-
         # Define Optimizer
         critic_params = list(
             self.loss_module.qvalue_network_params.flatten_keys().values()
@@ -139,7 +138,7 @@ class SACAgent(BaseAgent):
         batch_size=256,
         prb=False,
         buffer_size=100000,
-        buffer_scratch_dir=None,
+        buffer_scratch_dir=".",
         device="cpu",
         prefetch=3,
     ):
