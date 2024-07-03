@@ -49,7 +49,7 @@ def logout(agent):
     x = input("Do you want to save the replay buffer? (y/n)")
     if x == "y":
         save_name = input("Enter the name of the file to save: ")
-        torch.save(agent.replay_buffer.state_dict(), save_name + ".pth")
+        agent.replay_buffer.dump(save_name)
 
 
 def login(agent):

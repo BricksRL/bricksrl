@@ -50,12 +50,14 @@ class SACAgent(BaseAgent):
         # Reset weights
         self.reset_params = agent_config.reset_params
 
+        self.batch_size = agent_config.batch_size
         # Define Replay Buffer
         self.replay_buffer = self.create_replay_buffer(
-            batch_size=agent_config.batch_size,
+            batch_size=self.batch_size,
             prb=agent_config.prb,
             buffer_size=agent_config.buffer_size,
             device=device,
+            buffer_scratch_dir="/tmp",
         )
 
         # Define Optimizer
@@ -99,7 +101,12 @@ class SACAgent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            self.replay_buffer.load_state_dict(torch.load(path))
+            self.replay_buffer.load(path)
+            if self.replay_buffer._batch_size != self.batch_size:
+                Warning(
+                    "Batch size of the loaded replay buffer is different from the agent's config batch size! Rewriting the batch size to match the agent's config batch size."
+                )
+                self.replay_buffer._batch_size = self.batch_size
             print("Replay Buffer loaded")
             print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
         except:
