@@ -4,8 +4,8 @@ import tensordict as td
 import torch
 from pynput import keyboard
 from tensordict import TensorDictBase
-from torchrl.data import TensorDictPrioritizedReplayBuffer, TensorDictReplayBuffer
-from torchrl.data.replay_buffers.storages import LazyMemmapStorage, LazyTensorStorage
+from torchrl.data import TensorDictReplayBuffer
+from torchrl.data.replay_buffers.storages import LazyMemmapStorage
 
 from src.agents.base import BaseAgent
 
