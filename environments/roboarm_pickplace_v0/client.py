@@ -4,7 +4,7 @@ import ustruct
 from micropython import kbd_intr
 from pybricks.hubs import InventorHub
 from pybricks.parameters import Port
-from pybricks.pupdevices import ColorSensor, Motor
+from pybricks.pupdevices import Motor
 from pybricks.tools import wait
 from uselect import poll
 
