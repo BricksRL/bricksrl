@@ -18,7 +18,7 @@ class VecObsDummyEnv(EnvBase):
 
     action_dim = 4
     state_dim = 7
-    observation_key = "vec_observation"
+    observation_key = "observation"
 
     def __init__(self, max_episode_steps=10):
         self.max_episode_steps = max_episode_steps
@@ -100,7 +100,7 @@ class VecGoalObsDummyEnv(EnvBase):
 
     action_dim = 4
     state_dim = 7
-    observation_key = "vec_observation"
+    observation_key = "observation"
     goal_observation_key = "goal_observation"
 
     def __init__(self, max_episode_steps=10):

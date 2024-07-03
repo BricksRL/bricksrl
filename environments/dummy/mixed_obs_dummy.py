@@ -18,8 +18,8 @@ class MixedObsDummyEnv(EnvBase):
 
     action_dim = 4
     state_dim = 7
-    vec_observation_key = "vec_observation"
-    image_observation_key = "image_observation"
+    observation_key = "observation"
+    pixel_observation_key = "pixels"
 
     def __init__(self, max_episode_steps=10):
         self.max_episode_steps = max_episode_steps
@@ -35,14 +35,14 @@ class MixedObsDummyEnv(EnvBase):
             high=torch.ones((1, self.state_dim)),
         )
 
-        image_observation_spec = BoundedTensorSpec(
+        pixel_observation_spec = BoundedTensorSpec(
             low=torch.zeros((1,) + (64, 64, 3), dtype=torch.uint8),
             high=torch.ones((1,) + (64, 64, 3), dtype=torch.uint8) * 255,
         )
 
         self.observation_spec = CompositeSpec(shape=(1,))
-        self.observation_spec.set(self.vec_observation_key, observation_spec)
-        self.observation_spec.set(self.image_observation_key, image_observation_spec)
+        self.observation_spec.set(self.observation_key, observation_spec)
+        self.observation_spec.set(self.pixel_observation_key, pixel_observation_spec)
         super().__init__(batch_size=self._batch_size)
 
     def _set_seed(self, seed: int):
@@ -57,12 +57,12 @@ class MixedObsDummyEnv(EnvBase):
         """
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
-        observation = self.observation_spec[self.vec_observation_key].rand()
-        image_observation = self.observation_spec[self.image_observation_key].rand()
+        observation = self.observation_spec[self.observation_key].rand()
+        pixel_observation = self.observation_spec[self.pixel_observation_key].rand()
         return TensorDict(
             {
-                self.vec_observation_key: observation.float(),
-                self.image_observation_key: image_observation,
+                self.observation_key: observation.float(),
+                self.pixel_observation_key: pixel_observation,
             },
             batch_size=[1],
         )
@@ -78,8 +78,8 @@ class MixedObsDummyEnv(EnvBase):
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         """ """
         action = tensordict.get("action").cpu().numpy()
-        observation = self.observation_spec[self.vec_observation_key].rand()
-        image_observation = self.observation_spec[self.image_observation_key].rand()
+        observation = self.observation_spec[self.observation_key].rand()
+        pixel_observation = self.observation_spec[self.pixel_observation_key].rand()
 
         reward, done = self.reward(
             action=action,
@@ -87,8 +87,8 @@ class MixedObsDummyEnv(EnvBase):
         )
         next_tensordict = TensorDict(
             {
-                self.vec_observation_key: observation.float(),
-                self.image_observation_key: image_observation,
+                self.observation_key: observation.float(),
+                self.pixel_observation_key: pixel_observation,
                 "reward": torch.tensor([reward]).float(),
                 "done": torch.tensor([done]).bool(),
             },

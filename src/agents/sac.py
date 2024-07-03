@@ -50,12 +50,14 @@ class SACAgent(BaseAgent):
         # Reset weights
         self.reset_params = agent_config.reset_params
 
+        self.batch_size = agent_config.batch_size
         # Define Replay Buffer
         self.replay_buffer = self.create_replay_buffer(
-            batch_size=agent_config.batch_size,
+            batch_size=self.batch_size,
             prb=agent_config.prb,
             buffer_size=agent_config.buffer_size,
             device=device,
+            buffer_scratch_dir="/tmp",
         )
 
         # Define Optimizer
@@ -79,7 +81,6 @@ class SACAgent(BaseAgent):
         # general stats
         self.collected_transitions = 0
         self.total_updates = 0
-        self.do_pretrain = agent_config.pretrain
 
     def get_agent_statedict(self):
         """Save agent"""
@@ -100,7 +101,12 @@ class SACAgent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            self.replay_buffer.load_state_dict(torch.load(path))
+            self.replay_buffer.load(path)
+            if self.replay_buffer._batch_size != self.batch_size:
+                Warning(
+                    "Batch size of the loaded replay buffer is different from the agent's config batch size! Rewriting the batch size to match the agent's config batch size."
+                )
+                self.replay_buffer._batch_size = self.batch_size
             print("Replay Buffer loaded")
             print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
         except:
@@ -123,10 +129,10 @@ class SACAgent(BaseAgent):
         td.pop("scale")
         td.pop("loc")
         td.pop("params")
-        if "vector_obs_embedding" in td.keys():
-            td.pop("vector_obs_embedding")
-        if "image_embedding" in td.keys():
-            td.pop("image_embedding")
+        if "obs_embedding" in td.keys():
+            td.pop("obs_embedding")
+        if "pixel_embedding" in td.keys():
+            td.pop("pixel_embedding")
 
     def create_replay_buffer(
         self,
@@ -147,7 +153,6 @@ class SACAgent(BaseAgent):
                 prefetch=1,
                 storage=LazyTensorStorage(
                     buffer_size,
-                    device=device,
                 ),
             )
         else:
@@ -157,10 +162,10 @@ class SACAgent(BaseAgent):
                 storage=LazyMemmapStorage(
                     buffer_size,
                     scratch_dir=buffer_scratch_dir,
-                    device=device,
                 ),
                 batch_size=batch_size,
             )
+        replay_buffer.append_transform(lambda x: x.to(device))
         return replay_buffer
 
     @torch.no_grad()
@@ -183,18 +188,6 @@ class SACAgent(BaseAgent):
         """Add experience to replay buffer"""
         self.replay_buffer.extend(transition)
         self.collected_transitions += 1
-
-    def pretrain(self, wandb, batch_size=64, num_updates=1):
-        """Pretrain the agent with simple behavioral cloning"""
-        # TODO: implement pretrain for testing
-        # for i in range(num_updates):
-        #     batch = self.replay_buffer.sample(batch_size)
-        #     pred, _ = self.actor(batch["observations"].float())
-        #     loss = torch.mean((pred - batch["actions"]) ** 2)
-        #     self.optimizer.zero_grad()
-        #     loss.backward()
-        #     self.optimizer.step()
-        #     wandb.log({"pretrain/loss": loss.item()})
 
     def train(self, batch_size=64, num_updates=1):
         """Train the agent"""

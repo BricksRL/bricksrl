@@ -5,7 +5,7 @@ from src.agents.random import RandomAgent
 from src.agents.sac import SACAgent
 from src.agents.td3 import TD3Agent
 
-all_agents = ["td3", "sac", "bc", "iql", "cql", "random"]
+all_agents = ["td3", "sac", "iql", "cql", "random"]
 
 
 def get_agent(action_spec, state_spec, cfg):

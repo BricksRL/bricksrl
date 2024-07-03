@@ -1,8 +1,8 @@
 import time
+from typing import Tuple
 
 import numpy as np
 import torch
-
 from environments.base.base_env import BaseEnv
 from tensordict import TensorDict, TensorDictBase
 from torchrl.data.tensor_specs import BoundedTensorSpec, CompositeSpec
@@ -18,25 +18,21 @@ class SpinningEnv_v0(BaseEnv):
         sleep_time (float): The time to wait between sending actions and receiving the next state. Defaults to 0.2.
         verbose (bool): Whether to print verbose information during the environment's execution. Defaults to False.
 
-    Attributes:
-        action_space (gym.spaces.Box): The continuous action space in the range [-1, 1].
-        observation_space (gym.spaces.Box): The state space consisting of 5 sensor readings (left, right, pitch, roll, rotation_velocity) and 1 direction (left or right).
-
-    Methods:
-        sample_random_action() -> np.ndarray: Samples a random action from the action space.
-        normalize_state(state: np.ndarray) -> np.ndarray: Normalizes and clips the state to be compatible with the agent.
-        reset() -> np.ndarray: Resets the environment and returns the initial state.
     """
 
     action_dim = 2  # to control the wheel motors independently
     state_dim = 5  # 5 sensors (left, right, pitch, roll, rotation_velocity) + 1 direction (left or right)
 
-    motor_angles = [0, 360]
-    pitch_angles = [-90, 90]
-    roll_angles = [-90, 90]
-    rotation_velocity = [-100, 100]  # adapt to real values
-    observation_key = "vec_observation"
-    original_vec_observation_key = "original_vec_observation"
+    observation_ranges = {
+        "left_motor_angle": [0, 360],
+        "right_motor_angle": [0, 360],
+        "pitch_angle": [-90, 90],
+        "roll_angle": [-90, 90],
+        "rotation_velocity": [-100, 100],
+        "direction": [0, 1],
+    }
+
+    observation_key = "observation"
 
     def __init__(
         self,
@@ -58,12 +54,12 @@ class SpinningEnv_v0(BaseEnv):
         # Define observation spec
         bounds = torch.tensor(
             [
-                self.motor_angles,
-                self.motor_angles,
-                self.pitch_angles,
-                self.roll_angles,
-                self.rotation_velocity,
-                [0, 1],
+                self.observation_ranges["left_motor_angle"],
+                self.observation_ranges["right_motor_angle"],
+                self.observation_ranges["pitch_angle"],
+                self.observation_ranges["roll_angle"],
+                self.observation_ranges["rotation_velocity"],
+                self.observation_ranges["direction"],
             ]
         )
         low_bounds = bounds[:, 0].unsqueeze(0)
@@ -80,25 +76,6 @@ class SpinningEnv_v0(BaseEnv):
         super().__init__(
             action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
         )
-
-    def normalize_state(self, state: np.ndarray) -> torch.Tensor:
-        """
-        Normalize the state to be processed by the agent.
-
-        Args:
-            state (np.ndarray): The state to be normalized.
-
-        Returns:
-            torch.Tensor: The normalized state.
-        """
-        state = (
-            torch.from_numpy(state)
-            - self.observation_spec[self.observation_key].space.low
-        ) / (
-            self.observation_spec[self.observation_key].space.high
-            - self.observation_spec[self.observation_key].space.low
-        )
-        return state
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
         """
@@ -119,65 +96,56 @@ class SpinningEnv_v0(BaseEnv):
         state = self.read_from_hub()
         self.direction = np.random.randint(0, 2)  # (0,1) left or right
         full_original_state = np.concatenate(
-            (state, np.array([[self.direction]])), axis=1
+            (state, np.array([[self.direction]])), axis=1, dtype=np.float32
         )
-        norm_observation = self.normalize_state(full_original_state)
+
         return TensorDict(
             {
-                self.observation_key: norm_observation.float(),
-                self.original_vec_observation_key: torch.from_numpy(
-                    full_original_state
-                ).float(),
+                self.observation_key: torch.tensor(full_original_state),
             },
             batch_size=[1],
         )
 
-    def reward(self, tensordict: TensorDictBase) -> TensorDictBase:
+    def reward(self, next_observation: np.array) -> Tuple[float, bool]:
         """Reward function of Spinning environment.
         If the self.direction is 0, the robot is spinning left, otherwise right.
         We want to maximise in those cases the angular velocity (last element of the state vector).
         If the robot is spinning in the wrong direction, we want to minimize the angular velocity.
         """
         done = False
-        velocity = tensordict.get((self.original_vec_observation_key))[:, -2]
+        velocity = next_observation[:, -2]
 
         if self.direction == 0:
             reward = velocity
         else:
             reward = -velocity
-        tensordict.set("reward", reward.clone().detach().float())
-        tensordict.set("done", torch.tensor([done]).bool())
-        return tensordict
+
+        return reward, done
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         """ """
         # Send action to hub to receive next state
         self.send_to_hub(tensordict.get("action").cpu().numpy().squeeze())
-        time.sleep(
-            self.sleep_time
-        )  # we need to wait some time for sensors to read and to
+        time.sleep(self.sleep_time)  # wait some time for sensors to read and to
         # receive the next state
         next_observation = self.read_from_hub()
         full_original_next_observation = np.concatenate(
-            (next_observation, np.array([[self.direction]])), axis=1
+            (next_observation, np.array([[self.direction]])), axis=1, dtype=np.float32
         )
         # calc reward and done
+        reward, done = self.reward(full_original_next_observation)
+
         next_tensordict = TensorDict(
             {
-                self.observation_key: self.normalize_state(
-                    full_original_next_observation
-                ).float(),
-                self.original_vec_observation_key: torch.from_numpy(
-                    full_original_next_observation
-                ).float(),
+                self.observation_key: torch.tensor(full_original_next_observation),
+                "reward": torch.tensor([reward]).float(),
+                "done": torch.tensor([done]).bool(),
             },
             batch_size=[1],
         )
-        next_tensordict = self.reward(next_tensordict)
-
         # increment episode step counter
         self.episode_step_iter += 1
         if self.episode_step_iter >= self.max_episode_steps:
             next_tensordict.set("done", torch.tensor([True]).bool())
-            # To not act
+
         return next_tensordict

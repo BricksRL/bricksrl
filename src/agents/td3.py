@@ -62,12 +62,14 @@ class TD3Agent(BaseAgent):
         )
         self.target_net_updater.init_()
 
+        self.batch_size = agent_config.batch_size
         # Define Replay Buffer
         self.replay_buffer = self.create_replay_buffer(
-            batch_size=agent_config.batch_size,
+            batch_size=self.batch_size,
             prb=agent_config.prb,
             buffer_size=agent_config.buffer_size,
             device=device,
+            buffer_scratch_dir="/tmp",
         )
 
         # Define Optimizer
@@ -90,7 +92,6 @@ class TD3Agent(BaseAgent):
         self.collected_transitions = 0
         # td stats for delayed update
         self.total_updates = 0
-        self.do_pretrain = False
 
     def get_agent_statedict(self):
         """Save agent"""
@@ -111,7 +112,12 @@ class TD3Agent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            self.replay_buffer.load_state_dict(torch.load(path))
+            self.replay_buffer.load(path)
+            if self.replay_buffer._batch_size != self.batch_size:
+                Warning(
+                    "Batch size of the loaded replay buffer is different from the agent's config batch size! Rewriting the batch size to match the agent's config batch size."
+                )
+                self.replay_buffer._batch_size = self.batch_size
             print("Replay Buffer loaded")
             print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
         except:
@@ -144,7 +150,6 @@ class TD3Agent(BaseAgent):
                 prefetch=1,
                 storage=LazyTensorStorage(
                     buffer_size,
-                    device=device,
                 ),
             )
         else:
@@ -154,19 +159,19 @@ class TD3Agent(BaseAgent):
                 storage=LazyMemmapStorage(
                     buffer_size,
                     scratch_dir=buffer_scratch_dir,
-                    device=device,
                 ),
                 batch_size=batch_size,
             )
+        replay_buffer.append_transform(lambda x: x.to(device))
         return replay_buffer
 
     def td_preprocessing(self, td: TensorDictBase) -> TensorDictBase:
         # TODO not ideal to have this here
         td.pop("param")
-        if "vector_obs_embedding" in td.keys():
-            td.pop("vector_obs_embedding")
-        if "image_embedding" in td.keys():
-            td.pop("image_embedding")
+        if "obs_embedding" in td.keys():
+            td.pop("obs_embedding")
+        if "pixel_embedding" in td.keys():
+            td.pop("pixel_embedding")
 
     def eval(self):
         """Sets the agent to evaluation mode."""
@@ -186,7 +191,7 @@ class TD3Agent(BaseAgent):
         """Get eval action from actor network"""
         with set_exploration_type(ExplorationType.MODE):
             out_td = self.actor(td.to(self.device))
-        self.td_preprocessing(out_td)
+        # self.td_preprocessing(out_td)
         return out_td
 
     def add_experience(self, transition: td.TensorDict):
