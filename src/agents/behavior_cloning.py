@@ -7,6 +7,7 @@ from torchrl.data import BoundedTensorSpec, TensorDictReplayBuffer
 
 from torchrl.data.replay_buffers.storages import LazyMemmapStorage
 from torchrl.envs.utils import ExplorationType, set_exploration_type
+from torchrl.envs import RenameTransform
 
 from src.agents.base import BaseAgent
 from src.networks.networks import get_deterministic_actor, get_stochastic_actor
@@ -50,7 +51,7 @@ class BehavioralCloningAgent(BaseAgent):
         )
 
         # create replay buffer
-        self.offline_data_path = None
+        self.batch_size = agent_config.batch_size
         self.replay_buffer = self.create_replay_buffer()
 
         # general stats
@@ -75,7 +76,12 @@ class BehavioralCloningAgent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            self.replay_buffer.load_state_dict(torch.load(path))
+            self.replay_buffer.load(path)
+            if self.replay_buffer._batch_size != self.batch_size:
+                Warning(
+                    "Batch size of the loaded replay buffer is different from the agent's config batch size! Rewriting the batch size to match the agent's config batch size."
+                )
+                self.replay_buffer._batch_size = self.batch_size
             print("Replay Buffer loaded")
             print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
         except:
@@ -95,8 +101,8 @@ class BehavioralCloningAgent(BaseAgent):
     def create_replay_buffer(
         self,
         batch_size=256,
-        buffer_size=10000,
-        buffer_scratch_dir=None,
+        buffer_size=1000000,
+        buffer_scratch_dir="./tmp",
         device="cpu",
         prefetch=3,
     ):
@@ -108,10 +114,10 @@ class BehavioralCloningAgent(BaseAgent):
             storage=LazyMemmapStorage(
                 buffer_size,
                 scratch_dir=buffer_scratch_dir,
-                device=device,
             ),
             batch_size=batch_size,
         )
+        replay_buffer.append_transform(lambda x: x.to(device))
 
         return replay_buffer
 
@@ -165,10 +171,12 @@ class BehavioralCloningAgent(BaseAgent):
     def train(self, batch_size=64, num_updates=1):
         """Train the agent"""
         log_data = {}
+        rename = RenameTransform(in_keys=["image_observation", ("next", "image_observation")], out_keys=["pixels", ("next", "pixels")])
 
         for i in range(num_updates):
             batch = self.replay_buffer.sample(batch_size).to(self.device)
             orig_action = batch.get("action").clone()
+
             out_dict = self.actor(batch)
             loss = torch.mean((out_dict.get("action") - orig_action) ** 2)
             self.optimizer.zero_grad()

@@ -146,7 +146,7 @@ class RoboArmPickPlaceEnv_v0(BaseEnv):
                 self.observation_key: torch.tensor(observation).float(),
                 self.pixels_observation_key: torch.from_numpy(resized_frame)[
                     None, :
-                ].float(),
+                ].to(torch.uint8),
             },
             batch_size=[1],
         )
@@ -187,7 +187,7 @@ class RoboArmPickPlaceEnv_v0(BaseEnv):
                 self.observation_key: torch.tensor(next_observation).float(),
                 self.pixels_observation_key: torch.from_numpy(resized_frame)[
                     None, :
-                ].float(),
+                ].to(torch.uint8),
                 "reward": torch.tensor([reward]).float(),
                 "done": torch.tensor([done]).bool(),
             },
