@@ -159,4 +159,6 @@ Evaluation videos of the trained agents can be found [here](https://sites.google
 
 
 
+## High-Level Examples
+In the [example notebook](example_notebook.ipynb) we provide high-level training examples to train a **SAC agent** in the **RoboArmSim-v0** environment and a **TD3 agent** in the **WalkerSim-v0** enviornment. 
 
