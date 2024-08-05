@@ -18,8 +18,8 @@ class KeyboardAgent(BaseAgent):
 
         # Define the key to action mapping
         self.key_action_mapping = {
-            "a": [-0.15, 0, 0, 0],  # Rotate motor -30
-            "d": [0.15, 0, 0, 0],  # Rotate motor +30
+            "a": [0.15, 0, 0, 0],  # Rotate motor -30
+            "d": [-0.15, 0, 0, 0],  # Rotate motor +30
             "s": [0, -0.20, 0, 0],  # Low motor -10
             "w": [0, 0.20, 0, 0],  # Low motor +10
             "q": [0, 0, -0.25, 0],  # High motor -15
@@ -69,7 +69,9 @@ class KeyboardAgent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            self.replay_buffer.load(path)
+            # self.replay_buffer.load(path)
+            loaded_data = TensorDictBase.load_memmap(path).to_tensordict()
+            self.replay_buffer.extend(loaded_data)
             if self.replay_buffer._batch_size != self.buffer_batch_size:
                 Warning(
                     "Batch size of the loaded replay buffer is different from the agent's config batch size! Rewriting the batch size to match the agent's config batch size."
@@ -104,6 +106,9 @@ class KeyboardAgent(BaseAgent):
             batch_size=batch_size,
         )
         replay_buffer.append_transform(lambda x: x.to(device))
+
+
+
         return replay_buffer
 
     @torch.no_grad()
@@ -124,7 +129,14 @@ class KeyboardAgent(BaseAgent):
 
     def add_experience(self, transition: td.TensorDict):
         """Add experience to replay buffer"""
-        self.replay_buffer.extend(transition)
+        
+        # transform pixels to int if pixels in observation spec
+        save_transition = transition.copy()
+        if "pixels" in transition.keys():
+            save_transition.set("pixels", (save_transition.get("pixels")*255).to(torch.int64))
+            save_transition.set(("next", "pixels"), (save_transition.get(("next", "pixels"))*255).to(torch.int64))
+
+        self.replay_buffer.extend(save_transition)
         self.collected_transitions += 1
 
     def train(self, batch_size=64, num_updates=1):

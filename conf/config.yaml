@@ -4,10 +4,10 @@ run_name: ""
 verbose: 0
 
 device: "cuda"
-episodes: 5000
+episodes: 250
 
 defaults:
   - _self_
   # random, sac, td3, droq
-  - agent: bc 
-  - env: roboarm_pickplace-v0
+  - agent: sac 
+  - env: walker_sim-v0

@@ -5,9 +5,11 @@ from torchrl.envs import (
     Compose,
     DoubleToFloat,
     ObservationNorm,
+    PermuteTransform,
     RewardSum,
     ToTensorImage,
     TransformedEnv,
+    VIPRewardTransform,
 )
 
 from environments.roboarm_mixed_v0.RoboArmMixedEnv import RoboArmMixedEnv_v0
@@ -74,6 +76,18 @@ def make_env(config):
     if "pixels" in observation_keys:
         transforms.append(ToTensorImage(in_keys=["pixels"], from_int=True))
 
+    if config.env.name == "roboarm_pickplace-v0" and config.env.use_vip_reward:
+        transforms.append(PermuteTransform((-1, -2, -3), in_keys=["pixels"]))
+        transforms.append(
+            VIPRewardTransform(
+                in_keys=["pixels"],
+                download=True,
+                size=100,
+                model_name="resnet50",
+                tensor_pixels_keys=["pixels", ("next", "pixels")], # Does not seem to work
+            )
+        )
+
     env = TransformedEnv(env, Compose(*transforms))
 
     action_spec = env.action_spec
@@ -139,6 +153,9 @@ def make(name="RunAway", env_conf=None):
             verbose=env_conf.verbose,
             reward_signal=env_conf.reward_signal,
             camera_id=env_conf.camera_id,
+            image_size=env_conf.image_size,
+            target_image_path=env_conf.target_image_path,
+            use_vip_reward=env_conf.use_vip_reward,
         )
     else:
         print("Environment not found")

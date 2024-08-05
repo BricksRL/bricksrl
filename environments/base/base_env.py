@@ -121,6 +121,16 @@ class BaseEnv(EnvBase):
     def _set_seed(self, seed: int):
         return super()._set_seed(seed)
 
+    def get_reset_tensordict(self, **kwargs) -> TensorDictBase:
+        """ """
+        return TensorDict(
+            {
+            },
+            batch_size=[
+                1,
+            ],
+        )
+
 
 class BaseSimEnv(EnvBase):
     """

@@ -1,7 +1,8 @@
 import os
 import sys
 import time
-
+import torch
+from tensordict import TensorDict
 import hydra
 import numpy as np
 import wandb
@@ -60,7 +61,7 @@ def run(cfg: DictConfig) -> None:
     quit = False
     try:
         for e in tqdm(range(train_episodes), desc="Training"):
-            td = env.reset()
+            td = env.reset(env.get_reset_tensordict())
             done = td.get("done", False)
             truncated = td.get("truncated", False)
             ep_return = 0

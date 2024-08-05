@@ -13,7 +13,13 @@ class RandomAgent(BaseAgent):
         )
 
         self.actor = None
-        self.replay_buffer = {}
+        self.replay_buffer = self.create_replay_buffer(
+            batch_size=256,
+            prb=False,
+            buffer_size=1000000,
+            device=device,
+            buffer_scratch_dir="/tmp",
+        )
 
     def eval(self):
         """Sets the agent to evaluation mode."""
@@ -37,3 +43,37 @@ class RandomAgent(BaseAgent):
     def train(self, batch_size=64, num_updates=1):
         """Train the agent"""
         return {}
+
+
+    def create_replay_buffer(
+        self,
+        batch_size=256,
+        prb=False,
+        buffer_size=100000,
+        buffer_scratch_dir=None,
+        device="cpu",
+        prefetch=3,
+    ):
+        """Create replay buffer"""
+        # TODO: make this part of base off policy agent
+        if prb:
+            replay_buffer = TensorDictPrioritizedReplayBuffer(
+                alpha=0.7,
+                beta=0.5,
+                pin_memory=False,
+                prefetch=1,
+                storage=LazyTensorStorage(
+                    buffer_size,
+                ),
+            )
+        else:
+            replay_buffer = TensorDictReplayBuffer(
+                pin_memory=False,
+                prefetch=prefetch,
+                storage=LazyMemmapStorage(
+                    buffer_size,
+                    scratch_dir=buffer_scratch_dir,
+                ),
+                batch_size=batch_size,
+            )
+        return replay_buffer

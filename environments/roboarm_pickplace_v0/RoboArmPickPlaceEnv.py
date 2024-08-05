@@ -37,6 +37,11 @@ class RoboArmPickPlaceEnv_v0(BaseEnv):
         verbose: bool = False,
         reward_signal: str = "dense",
         camera_id: int = 0,
+        image_size: Tuple[int, int] = (64, 64),
+        human_control: bool = False,
+        use_vip_reward: bool = False,
+        target_image_path: str = None,
+        mixed_observation: bool = True,
     ):
         self.sleep_time = sleep_time
 
@@ -46,9 +51,21 @@ class RoboArmPickPlaceEnv_v0(BaseEnv):
         ], "Reward signal must be dense or sparse."
         self.reward_signal = reward_signal
         self.max_episode_steps = max_episode_steps
+        self.image_size = image_size
+        self.human_control = human_control
 
         self.camera = cv2.VideoCapture(int(camera_id))
         self._batch_size = torch.Size([1])
+
+        if target_image_path is not None:
+            target_image = np.load(target_image_path)
+        else:
+            target_image = np.load(
+                "environments/roboarm_pickplace_v0/pickplace_green100_target.npy"
+            )
+        self.target_image = target_image
+        self.use_vip_reward = use_vip_reward
+        self.mixed_observation = mixed_observation
 
         # Define action spec
         self.action_spec = BoundedTensorSpec(
@@ -80,23 +97,30 @@ class RoboArmPickPlaceEnv_v0(BaseEnv):
         ret, frame = self.camera.read()
         if not ret:
             raise ValueError("Camera not available.")
-        resized_frame = cv2.resize(frame, (64, 64))
+        resized_frame = cv2.resize(frame, self.image_size)
         shape = resized_frame.shape
         pixels_observation_spec = BoundedTensorSpec(
-            low=torch.zeros((1,) + shape, dtype=torch.uint8),
-            high=torch.ones((1,) + shape, dtype=torch.uint8) * 255,
-            dtype=torch.uint8,
+            low=torch.zeros((1,) + shape, dtype=torch.int64),
+            high=torch.ones((1,) + shape, dtype=torch.int64) * 255,
+            dtype=torch.int64,
         )
+        if self.mixed_observation:
+            self.observation_spec = CompositeSpec(
+                {
+                    self.observation_key: observation_spec,
+                    self.pixels_observation_key: pixels_observation_spec,
+                },
+                shape=(1,),
+            )
+        else:
+            self.observation_spec = CompositeSpec(
+                {
+                    self.pixels_observation_key: pixels_observation_spec,
+                },
+                shape=(1,),
+            )
 
-        self.observation_spec = CompositeSpec(
-            {
-                self.observation_key: observation_spec,
-                self.pixels_observation_key: pixels_observation_spec,
-            },
-            shape=(1,),
-        )
-
-        self.goal_positions = self.init_camera_position()
+        _ = self.init_camera_position()
 
         super().__init__(
             action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
@@ -121,6 +145,21 @@ class RoboArmPickPlaceEnv_v0(BaseEnv):
 
         return
 
+    def get_reset_tensordict(self, **kwargs) -> TensorDictBase:
+        """ """
+        if self.use_vip_reward:
+            return TensorDict(
+                {
+                    "goal_image": torch.from_numpy(self.target_image)
+                    .to(torch.int64)
+                    .unsqueeze(0),
+                },
+                batch_size=[
+                    1,
+                ],
+            )
+        return TensorDict({},batch_size=[1])
+
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
         """
         Reset the environment and return the initial state.
@@ -130,23 +169,23 @@ class RoboArmPickPlaceEnv_v0(BaseEnv):
         """
         # TODO solve this fake action sending before to receive first state
         self.episode_step_iter = 0
-        if tensordict is not None:
-            action = tensordict.get("action").cpu().numpy().squeeze()
-        else:
-            action = np.zeros(self.action_dim)
+        action = np.zeros(self.action_dim)
         self.send_to_hub(action)
         time.sleep(self.sleep_time)
         observation = self.read_from_hub()
 
         ret, frame = self.camera.read()
-        resized_frame = cv2.resize(frame, (64, 64))
+        resized_frame = cv2.resize(frame, self.image_size)
 
         return TensorDict(
             {
                 self.observation_key: torch.tensor(observation).float(),
                 self.pixels_observation_key: torch.from_numpy(resized_frame)[
                     None, :
-                ].to(torch.uint8),
+                ].to(torch.int64),
+                # "goal_image": torch.from_numpy(self.target_image)
+                # .to(torch.int64)
+                # .unsqueeze(0),
             },
             batch_size=[1],
         )
@@ -181,18 +220,21 @@ class RoboArmPickPlaceEnv_v0(BaseEnv):
         reward, done = self.reward(
             frame,
         )
-        resized_frame = cv2.resize(frame, (64, 64))
+        resized_frame = cv2.resize(frame, self.image_size)
         next_tensordict = TensorDict(
             {
                 self.observation_key: torch.tensor(next_observation).float(),
                 self.pixels_observation_key: torch.from_numpy(resized_frame)[
                     None, :
-                ].to(torch.uint8),
+                ].to(torch.int64),
                 "reward": torch.tensor([reward]).float(),
                 "done": torch.tensor([done]).bool(),
+                # "goal_image": torch.from_numpy(self.target_image)
+                # .to(torch.int64)
+                # .unsqueeze(0),
             },
             batch_size=[1],
-        )
+        )  # .to(tensordict.device)
 
         # increment episode step counter
         self.episode_step_iter += 1

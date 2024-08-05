@@ -58,6 +58,7 @@ class SACAgent(BaseAgent):
             prb=agent_config.prb,
             buffer_size=agent_config.buffer_size,
             buffer_scratch_dir="/tmp",
+            device=device,
         )
         # Define Optimizer
         critic_params = list(

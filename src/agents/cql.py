@@ -111,7 +111,12 @@ class CQLAgent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            self.replay_buffer.load_state_dict(torch.load(path))
+            self.replay_buffer.load(path)
+            if self.replay_buffer._batch_size != self.batch_size:
+                Warning(
+                    "Batch size of the loaded replay buffer is different from the agent's config batch size! Rewriting the batch size to match the agent's config batch size."
+                )
+                self.replay_buffer._batch_size = self.batch_size
             print("Replay Buffer loaded")
             print("Replay Buffer size: ", self.replay_buffer.__len__(), "\n")
         except:
@@ -158,7 +163,6 @@ class CQLAgent(BaseAgent):
                 prefetch=1,
                 storage=LazyTensorStorage(
                     buffer_size,
-                    device=device,
                 ),
             )
         else:
@@ -168,10 +172,10 @@ class CQLAgent(BaseAgent):
                 storage=LazyMemmapStorage(
                     buffer_size,
                     scratch_dir=buffer_scratch_dir,
-                    device=device,
                 ),
                 batch_size=batch_size,
             )
+        replay_buffer.append_transform(lambda x: x.to(device))
         return replay_buffer
 
     @torch.no_grad()

@@ -2,7 +2,7 @@ name: iql
 lr: 3e-4
 batch_size: 256
 num_updates: 1
-prefill_episodes: 10
+prefill_episodes: 0
 
 num_cells: 256
 gamma: 0.99

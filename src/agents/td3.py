@@ -10,6 +10,8 @@ from torchrl.envs.utils import ExplorationType, set_exploration_type
 from torchrl.modules import AdditiveGaussianWrapper
 from torchrl.objectives import SoftUpdate
 from torchrl.objectives.td3 import TD3Loss
+from torchrl.objectives.td3_bc import TD3BCLoss
+from torchrl.envs.transforms import ToTensorImage
 
 from src.agents.base import BaseAgent
 from src.networks.networks import get_critic, get_deterministic_actor
@@ -36,6 +38,9 @@ class TD3Agent(BaseAgent):
         self.critic = get_critic(self.observation_keys, agent_config)
 
         self.model = nn.ModuleList([self.actor, self.critic]).to(device)
+
+        print(self.actor)
+        print(self.critic)
         # initialize networks
         self.init_nets(self.model)
 
@@ -48,14 +53,27 @@ class TD3Agent(BaseAgent):
         ).to(device)
 
         # define loss function
-        self.loss_module = TD3Loss(
-            actor_network=self.model[0],
-            qvalue_network=self.model[1],
-            action_spec=action_spec,
-            num_qvalue_nets=2,
-            loss_function=agent_config.loss_function,
-            separate_losses=False,
-        )
+        self.use_bc = agent_config.use_bc
+        if not self.use_bc:
+            self.loss_module = TD3Loss(
+                actor_network=self.model[0],
+                qvalue_network=self.model[1],
+                action_spec=action_spec,
+                num_qvalue_nets=2,
+                loss_function=agent_config.loss_function,
+                separate_losses=False,
+            )
+        else:
+            self.loss_module = TD3BCLoss(
+                actor_network=self.model[0],
+                qvalue_network=self.model[1],
+                action_spec=action_spec,
+                num_qvalue_nets=2,
+                loss_function=agent_config.loss_function,
+                separate_losses=False,
+                alpha=agent_config.alpha,
+            )
+
         # Define Target Network Updater
         self.target_net_updater = SoftUpdate(
             self.loss_module, eps=agent_config.soft_update_eps
@@ -112,7 +130,9 @@ class TD3Agent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            self.replay_buffer.load(path)
+            #self.replay_buffer.load(path)
+            loaded_data = TensorDictBase.load_memmap(path)
+            self.replay_buffer.extend(loaded_data)
             if self.replay_buffer._batch_size != self.batch_size:
                 Warning(
                     "Batch size of the loaded replay buffer is different from the agent's config batch size! Rewriting the batch size to match the agent's config batch size."
@@ -163,6 +183,13 @@ class TD3Agent(BaseAgent):
                 batch_size=batch_size,
             )
         replay_buffer.append_transform(lambda x: x.to(device))
+        # replay_buffer.append_transform(
+        #     ToTensorImage(
+        #         from_int=True,
+        #         shape_tolerant=True,
+        #         in_keys=["pixels", ("next", "pixels")],
+        #     )
+        # )
         return replay_buffer
 
     def td_preprocessing(self, td: TensorDictBase) -> TensorDictBase:
@@ -215,7 +242,10 @@ class TD3Agent(BaseAgent):
             else:
                 sampled_tensordict = sampled_tensordict.clone()
             # Update Critic Network
-            q_loss, _ = self.loss_module.value_loss(sampled_tensordict)
+            if self.use_bc:
+                q_loss, _ = self.loss_module.qvalue_loss(sampled_tensordict)
+            else:
+                q_loss, _ = self.loss_module.value_loss(sampled_tensordict)
             self.optimizer_critic.zero_grad()
             q_loss.backward()
             self.optimizer_critic.step()

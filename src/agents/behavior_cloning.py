@@ -7,7 +7,7 @@ from torchrl.data import BoundedTensorSpec, TensorDictReplayBuffer
 
 from torchrl.data.replay_buffers.storages import LazyMemmapStorage
 from torchrl.envs.utils import ExplorationType, set_exploration_type
-from torchrl.envs import RenameTransform
+from torchrl.envs import RenameTransform, ToTensorImage
 
 from src.agents.base import BaseAgent
 from src.networks.networks import get_deterministic_actor, get_stochastic_actor
@@ -32,12 +32,10 @@ class BehavioralCloningAgent(BaseAgent):
             self.actor = get_deterministic_actor(
                 self.observation_keys, action_spec, agent_config
             )
-            self.pretrain = self.pretrain_deter
         elif agent_config.policy_type == "stochastic":
             self.actor = get_stochastic_actor(
                 self.observation_keys, action_spec, agent_config
             )
-            self.pretrain = self.pretrain_stoch
         else:
             raise ValueError(
                 "policy_type not recognized, choose deterministic or stochastic"
@@ -76,7 +74,9 @@ class BehavioralCloningAgent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            self.replay_buffer.load(path)
+            # self.replay_buffer.load(path)
+            loaded_data = TensorDictBase.load_memmap(path)
+            self.replay_buffer.extend(loaded_data)
             if self.replay_buffer._batch_size != self.batch_size:
                 Warning(
                     "Batch size of the loaded replay buffer is different from the agent's config batch size! Rewriting the batch size to match the agent's config batch size."
@@ -118,6 +118,7 @@ class BehavioralCloningAgent(BaseAgent):
             batch_size=batch_size,
         )
         replay_buffer.append_transform(lambda x: x.to(device))
+        replay_buffer.append_transform(ToTensorImage(from_int=True, shape_tolerant=True))
 
         return replay_buffer
 
@@ -134,44 +135,11 @@ class BehavioralCloningAgent(BaseAgent):
     def add_experience(self, transition: td.TensorDict):
         """Add experience to replay buffer"""
 
-        # TODO: for bc we dont want to add to replay buffer
         pass
-
-    def pretrain_stoch(self, wandb, batch_size=64, num_updates=1):
-        """Pretrain the agent with simple behavioral cloning"""
-
-        for i in range(num_updates):
-            batch = self.replay_buffer.sample(batch_size)
-            input_td = td.TensorDict(
-                {"observation": batch["vec_observations"].float()}, batch_size=(256)
-            )
-            dist = self.actor.get_dist(input_td)
-            loss = -dist.log_prob(batch["actions"]).mean()
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-            wandb.log({"pretrain/loss": loss.item()})
-
-        self.actor.eval()
-
-    def pretrain_deter(self, wandb, batch_size=64, num_updates=1):
-        """Pretrain the agent with simple behavioral cloning"""
-
-        for i in range(num_updates):
-            batch = self.replay_buffer.sample(batch_size)
-            pred, _ = self.actor(batch["vec_observations"].float())
-            loss = torch.mean((pred - batch["actions"]) ** 2)
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-            wandb.log({"pretrain/loss": loss.item()})
-
-        self.actor.eval()
 
     def train(self, batch_size=64, num_updates=1):
         """Train the agent"""
         log_data = {}
-        rename = RenameTransform(in_keys=["image_observation", ("next", "image_observation")], out_keys=["pixels", ("next", "pixels")])
 
         for i in range(num_updates):
             batch = self.replay_buffer.sample(batch_size).to(self.device)

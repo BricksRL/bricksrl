@@ -42,7 +42,7 @@ def run(cfg: DictConfig) -> None:
     _ = input("Press Enter to start evaluation...")
     try:
         for e in tqdm(range(eval_episodes), desc="Evaluation"):
-            td = env.reset()
+            td = env.reset(env.get_reset_tensordict())
             done = td.get("done", False)
             truncated = td.get("truncated", False)
             ep_return = 0
@@ -55,7 +55,7 @@ def run(cfg: DictConfig) -> None:
                 ep_steps += 1
                 step_start_time = time.time()
                 td = agent.get_eval_action(td)
-                td = env.step(td)
+                td = env.step(td.to("cpu"))
                 if env_name in VIDEO_LOGGING_ENVS:
                     image_caputres.append(
                         td.get(("next", "original_pixels")).cpu().numpy()
