@@ -61,6 +61,7 @@ def run(cfg: DictConfig) -> None:
                 td = agent.get_eval_action(td)
                 actions.append(td.get("action").cpu().numpy())
                 td = env.step(td)
+                agent.add_experience(td)
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)
                 done = td.get(("next", "done"), False)

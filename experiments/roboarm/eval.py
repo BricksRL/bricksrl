@@ -56,6 +56,7 @@ def run(cfg: DictConfig) -> None:
                 step_start_time = time.time()
                 td = agent.get_eval_action(td)
                 td = env.step(td)
+                agent.add_experience(td)
                 if env_name in VIDEO_LOGGING_ENVS:
                     image_caputres.append(
                         td.get(("next", "original_pixels")).cpu().numpy()
