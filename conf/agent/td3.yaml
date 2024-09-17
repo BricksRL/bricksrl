@@ -16,5 +16,5 @@ dropout: 0.0
 prb: 0
 buffer_size: 1000000
 reset_params: False
-use_bc: True
+use_bc: False
 alpha: 1.0
