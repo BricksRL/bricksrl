@@ -22,6 +22,7 @@ class BaseEnv(EnvBase):
         self,
         action_dim: int,
         state_dim: int,
+        use_hub: bool = True,
         verbose: bool = False,
     ):
         self.verbose = verbose
@@ -36,11 +37,14 @@ class BaseEnv(EnvBase):
         # buffer state in case of missing data
         self.buffered_state = np.zeros(self.state_dim, dtype=np.float32)
 
-        self.hub = PybricksHub(
-            state_dim=state_dim, out_format_str=self.state_format_str
-        )
-        self.hub.connect()
-        print("Connected to hub.")
+        if use_hub:
+            self.hub = PybricksHub(
+                state_dim=state_dim, out_format_str=self.state_format_str
+            )
+            self.hub.connect()
+            print("Connected to hub.")
+        else:
+            self.hub = None
         super().__init__(batch_size=torch.Size([1]))
 
     def send_to_hub(self, action: np.array) -> None:

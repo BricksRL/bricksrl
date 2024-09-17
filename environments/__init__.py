@@ -36,7 +36,7 @@ ALL_ROBOARM_ENVS = [
 ALL_ENVS = ALL_2WHEELER_ENVS + ALL_WALKER_ENVS + ALL_ROBOARM_ENVS
 
 
-def make_env(config):
+def make_env(config, pretrain=False):
     """
     Creates a new environment based on the provided configuration.
 
@@ -46,7 +46,7 @@ def make_env(config):
     Returns:
         A tuple containing the new environment, its action space, and its state space.
     """
-    env = make(name=config.env.name, env_conf=config.env)
+    env = make(name=config.env.name, env_conf=config.env, pretain=pretrain)
     observation_keys = [key for key in env.observation_spec.keys()]
 
     transforms = []
@@ -84,7 +84,10 @@ def make_env(config):
                 download=True,
                 size=100,
                 model_name="resnet50",
-                tensor_pixels_keys=["pixels", ("next", "pixels")], # Does not seem to work
+                tensor_pixels_keys=[
+                    "pixels",
+                    ("next", "pixels"),
+                ],  # Does not seem to work
             )
         )
 
@@ -96,24 +99,27 @@ def make_env(config):
     return env, action_spec, state_spec
 
 
-def make(name="RunAway", env_conf=None):
+def make(name="RunAway", env_conf=None, pretain=False):
     if name == "runaway-v0":
         return RunAwayEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             min_distance=env_conf.min_distance,
             verbose=env_conf.verbose,
+            pretain=pretain,
         )
     elif name == "spinning-v0":
         return SpinningEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             sleep_time=env_conf.sleep_time,
             verbose=env_conf.verbose,
+            pretain=pretain,
         )
     elif name == "walker-v0":
         return WalkerEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
+            pretain=pretain,
         )
     elif name == "walker_sim-v0":
         return WalkerEnvSim_v0(
@@ -122,6 +128,7 @@ def make(name="RunAway", env_conf=None):
             low_action_angle=env_conf.low_action_angle,
             high_action_angle=env_conf.high_action_angle,
             verbose=env_conf.verbose,
+            pretain=pretain,
         )
     elif name == "roboarm-v0":
         return RoboArmEnv_v0(
@@ -129,6 +136,7 @@ def make(name="RunAway", env_conf=None):
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
             reward_signal=env_conf.reward_signal,
+            pretain=pretain,
         )
     elif name == "roboarm_sim-v0":
         return RoboArmSimEnv_v0(
@@ -136,6 +144,7 @@ def make(name="RunAway", env_conf=None):
             verbose=env_conf.verbose,
             noise=env_conf.noise,
             reward_signal=env_conf.reward_signal,
+            pretain=pretain,
         )
     elif name == "roboarm_mixed-v0":
         return RoboArmMixedEnv_v0(
@@ -145,6 +154,7 @@ def make(name="RunAway", env_conf=None):
             reward_signal=env_conf.reward_signal,
             camera_id=env_conf.camera_id,
             goal_radius=env_conf.goal_radius,
+            pretain=pretain,
         )
     elif name == "roboarm_pickplace-v0":
         return RoboArmPickPlaceEnv_v0(
@@ -156,6 +166,7 @@ def make(name="RunAway", env_conf=None):
             image_size=env_conf.image_size,
             target_image_path=env_conf.target_image_path,
             use_vip_reward=env_conf.use_vip_reward,
+            pretain=pretain,
         )
     else:
         print("Environment not found")

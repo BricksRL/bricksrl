@@ -35,6 +35,7 @@ class RoboArmPickPlaceEnv_v0(BaseEnv):
         max_episode_steps: int = 50,
         sleep_time: float = 0.0,
         verbose: bool = False,
+        pretrain: bool = False,
         reward_signal: str = "dense",
         camera_id: int = 0,
         image_size: Tuple[int, int] = (64, 64),
@@ -123,7 +124,10 @@ class RoboArmPickPlaceEnv_v0(BaseEnv):
         _ = self.init_camera_position()
 
         super().__init__(
-            action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
+            action_dim=self.action_dim,
+            state_dim=self.state_dim,
+            verbose=verbose,
+            use_hub=1 - pretrain,
         )
 
     def init_camera_position(
@@ -158,7 +162,7 @@ class RoboArmPickPlaceEnv_v0(BaseEnv):
                     1,
                 ],
             )
-        return TensorDict({},batch_size=[1])
+        return TensorDict({}, batch_size=[1])
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
         """

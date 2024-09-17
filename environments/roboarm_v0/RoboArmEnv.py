@@ -32,6 +32,7 @@ class RoboArmEnv_v0(BaseEnv):
         max_episode_steps: int = 50,
         sleep_time: float = 0.0,
         verbose: bool = False,
+        pretrain: bool = False,
         reward_signal: str = "dense",
     ):
         self.sleep_time = sleep_time
@@ -77,7 +78,10 @@ class RoboArmEnv_v0(BaseEnv):
         self.observation_spec.set(self.observation_key, observation_spec)
         self.observation_spec.set(self.goal_observation_key, observation_spec)
         super().__init__(
-            action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
+            action_dim=self.action_dim,
+            state_dim=self.state_dim,
+            verbose=verbose,
+            use_hub=1 - pretrain,
         )
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
