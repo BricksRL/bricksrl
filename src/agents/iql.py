@@ -114,7 +114,6 @@ class IQLAgent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            # self.replay_buffer.load(path)
             loaded_data = TensorDictBase.load_memmap(path)
             self.replay_buffer.extend(loaded_data)
             if self.replay_buffer._batch_size != self.batch_size:
@@ -152,7 +151,6 @@ class IQLAgent(BaseAgent):
 
     def create_replay_buffer(
         self,
-        batch_size=256,
         prb=False,
         buffer_size=100000,
         buffer_scratch_dir=None,
@@ -180,16 +178,11 @@ class IQLAgent(BaseAgent):
                     buffer_size,
                     scratch_dir=buffer_scratch_dir,
                 ),
-                batch_size=batch_size,
+                batch_size=self.batch_size,
             )
         replay_buffer.append_transform(lambda x: x.to(device))
-        replay_buffer.append_transform(
-            ToTensorImage(
-                from_int=True,
-                shape_tolerant=True,
-                in_keys=["pixels", ("next", "pixels")],
-            )
-        )
+        # TODO: check if we have image in observation space if so add this transform
+        # replay_buffer.append_transform(ToTensorImage(from_int=True, shape_tolerant=True))
 
         return replay_buffer
 

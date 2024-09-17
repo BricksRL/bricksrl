@@ -5,13 +5,13 @@ from tensordict import TensorDictBase
 from torch import nn, optim
 from torchrl.data import TensorDictPrioritizedReplayBuffer, TensorDictReplayBuffer
 from torchrl.data.replay_buffers.storages import LazyMemmapStorage, LazyTensorStorage
+from torchrl.envs.transforms import ToTensorImage
 
 from torchrl.envs.utils import ExplorationType, set_exploration_type
 from torchrl.modules import AdditiveGaussianWrapper
 from torchrl.objectives import SoftUpdate
 from torchrl.objectives.td3 import TD3Loss
 from torchrl.objectives.td3_bc import TD3BCLoss
-from torchrl.envs.transforms import ToTensorImage
 
 from src.agents.base import BaseAgent
 from src.networks.networks import get_critic, get_deterministic_actor
@@ -83,7 +83,6 @@ class TD3Agent(BaseAgent):
         self.batch_size = agent_config.batch_size
         # Define Replay Buffer
         self.replay_buffer = self.create_replay_buffer(
-            batch_size=self.batch_size,
             prb=agent_config.prb,
             buffer_size=agent_config.buffer_size,
             device=device,
@@ -130,7 +129,6 @@ class TD3Agent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            #self.replay_buffer.load(path)
             loaded_data = TensorDictBase.load_memmap(path)
             self.replay_buffer.extend(loaded_data)
             if self.replay_buffer._batch_size != self.batch_size:
@@ -153,7 +151,6 @@ class TD3Agent(BaseAgent):
 
     def create_replay_buffer(
         self,
-        batch_size=256,
         prb=False,
         buffer_size=100000,
         buffer_scratch_dir=None,
@@ -180,9 +177,10 @@ class TD3Agent(BaseAgent):
                     buffer_size,
                     scratch_dir=buffer_scratch_dir,
                 ),
-                batch_size=batch_size,
+                batch_size=self.batch_size,
             )
         replay_buffer.append_transform(lambda x: x.to(device))
+        # TODO: check if we have image in observation space if so add this transform
         # replay_buffer.append_transform(
         #     ToTensorImage(
         #         from_int=True,

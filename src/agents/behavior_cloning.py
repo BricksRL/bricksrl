@@ -99,7 +99,6 @@ class BehavioralCloningAgent(BaseAgent):
 
     def create_replay_buffer(
         self,
-        batch_size=256,
         buffer_size=1000000,
         buffer_scratch_dir="./tmp",
         device="cpu",
@@ -114,7 +113,7 @@ class BehavioralCloningAgent(BaseAgent):
                 buffer_size,
                 scratch_dir=buffer_scratch_dir,
             ),
-            batch_size=batch_size,
+            batch_size=self.batch_size,
         )
         replay_buffer.append_transform(lambda x: x.to(device))
         # TODO: check if we have image in observation space if so add this transform
