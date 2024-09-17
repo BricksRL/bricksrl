@@ -74,7 +74,6 @@ class BehavioralCloningAgent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            # self.replay_buffer.load(path)
             loaded_data = TensorDictBase.load_memmap(path)
             self.replay_buffer.extend(loaded_data)
             if self.replay_buffer._batch_size != self.batch_size:
@@ -118,7 +117,8 @@ class BehavioralCloningAgent(BaseAgent):
             batch_size=batch_size,
         )
         replay_buffer.append_transform(lambda x: x.to(device))
-        replay_buffer.append_transform(ToTensorImage(from_int=True, shape_tolerant=True))
+        # TODO: check if we have image in observation space if so add this transform
+        #replay_buffer.append_transform(ToTensorImage(from_int=True, shape_tolerant=True))
 
         return replay_buffer
 
