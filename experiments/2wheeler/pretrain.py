@@ -21,7 +21,7 @@ def run(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
 
     # make environment.
-    setup_check(robot="roboarm", config=cfg)
+    setup_check(robot="2wheeler", config=cfg)
     env, action_space, state_space = make_env(cfg, pretrain=True)
 
     # make agent

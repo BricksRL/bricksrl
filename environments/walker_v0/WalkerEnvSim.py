@@ -35,6 +35,7 @@ class WalkerEnvSim_v0(BaseSimEnv):
         low_action_angle: int = -100,
         high_action_angle: int = 0,
         verbose: bool = False,
+        pretrain: bool = False,
     ):
         self._batch_size = torch.Size([1])
         self.max_episode_steps = max_episode_steps
@@ -74,7 +75,10 @@ class WalkerEnvSim_v0(BaseSimEnv):
             {self.observation_key: observation_spec}, shape=(1,)
         )
         super().__init__(
-            action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
+            action_dim=self.action_dim,
+            state_dim=self.state_dim,
+            verbose=verbose,
+            use_hub=False,
         )
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:

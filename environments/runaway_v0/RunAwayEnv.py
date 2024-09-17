@@ -45,6 +45,7 @@ class RunAwayEnv_v0(BaseEnv):
         min_distance: float = 40,
         sleep_time: float = 0.2,
         verbose: bool = False,
+        pretrain: bool = False,
     ):
         self.sleep_time = sleep_time
         self.min_distance = min_distance
@@ -81,7 +82,10 @@ class RunAwayEnv_v0(BaseEnv):
         )
         self.verbose = verbose
         super().__init__(
-            action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
+            action_dim=self.action_dim,
+            state_dim=self.state_dim,
+            verbose=verbose,
+            use_hub=1 - pretrain,
         )
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:

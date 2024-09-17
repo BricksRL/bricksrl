@@ -22,7 +22,7 @@ def run(cfg: DictConfig) -> None:
 
     # make environment.
     setup_check(robot="walker", config=cfg)
-    env, action_space, state_space = make_env(cfg)
+    env, action_space, state_space = make_env(cfg, pretrain=True)
 
     # make agent
     agent, project_name = get_agent(action_space, state_space, cfg)

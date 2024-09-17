@@ -45,6 +45,7 @@ class WalkerEnv_v0(BaseEnv):
         max_episode_steps: int = 50,
         sleep_time: float = 0.0,
         verbose: bool = False,
+        pretrain: bool = False,
     ):
         self.sleep_time = sleep_time
         self._batch_size = torch.Size([1])
@@ -83,7 +84,10 @@ class WalkerEnv_v0(BaseEnv):
             {self.observation_key: observation_spec}, shape=(1,)
         )
         super().__init__(
-            action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
+            action_dim=self.action_dim,
+            state_dim=self.state_dim,
+            verbose=verbose,
+            use_hub=1 - pretrain,
         )
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
