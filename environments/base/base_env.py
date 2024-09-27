@@ -126,7 +126,6 @@ class BaseEnv(EnvBase):
         return super()._set_seed(seed)
 
 
-
 class BaseSimEnv(EnvBase):
     """
     The base class for reinforcement learning environments used to simulate Lego robots.

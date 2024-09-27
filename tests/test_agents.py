@@ -49,7 +49,9 @@ def test_random_agent(env, device):
     else:
         device = "cpu"
     with initialize(config_path="../conf"):
-        cfg = compose(config_name="config", overrides=["device=" + device, "agent=random"])
+        cfg = compose(
+            config_name="config", overrides=["device=" + device, "agent=random"]
+        )
     # Test data collection
     env = get_env(env)
     agent, _ = get_agent(env.action_spec, env.observation_spec, cfg)
@@ -172,6 +174,7 @@ def test_drq_agent(env, device):
 
     assert torch.allclose(eval_td1["action"], eval_td2["action"])
 
+
 @pytest.mark.parametrize(
     "env",
     ["mixed", "vec", "vec_goal"],
@@ -186,9 +189,7 @@ def test_iql_agent(env, device):
     else:
         device = "cpu"
     with initialize(config_path="../conf"):
-        cfg = compose(
-            config_name="config", overrides=["agent=iql", "device=" + device]
-        )
+        cfg = compose(config_name="config", overrides=["agent=iql", "device=" + device])
 
     # Test data collection
     env = get_env(env)
@@ -210,6 +211,7 @@ def test_iql_agent(env, device):
     eval_td2 = agent.get_eval_action(td)
 
     assert torch.allclose(eval_td1["action"], eval_td2["action"])
+
 
 @pytest.mark.parametrize(
     "env",
@@ -225,9 +227,7 @@ def test_cql_agent(env, device):
     else:
         device = "cpu"
     with initialize(config_path="../conf"):
-        cfg = compose(
-            config_name="config", overrides=["agent=cql", "device=" + device]
-        )
+        cfg = compose(config_name="config", overrides=["agent=cql", "device=" + device])
 
     # Test data collection
     env = get_env(env)
@@ -250,6 +250,7 @@ def test_cql_agent(env, device):
 
     assert torch.allclose(eval_td1["action"], eval_td2["action"])
 
+
 @pytest.mark.parametrize(
     "env",
     ["mixed", "vec", "vec_goal"],
@@ -264,9 +265,7 @@ def test_bc_agent(env, device):
     else:
         device = "cpu"
     with initialize(config_path="../conf"):
-        cfg = compose(
-            config_name="config", overrides=["agent=bc", "device=" + device]
-        )
+        cfg = compose(config_name="config", overrides=["agent=bc", "device=" + device])
 
     # Test data collection
     env = get_env(env)
@@ -282,7 +281,6 @@ def test_bc_agent(env, device):
     eval_td2 = agent.get_eval_action(td)
 
     assert torch.allclose(eval_td1["action"], eval_td2["action"])
-
 
 
 @pytest.mark.parametrize(
