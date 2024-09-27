@@ -35,6 +35,7 @@ def make_env(config, pretrain=False):
 
     Args:
         config: A configuration object containing the environment name and maximum episode steps.
+        pretrain: A boolean indicating whether the environment is for pretraining.
 
     Returns:
         A tuple containing the new environment, its action space, and its state space.
@@ -106,7 +107,6 @@ def make(name="RunAway", env_conf=None, pretain=False):
             low_action_angle=env_conf.low_action_angle,
             high_action_angle=env_conf.high_action_angle,
             verbose=env_conf.verbose,
-            pretain=pretain,
         )
     elif name == "roboarm-v0":
         return RoboArmEnv_v0(
@@ -122,7 +122,6 @@ def make(name="RunAway", env_conf=None, pretain=False):
             verbose=env_conf.verbose,
             noise=env_conf.noise,
             reward_signal=env_conf.reward_signal,
-            pretain=pretain,
         )
     elif name == "roboarm_mixed-v0":
         return RoboArmMixedEnv_v0(
