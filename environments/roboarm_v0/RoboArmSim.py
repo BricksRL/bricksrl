@@ -30,7 +30,6 @@ class RoboArmSimEnv_v0(BaseSimEnv):
         max_episode_steps: int = 50,
         noise: float = 0.1,
         verbose: bool = False,
-        pretrain: bool = False,
         reward_signal: str = "dense",
     ):
         self.noise = noise

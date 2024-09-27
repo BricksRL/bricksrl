@@ -35,7 +35,6 @@ class WalkerEnvSim_v0(BaseSimEnv):
         low_action_angle: int = -100,
         high_action_angle: int = 0,
         verbose: bool = False,
-        pretrain: bool = False,
     ):
         self._batch_size = torch.Size([1])
         self.max_episode_steps = max_episode_steps
