@@ -1,6 +1,0 @@
-name: keyboard
-
-batch_size: 256
-buffer_size: 1000000
-num_updates: 2500
-prefill_episodes: 0
