@@ -86,7 +86,7 @@ def prefill_buffer(env, agent, num_episodes=10, stop_on_done=False):
         inpt = input("Press Enter to start prefilling episode: ")
         for e in tqdm(range(num_episodes), desc="Prefilling buffer"):
             print("Prefill episode: ", e)
-            td = env.reset(env.get_reset_tensordict())
+            td = env.reset()
             done = False
             truncated = False
             while not done and not truncated:

@@ -30,11 +30,11 @@ class BehavioralCloningAgent(BaseAgent):
 
         if agent_config.policy_type == "deterministic":
             self.actor = get_deterministic_actor(
-                self.observation_keys, action_spec, agent_config
+                state_spec, action_spec, agent_config
             )
         elif agent_config.policy_type == "stochastic":
             self.actor = get_stochastic_actor(
-                self.observation_keys, action_spec, agent_config
+                state_spec, action_spec, agent_config
             )
         else:
             raise ValueError(

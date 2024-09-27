@@ -1,8 +1,7 @@
 import os
 import sys
 import time
-import torch
-from tensordict import TensorDict
+
 import hydra
 import numpy as np
 import wandb
@@ -42,7 +41,7 @@ def run(cfg: DictConfig) -> None:
     # initialize wandb
     wandb.init(project=project_name)
     wandb.config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
-    # wandb.watch(agent.actor, log_freq=1) if agent.actor else None
+    wandb.watch(agent.actor, log_freq=1) if agent.actor else None
 
     # prefill buffer with random actions
     prefill_buffer(
@@ -61,7 +60,7 @@ def run(cfg: DictConfig) -> None:
     quit = False
     try:
         for e in tqdm(range(train_episodes), desc="Training"):
-            td = env.reset(env.get_reset_tensordict())
+            td = env.reset()
             done = td.get("done", False)
             truncated = td.get("truncated", False)
             ep_return = 0

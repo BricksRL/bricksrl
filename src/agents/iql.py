@@ -21,11 +21,11 @@ class IQLAgent(BaseAgent):
         )
 
         self.actor = get_stochastic_actor(
-            self.observation_keys, action_spec, agent_config
+            state_spec, action_spec, agent_config
         )
-        self.critic = get_critic(self.observation_keys, agent_config)
+        self.critic = get_critic(state_spec, agent_config)
 
-        self.value = get_value_operator(self.observation_keys, agent_config)
+        self.value = get_value_operator(state_spec, agent_config)
 
         self.actor.to(device)
         self.critic.to(device)
@@ -57,7 +57,6 @@ class IQLAgent(BaseAgent):
         self.batch_size = agent_config.batch_size
 
         self.replay_buffer = self.create_replay_buffer(
-            batch_size=self.batch_size,
             prb=agent_config.prb,
             buffer_size=agent_config.buffer_size,
             device=device,

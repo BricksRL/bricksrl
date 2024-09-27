@@ -5,7 +5,6 @@ from tensordict import TensorDictBase
 from torch import nn, optim
 from torchrl.data import TensorDictPrioritizedReplayBuffer, TensorDictReplayBuffer
 from torchrl.data.replay_buffers.storages import LazyMemmapStorage, LazyTensorStorage
-from torchrl.envs.transforms import ToTensorImage
 
 from torchrl.envs.utils import ExplorationType, set_exploration_type
 from torchrl.modules import AdditiveGaussianWrapper
@@ -33,9 +32,9 @@ class TD3Agent(BaseAgent):
         )
 
         self.actor = get_deterministic_actor(
-            self.observation_keys, action_spec, agent_config
+            state_spec, action_spec, agent_config
         )
-        self.critic = get_critic(self.observation_keys, agent_config)
+        self.critic = get_critic(state_spec, agent_config)
 
         self.model = nn.ModuleList([self.actor, self.critic]).to(device)
 

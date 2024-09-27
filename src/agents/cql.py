@@ -22,9 +22,9 @@ class CQLAgent(BaseAgent):
         with_lagrange = agent_config.with_lagrange
 
         self.actor = get_stochastic_actor(
-            self.observation_keys, action_spec, agent_config
+            state_spec, action_spec, agent_config
         )
-        self.critic = get_critic(self.observation_keys, agent_config)
+        self.critic = get_critic(state_spec, agent_config)
 
         self.actor.to(device)
         self.critic.to(device)
