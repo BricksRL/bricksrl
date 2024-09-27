@@ -49,7 +49,7 @@ def test_random_agent(env, device):
     else:
         device = "cpu"
     with initialize(config_path="../conf"):
-        cfg = compose(config_name="config", overrides=["device=" + device])
+        cfg = compose(config_name="config", overrides=["device=" + device, "agent=random"])
     # Test data collection
     env = get_env(env)
     agent, _ = get_agent(env.action_spec, env.observation_spec, cfg)
