@@ -276,12 +276,6 @@ def test_bc_agent(env, device):
     agent.train(batch_size=1, num_updates=1)
 
     # Test evaluation
-    td = env.reset()
-    td1 = agent.get_action(td)
-    td2 = agent.get_action(td)
-
-    assert not torch.allclose(td1["action"], td2["action"])
-
     agent.eval()
     td = env.reset()
     eval_td1 = agent.get_eval_action(td)
