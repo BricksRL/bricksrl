@@ -163,6 +163,18 @@ Evaluation videos of the trained agents can be found [here](https://sites.google
   <summary>Click me</summary>
 With the use of precollected [offline datasets]() we can pretrain agents with offline RL to perform a task without the need of real world interaction. Such pretrained policies can be evaluated directly or used for later training to fine tuning the pretrained policy on the real robot. 
 
+#### Datasets
+The datasets can be downloaded from huggingface and contain expert and random transitions for the 2Wheeler (RunAway-v0 and Spinning-v0), Walker (Walker-v0) and RoboArm (RoboArm-v0) robots.
+
+   ```bash
+      git lfs install
+      git clone git@hf.co:datasets/compsciencelab/BricksRL-Datasets
+   ```
+
+The datasets consist of TensorDicts containing expert and random transitions, which can be directly loaded into the replay buffer. When initiating (pre-)training, simply provide the path to the desired TensorDict when prompted to load the replay buffer.
+
+
+
 #### Pretrain an Agent
 
 The execution of an experiment for offline training is similar to the online training except that you run the **pretrain.py** script: 
@@ -181,14 +193,6 @@ Or run training for fine-tuning the policy on the real robot:
 
    ```bash
    python experiments/walker/train.py
-   ```
-
-#### Datasets
-The datasets can be downloaded from huggingface and contain expert and random transitions for the 2Wheeler (RunAway-v0 and Spinning-v0), Walker (Walker-v0) and RoboArm (RoboArm-v0) robots.
-
-   ```bash
-      git lfs install
-      git clone git@hf.co:datasets/Sebasdi/BricksRL-Datasets
    ```
 
 
