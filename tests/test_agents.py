@@ -17,9 +17,9 @@ def collection_round(env, agent, max_steps=1000):
         td = step_mdp(td)
 
 
-def get_env(env):
+def get_env(env, img_shape=(64, 64, 3)):
     if env == "mixed":
-        env = MixedObsDummyEnv()
+        env = MixedObsDummyEnv(img_shape=img_shape)
         env = TransformedEnv(
             env, Compose(ToTensorImage(in_keys=["pixels"], from_int=True))
         )
@@ -155,6 +155,88 @@ def test_drq_agent(env, device):
     env = get_env(env)
     agent, _ = get_agent(env.action_spec, env.observation_spec, cfg)
     collection_round(env, agent, max_steps=10)
+    # Test training
+    agent.train(batch_size=1, num_updates=1)
+
+    # Test evaluation
+    td = env.reset()
+    td1 = agent.get_action(td)
+    td2 = agent.get_action(td)
+
+    assert not torch.allclose(td1["action"], td2["action"])
+
+    agent.eval()
+    td = env.reset()
+    eval_td1 = agent.get_eval_action(td)
+    eval_td2 = agent.get_eval_action(td)
+
+    assert torch.allclose(eval_td1["action"], eval_td2["action"])
+
+@pytest.mark.parametrize(
+    "env",
+    ["mixed", "vec", "vec_goal"],
+)
+@pytest.mark.parametrize(
+    "device",
+    ["cpu", "cuda"],
+)
+def test_iql_agent(env, device):
+    if torch.cuda.is_available() and device == "cuda":
+        device = "cuda"
+    else:
+        device = "cpu"
+    with initialize(config_path="../conf"):
+        cfg = compose(
+            config_name="config", overrides=["agent=iql", "device=" + device]
+        )
+
+    # Test data collection
+    env = get_env(env)
+    agent, _ = get_agent(env.action_spec, env.observation_spec, cfg)
+    collection_round(env, agent, max_steps=10)
+    # Test training
+    agent.train(batch_size=1, num_updates=1)
+
+    # Test evaluation
+    td = env.reset()
+    td1 = agent.get_action(td)
+    td2 = agent.get_action(td)
+
+    assert not torch.allclose(td1["action"], td2["action"])
+
+    agent.eval()
+    td = env.reset()
+    eval_td1 = agent.get_eval_action(td)
+    eval_td2 = agent.get_eval_action(td)
+
+    assert torch.allclose(eval_td1["action"], eval_td2["action"])
+
+
+@pytest.mark.parametrize(
+    "env",
+    ["mixed"],
+)
+@pytest.mark.parametrize(
+    "img_shape",
+    [(64, 64, 3), (128, 128, 3)],
+)
+@pytest.mark.parametrize(
+    "device",
+    ["cpu", "cuda"],
+)
+def test_mixd_obs_size_agent(env, device, img_shape):
+    if torch.cuda.is_available() and device == "cuda":
+        device = "cuda"
+    else:
+        device = "cpu"
+    with initialize(config_path="../conf"):
+        cfg = compose(config_name="config", overrides=["agent=td3", "device=" + device])
+
+    # Test data collection
+    env = get_env(env, img_shape)
+    agent, _ = get_agent(env.action_spec, env.observation_spec, cfg)
+    collection_round(env, agent, max_steps=10)
+
     # Test training
     agent.train(batch_size=1, num_updates=1)
 
