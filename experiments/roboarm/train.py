@@ -56,7 +56,7 @@ def run(cfg: DictConfig) -> None:
     train_episodes = cfg.episodes
     max_episode_steps = cfg.env.max_episode_steps
 
-    print("Start training...")  
+    print("Start training...")
     quit = False
     try:
         for e in tqdm(range(train_episodes), desc="Training"):

@@ -42,7 +42,7 @@ def run(cfg: DictConfig) -> None:
     _ = input("Press Enter to start evaluation...")
     try:
         for e in tqdm(range(eval_episodes), desc="Evaluation"):
-            td = env.reset(env.get_reset_tensordict())
+            td = env.reset()
             done = td.get("done", False)
             truncated = td.get("truncated", False)
             ep_return = 0
