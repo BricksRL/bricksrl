@@ -150,6 +150,7 @@ class BaseSimEnv(EnvBase):
         action_dim: int,
         state_dim: int,
         verbose: bool = False,
+        use_hub: bool = False,
     ):
         self.verbose = verbose
         self.action_dim = action_dim
