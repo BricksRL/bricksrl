@@ -6,8 +6,8 @@ from torch import nn, optim
 from torchrl.data import BoundedTensorSpec, TensorDictReplayBuffer
 
 from torchrl.data.replay_buffers.storages import LazyMemmapStorage
-from torchrl.envs.utils import ExplorationType, set_exploration_type
 from torchrl.envs import RenameTransform, ToTensorImage
+from torchrl.envs.utils import ExplorationType, set_exploration_type
 
 from src.agents.base import BaseAgent
 from src.networks.networks import get_deterministic_actor, get_stochastic_actor
@@ -29,9 +29,7 @@ class BehavioralCloningAgent(BaseAgent):
         )
 
         if agent_config.policy_type == "deterministic":
-            self.actor = get_deterministic_actor(
-                state_spec, action_spec, agent_config
-            )
+            self.actor = get_deterministic_actor(state_spec, action_spec, agent_config)
         elif agent_config.policy_type == "stochastic":
             raise NotImplementedError(
                 "Stochastic actor training is not implemented yet"
@@ -121,7 +119,7 @@ class BehavioralCloningAgent(BaseAgent):
         )
         replay_buffer.append_transform(lambda x: x.to(device))
         # TODO: check if we have image in observation space if so add this transform
-        #replay_buffer.append_transform(ToTensorImage(from_int=True, shape_tolerant=True))
+        # replay_buffer.append_transform(ToTensorImage(from_int=True, shape_tolerant=True))
 
         return replay_buffer
 

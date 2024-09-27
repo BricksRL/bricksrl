@@ -44,7 +44,6 @@ class RandomAgent(BaseAgent):
         """Train the agent"""
         return {}
 
-
     def create_replay_buffer(
         self,
         batch_size=256,

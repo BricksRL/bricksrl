@@ -31,9 +31,7 @@ class TD3Agent(BaseAgent):
             state_spec, action_spec, agent_config.name, device
         )
 
-        self.actor = get_deterministic_actor(
-            state_spec, action_spec, agent_config
-        )
+        self.actor = get_deterministic_actor(state_spec, action_spec, agent_config)
         self.critic = get_critic(state_spec, agent_config)
 
         self.model = nn.ModuleList([self.actor, self.critic]).to(device)
