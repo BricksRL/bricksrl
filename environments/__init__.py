@@ -3,10 +3,8 @@ from torchrl.envs import (
     CatFrames,
     Compose,
     ObservationNorm,
-    PermuteTransform,
     ToTensorImage,
     TransformedEnv,
-    VIPRewardTransform,
 )
 
 from environments.roboarm_mixed_v0.RoboArmMixedEnv import RoboArmMixedEnv_v0
@@ -70,21 +68,6 @@ def make_env(config, pretrain=False):
     )
     if "pixels" in observation_keys:
         transforms.append(ToTensorImage(in_keys=["pixels"], from_int=True))
-
-    if config.env.name == "roboarm_pickplace-v0" and config.env.use_vip_reward:
-        transforms.append(PermuteTransform((-1, -2, -3), in_keys=["pixels"]))
-        transforms.append(
-            VIPRewardTransform(
-                in_keys=["pixels"],
-                download=True,
-                size=100,
-                model_name="resnet50",
-                tensor_pixels_keys=[
-                    "pixels",
-                    ("next", "pixels"),
-                ],  # Does not seem to work
-            )
-        )
 
     env = TransformedEnv(env, Compose(*transforms))
 
