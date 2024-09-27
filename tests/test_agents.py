@@ -252,6 +252,47 @@ def test_cql_agent(env, device):
 
 @pytest.mark.parametrize(
     "env",
+    ["mixed", "vec", "vec_goal"],
+)
+@pytest.mark.parametrize(
+    "device",
+    ["cpu", "cuda"],
+)
+def test_bc_agent(env, device):
+    if torch.cuda.is_available() and device == "cuda":
+        device = "cuda"
+    else:
+        device = "cpu"
+    with initialize(config_path="../conf"):
+        cfg = compose(
+            config_name="config", overrides=["agent=bc", "device=" + device]
+        )
+
+    # Test data collection
+    env = get_env(env)
+    agent, _ = get_agent(env.action_spec, env.observation_spec, cfg)
+    collection_round(env, agent, max_steps=10)
+    # Test training
+    agent.train(batch_size=1, num_updates=1)
+
+    # Test evaluation
+    td = env.reset()
+    td1 = agent.get_action(td)
+    td2 = agent.get_action(td)
+
+    assert not torch.allclose(td1["action"], td2["action"])
+
+    agent.eval()
+    td = env.reset()
+    eval_td1 = agent.get_eval_action(td)
+    eval_td2 = agent.get_eval_action(td)
+
+    assert torch.allclose(eval_td1["action"], eval_td2["action"])
+
+
+
+@pytest.mark.parametrize(
+    "env",
     ["mixed"],
 )
 @pytest.mark.parametrize(

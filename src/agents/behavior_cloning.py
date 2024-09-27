@@ -33,9 +33,13 @@ class BehavioralCloningAgent(BaseAgent):
                 state_spec, action_spec, agent_config
             )
         elif agent_config.policy_type == "stochastic":
-            self.actor = get_stochastic_actor(
-                state_spec, action_spec, agent_config
+            raise NotImplementedError(
+                "Stochastic actor training is not implemented yet"
             )
+            # TODO: Implement stochastic actor training
+            # self.actor = get_stochastic_actor(
+            #     state_spec, action_spec, agent_config
+            # )
         else:
             raise ValueError(
                 "policy_type not recognized, choose deterministic or stochastic"
@@ -122,19 +126,17 @@ class BehavioralCloningAgent(BaseAgent):
         return replay_buffer
 
     @torch.no_grad()
-    def get_action(self, state):
+    def get_action(self, td: TensorDictBase) -> TensorDictBase:
         """Get action from actor network"""
-
-        state = torch.from_numpy(state).float().to(self.device)[None, :]
-        input_td = td.TensorDict({"observation": state}, batch_size=1)
-        # set exploration mode?
-        out_td = self.actor(input_td).squeeze(0)
-        return out_td["action"].cpu().numpy()
+        with set_exploration_type(ExplorationType.RANDOM):
+            out_td = self.actor(td.to(self.device))
+        return out_td
 
     def add_experience(self, transition: td.TensorDict):
         """Add experience to replay buffer"""
-
-        pass
+        """Add experience to replay buffer"""
+        self.replay_buffer.extend(transition)
+        self.collected_transitions += 1
 
     def train(self, batch_size=64, num_updates=1):
         """Train the agent"""
