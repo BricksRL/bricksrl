@@ -21,7 +21,7 @@ class MixedObsDummyEnv(EnvBase):
     observation_key = "observation"
     pixel_observation_key = "pixels"
 
-    def __init__(self, max_episode_steps=10):
+    def __init__(self, max_episode_steps=10, img_shape=(64, 64, 3)):
         self.max_episode_steps = max_episode_steps
         self._batch_size = torch.Size([1])
         self.action_spec = BoundedTensorSpec(
@@ -36,8 +36,8 @@ class MixedObsDummyEnv(EnvBase):
         )
 
         pixel_observation_spec = BoundedTensorSpec(
-            low=torch.zeros((1,) + (64, 64, 3), dtype=torch.uint8),
-            high=torch.ones((1,) + (64, 64, 3), dtype=torch.uint8) * 255,
+            low=torch.zeros((1,) + img_shape, dtype=torch.uint8),
+            high=torch.ones((1,) + img_shape, dtype=torch.uint8) * 255,
         )
 
         self.observation_spec = CompositeSpec(shape=(1,))
