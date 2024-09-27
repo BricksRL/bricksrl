@@ -364,7 +364,7 @@ def get_deterministic_actor(observation_spec, action_spec, agent_config):
             action_spec=action_spec,
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             activation_class=nn.ReLU,
-            img_shape=observation_spec["pixels"].shape
+            img_shape=observation_spec["pixels"].shape,
         )
 
     elif "pixels" in observation_keys and "observation" in observation_keys:
@@ -374,7 +374,7 @@ def get_deterministic_actor(observation_spec, action_spec, agent_config):
             action_spec=action_spec,
             num_cells=[agent_config.num_cells, agent_config.num_cells],
             activation_class=nn.ReLU,
-            img_shape=observation_spec["pixels"].shape
+            img_shape=observation_spec["pixels"].shape,
         )
     else:
         raise NotImplementedError("Actor for this observation space not implemented")
