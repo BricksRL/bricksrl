@@ -16,6 +16,8 @@ class BaseEnv(EnvBase):
     Args:
         action_dim (int): The dimensionality of the action space.
         state_dim (int): The dimensionality of the state space.
+        use_hub (bool): Whether to use the Pybricks hub for communication, if False, only the observation spec and action specs are created and can be used.
+        verbose (bool): Whether to print verbose output.
     """
 
     def __init__(
