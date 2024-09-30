@@ -55,7 +55,7 @@ def run(cfg: DictConfig) -> None:
                 ep_steps += 1
                 step_start_time = time.time()
                 td = agent.get_eval_action(td)
-                td = env.step(td.to("cpu"))
+                td = env.step(td)
                 if env_name in VIDEO_LOGGING_ENVS:
                     image_caputres.append(
                         td.get(("next", "original_pixels")).cpu().numpy()
