@@ -135,6 +135,8 @@ class BaseSimEnv(EnvBase):
     Args:
         action_dim (int): The dimensionality of the action space.
         state_dim (int): The dimensionality of the state space.
+        verbose (bool): Whether to print verbose output.
+        use_hub (bool): This argument is kept for compatibility but is not used in the simulation environment.
     """
 
     def __init__(
