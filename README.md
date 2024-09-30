@@ -175,9 +175,6 @@ The datasets can be downloaded from huggingface and contain expert and random tr
 
 The datasets consist of TensorDicts containing expert and random transitions, which can be directly loaded into the replay buffer. When initiating (pre-)training, simply provide the path to the desired TensorDict when prompted to load the replay buffer.
 
-## High-Level Examples
-In the [example notebook](example_notebook.ipynb) we provide high-level training examples to train a **SAC agent** in the **RoboArmSim-v0** environment and a **TD3 agent** in the **WalkerSim-v0** enviornment. 
-
 
 #### Pretrain an Agent
 
@@ -201,3 +198,6 @@ Or run training for fine-tuning the policy on the real robot:
 
 
 </details>
+
+## High-Level Examples
+In the [example notebook](example_notebook.ipynb) we provide high-level training examples to train a **SAC agent** in the **RoboArmSim-v0** environment and a **TD3 agent** in the **WalkerSim-v0** enviornment. 
