@@ -226,7 +226,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
                 self.observation_key: torch.tensor(observation, dtype=torch.float32),
                 self.pixels_observation_key: torch.from_numpy(resized_frame)[
                     None, :
-                ].float(),
+                ].to(torch.uint8),
                 self.original_pixels_key: torch.from_numpy(frame)[None, :].to(
                     torch.uint8
                 ),
@@ -324,7 +324,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
                 ),
                 self.pixels_observation_key: torch.from_numpy(resized_frame)[
                     None, :
-                ].float(),
+                ].to(torch.uint8),
                 self.original_pixels_key: torch.from_numpy(frame)[None, :].to(
                     torch.uint8
                 ),
