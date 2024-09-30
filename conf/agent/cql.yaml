@@ -1,0 +1,28 @@
+name: cql
+lr: 3e-4
+batch_size: 256
+num_updates: 1
+prefill_episodes: 10
+
+bc_steps: 1000
+
+# CQL specific
+num_cells: 256
+gamma: 0.99
+soft_update_eps: 0.995
+loss_function: l2
+temperature: 1.0
+min_q_weight: 1.0
+max_q_backup: False
+deterministic_backup: False
+num_random: 10
+with_lagrange: True
+lagrange_thresh: 5.0 # tau
+
+normalization: None
+dropout: 0.0
+
+prb: 0
+buffer_size: 1000000
+pretrain: False
+reset_params: False

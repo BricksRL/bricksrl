@@ -2,9 +2,7 @@ import numpy as np
 from torchrl.envs import (
     CatFrames,
     Compose,
-    DoubleToFloat,
     ObservationNorm,
-    RewardSum,
     ToTensorImage,
     TransformedEnv,
 )
@@ -17,28 +15,32 @@ from environments.spinning_v0.SpinningEnv import SpinningEnv_v0
 from environments.walker_v0.WalkerEnv import WalkerEnv_v0
 from environments.walker_v0.WalkerEnvSim import WalkerEnvSim_v0
 
-
 VIDEO_LOGGING_ENVS = ["roboarm_mixed-v0", "walker_mixed-v0"]
 ALL_2WHEELER_ENVS = ["spinning-v0", "runaway-v0"]
 ALL_WALKER_ENVS = [
     "walker-v0",
     "walker_sim-v0",
 ]
-ALL_ROBOARM_ENVS = ["roboarm-v0", "roboarm_mixed-v0", "roboarm_sim-v0"]
+ALL_ROBOARM_ENVS = [
+    "roboarm-v0",
+    "roboarm_mixed-v0",
+    "roboarm_sim-v0",
+]
 ALL_ENVS = ALL_2WHEELER_ENVS + ALL_WALKER_ENVS + ALL_ROBOARM_ENVS
 
 
-def make_env(config):
+def make_env(config, pretrain=False):
     """
     Creates a new environment based on the provided configuration.
 
     Args:
         config: A configuration object containing the environment name and maximum episode steps.
+        pretrain: A boolean indicating whether the environment is for pretraining.
 
     Returns:
         A tuple containing the new environment, its action space, and its state space.
     """
-    env = make(name=config.env.name, env_conf=config.env)
+    env = make(name=config.env.name, env_conf=config.env, pretrain=pretrain)
     observation_keys = [key for key in env.observation_spec.keys()]
 
     transforms = []
@@ -76,24 +78,27 @@ def make_env(config):
     return env, action_spec, state_spec
 
 
-def make(name="RunAway", env_conf=None):
+def make(name="RunAway", env_conf=None, pretrain=False):
     if name == "runaway-v0":
         return RunAwayEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             min_distance=env_conf.min_distance,
             verbose=env_conf.verbose,
+            pretrain=pretrain,
         )
     elif name == "spinning-v0":
         return SpinningEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             sleep_time=env_conf.sleep_time,
             verbose=env_conf.verbose,
+            pretrain=pretrain,
         )
     elif name == "walker-v0":
         return WalkerEnv_v0(
             max_episode_steps=env_conf.max_episode_steps,
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
+            pretrain=pretrain,
         )
     elif name == "walker_sim-v0":
         return WalkerEnvSim_v0(
@@ -109,6 +114,7 @@ def make(name="RunAway", env_conf=None):
             verbose=env_conf.verbose,
             sleep_time=env_conf.sleep_time,
             reward_signal=env_conf.reward_signal,
+            pretrain=pretrain,
         )
     elif name == "roboarm_sim-v0":
         return RoboArmSimEnv_v0(
@@ -125,6 +131,7 @@ def make(name="RunAway", env_conf=None):
             reward_signal=env_conf.reward_signal,
             camera_id=env_conf.camera_id,
             goal_radius=env_conf.goal_radius,
+            pretrain=pretrain,
         )
     else:
         print("Environment not found")

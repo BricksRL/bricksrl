@@ -61,6 +61,7 @@ def run(cfg: DictConfig) -> None:
                     image_caputres.append(
                         td.get(("next", "original_pixels")).cpu().numpy()
                     )
+                agent.add_experience(td)
                 total_agent_step_time = time.time() - step_start_time
                 total_step_times.append(total_agent_step_time)
                 done = td.get(("next", "done"), False)

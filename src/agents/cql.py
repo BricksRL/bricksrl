@@ -1,89 +1,63 @@
 import tensordict as td
 import torch
-
 from tensordict import TensorDictBase
-from torch import nn, optim
+from torch import optim
 from torchrl.data import TensorDictPrioritizedReplayBuffer, TensorDictReplayBuffer
 from torchrl.data.replay_buffers.storages import LazyMemmapStorage, LazyTensorStorage
-
 from torchrl.envs.utils import ExplorationType, set_exploration_type
-from torchrl.modules import AdditiveGaussianWrapper
 from torchrl.objectives import SoftUpdate
-from torchrl.objectives.td3 import TD3Loss
-from torchrl.objectives.td3_bc import TD3BCLoss
+
+from torchrl.objectives.cql import CQLLoss
 
 from src.agents.base import BaseAgent
-from src.networks.networks import get_critic, get_deterministic_actor
+from src.networks.networks import get_critic, get_stochastic_actor
 
 
-def initialize(net, std=0.02):
-    for p, n in net.named_parameters():
-        if "weight" in p:
-            # nn.init.xavier_uniform_(n)
-            nn.init.normal_(n, mean=0, std=std)
-        elif "bias" in p:
-            nn.init.zeros_(n)
-
-
-class TD3Agent(BaseAgent):
+class CQLAgent(BaseAgent):
     def __init__(self, state_spec, action_spec, agent_config, device="cpu"):
-        super(TD3Agent, self).__init__(
+        super(CQLAgent, self).__init__(
             state_spec, action_spec, agent_config.name, device
         )
 
-        self.actor = get_deterministic_actor(state_spec, action_spec, agent_config)
+        with_lagrange = agent_config.with_lagrange
+
+        self.actor = get_stochastic_actor(state_spec, action_spec, agent_config)
         self.critic = get_critic(state_spec, agent_config)
 
-        self.model = nn.ModuleList([self.actor, self.critic]).to(device)
+        self.actor.to(device)
+        self.critic.to(device)
 
-        print(self.actor)
-        print(self.critic)
         # initialize networks
-        self.init_nets(self.model)
-
-        self.actor_explore = AdditiveGaussianWrapper(
-            self.model[0],
-            sigma_init=1,
-            sigma_end=1,
-            mean=0,
-            std=agent_config.exploration_noise,
-        ).to(device)
+        self.init_nets([self.actor, self.critic])
 
         # define loss function
-        self.use_bc = agent_config.use_bc
-        if not self.use_bc:
-            self.loss_module = TD3Loss(
-                actor_network=self.model[0],
-                qvalue_network=self.model[1],
-                action_spec=action_spec,
-                num_qvalue_nets=2,
-                loss_function=agent_config.loss_function,
-                separate_losses=False,
-            )
-        else:
-            self.loss_module = TD3BCLoss(
-                actor_network=self.model[0],
-                qvalue_network=self.model[1],
-                action_spec=action_spec,
-                num_qvalue_nets=2,
-                loss_function=agent_config.loss_function,
-                separate_losses=False,
-                alpha=agent_config.alpha,
-            )
-
+        self.loss_module = CQLLoss(
+            actor_network=self.actor,
+            qvalue_network=self.critic,
+            loss_function=agent_config.loss_function,
+            temperature=agent_config.temperature,
+            min_q_weight=agent_config.min_q_weight,
+            max_q_backup=agent_config.max_q_backup,
+            deterministic_backup=agent_config.deterministic_backup,
+            num_random=agent_config.num_random,
+            with_lagrange=agent_config.with_lagrange,
+            lagrange_thresh=agent_config.lagrange_thresh,
+        )
         # Define Target Network Updater
         self.target_net_updater = SoftUpdate(
             self.loss_module, eps=agent_config.soft_update_eps
         )
         self.target_net_updater.init_()
 
-        self.batch_size = agent_config.batch_size
+        # Reset weights
+        self.reset_params = agent_config.reset_params
+
         # Define Replay Buffer
+        self.batch_size = agent_config.batch_size
         self.replay_buffer = self.create_replay_buffer(
             prb=agent_config.prb,
             buffer_size=agent_config.buffer_size,
             device=device,
-            buffer_scratch_dir="/tmp",
         )
 
         # Define Optimizer
@@ -99,13 +73,22 @@ class TD3Agent(BaseAgent):
         self.optimizer_critic = optim.Adam(
             critic_params, lr=agent_config.lr, weight_decay=0.0
         )
-
-        # Reset weights
-        self.reset_params = agent_config.reset_params
+        self.optimizer_alpha = optim.Adam(
+            [self.loss_module.log_alpha],
+            lr=3.0e-4,
+        )
+        if with_lagrange:
+            self.alpha_prime_optim = torch.optim.Adam(
+                [self.loss_module.log_alpha_prime],
+                lr=agent_config.lr,
+            )
+        else:
+            self.alpha_prime_optim = None
         # general stats
         self.collected_transitions = 0
-        # td stats for delayed update
         self.total_updates = 0
+        self.do_pretrain = agent_config.pretrain
+        self.bc_steps = agent_config.bc_steps
 
     def get_agent_statedict(self):
         """Save agent"""
@@ -146,6 +129,20 @@ class TD3Agent(BaseAgent):
         self.loss_module.qvalue_network_params.apply(self.reset_parameter)
         self.loss_module.target_qvalue_network_params.apply(self.reset_parameter)
 
+    def eval(self):
+        """Sets the agent to evaluation mode."""
+        self.actor.eval()
+
+    def td_preprocessing(self, td: TensorDictBase) -> TensorDictBase:
+        # TODO not ideal to have this here
+        td.pop("scale")
+        td.pop("loc")
+        td.pop("params")
+        if "vector_obs_embedding" in td.keys():
+            td.pop("vector_obs_embedding")
+        if "image_embedding" in td.keys():
+            td.pop("image_embedding")
+
     def create_replay_buffer(
         self,
         prb=False,
@@ -178,33 +175,14 @@ class TD3Agent(BaseAgent):
             )
         replay_buffer.append_transform(lambda x: x.to(device))
         # TODO: check if we have image in observation space if so add this transform
-        # replay_buffer.append_transform(
-        #     ToTensorImage(
-        #         from_int=True,
-        #         shape_tolerant=True,
-        #         in_keys=["pixels", ("next", "pixels")],
-        #     )
-        # )
+        # replay_buffer.append_transform(ToTensorImage(from_int=True, shape_tolerant=True))
         return replay_buffer
-
-    def td_preprocessing(self, td: TensorDictBase) -> TensorDictBase:
-        # TODO not ideal to have this here
-        td.pop("param")
-        if "obs_embedding" in td.keys():
-            td.pop("obs_embedding")
-        if "pixel_embedding" in td.keys():
-            td.pop("pixel_embedding")
-
-    def eval(self):
-        """Sets the agent to evaluation mode."""
-        self.actor.eval()
 
     @torch.no_grad()
     def get_action(self, td: TensorDictBase) -> TensorDictBase:
         """Get action from actor network"""
         with set_exploration_type(ExplorationType.RANDOM):
-            out_td = self.actor_explore(td.to(self.device))
-        self.actor_explore.step(1)
+            out_td = self.actor(td.to(self.device))
         self.td_preprocessing(out_td)
         return out_td
 
@@ -213,7 +191,7 @@ class TD3Agent(BaseAgent):
         """Get eval action from actor network"""
         with set_exploration_type(ExplorationType.MODE):
             out_td = self.actor(td.to(self.device))
-        # self.td_preprocessing(out_td)
+        self.td_preprocessing(out_td)
         return out_td
 
     def add_experience(self, transition: td.TensorDict):
@@ -223,42 +201,52 @@ class TD3Agent(BaseAgent):
 
     def train(self, batch_size=64, num_updates=1):
         """Train the agent"""
-        log_data = {}
-        for _ in range(num_updates):
+        self.actor.train()
+        for i in range(num_updates):
             self.total_updates += 1
-            if self.reset_params and self.total_updates % self.reset_params == 0:
-                self.reset_networks()
             # Sample a batch from the replay buffer
-            sampled_tensordict = self.replay_buffer.sample()
-            if sampled_tensordict.device != self.device:
-                sampled_tensordict = sampled_tensordict.to(
-                    self.device, non_blocking=True
-                )
+            batch = self.replay_buffer.sample(batch_size)
+            # Compute CQL Loss
+            loss = self.loss_module(batch)
+
+            # Update alpha
+            alpha_loss = loss["loss_alpha"]
+            alpha_prime_loss = loss["loss_alpha_prime"]
+            self.optimizer_alpha.zero_grad()
+            alpha_loss.backward()
+            self.optimizer_alpha.step()
+
+            # Update Actpr Network
+            # official cql implementation uses behavior cloning loss for first few updating steps as it helps for some tasks
+            if self.total_updates >= self.bc_steps:
+                actor_loss = loss["loss_actor"]
             else:
-                sampled_tensordict = sampled_tensordict.clone()
+                actor_loss = loss["loss_actor_bc"]
+            self.optimizer_actor.zero_grad()
+            actor_loss.backward()
+            self.optimizer_actor.step()
+
+            if self.alpha_prime_optim is not None:
+                self.alpha_prime_optim.zero_grad()
+                alpha_prime_loss.backward(retain_graph=True)
+                self.alpha_prime_optim.step()
+
             # Update Critic Network
-            if self.use_bc:
-                q_loss, _ = self.loss_module.qvalue_loss(sampled_tensordict)
-            else:
-                q_loss, _ = self.loss_module.value_loss(sampled_tensordict)
+            q_loss = loss["loss_qvalue"]
+            cql_loss = loss["loss_cql"]
+
+            q_loss = q_loss + cql_loss
             self.optimizer_critic.zero_grad()
-            q_loss.backward()
+            q_loss.backward(retain_graph=False)
             self.optimizer_critic.step()
-            log_data.update({"critic_loss": q_loss})
 
-            # Update Actor Network
-            if self.total_updates % 2 == 0:
-                actor_loss, _ = self.loss_module.actor_loss(sampled_tensordict)
-                self.optimizer_actor.zero_grad()
-                actor_loss.backward()
-                self.optimizer_actor.step()
-
-                # Update Target Networks
-                self.target_net_updater.step()
-                log_data.update({"actor_loss": actor_loss})
-
+            # Update Target Networks
+            self.target_net_updater.step()
             # Update Prioritized Replay Buffer
             if isinstance(self.replay_buffer, TensorDictPrioritizedReplayBuffer):
-                self.replay_buffer.update_priorities(sampled_tensordict)
-
-        return log_data
+                self.replay_buffer.update_priorities(
+                    batch["indices"],
+                    loss["critic_loss"].detach().cpu().numpy(),
+                )
+        self.actor.eval()
+        return loss

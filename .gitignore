@@ -133,3 +133,5 @@ dmypy.json
 wandb/
 # hydra
 outputs/
+# .pth files
+*.pth

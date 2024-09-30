@@ -117,7 +117,7 @@ Before running experiments, please review and modify the configuration settings 
 
 ### Robots
 
-Robots utilized for our experiments. Building instructions can be found [here](https://sites.google.com/view/bricksrl/building-instructions).
+Robots utilized for our experiments. Building instructions can be found [here](https://bricksrl.github.io/ProjectPage/).
 
 | ![2wheeler](https://drive.google.com/uc?export=view&id=1IxqQ1VZchPZMNXyZnTULuNy53-LMYT6W) | ![Walker](https://drive.google.com/uc?export=view&id=1ImR0f1UNjC4sUHXWWg_D06eukrh-doW9) | ![RoboArm](https://drive.google.com/uc?export=view&id=1IYCJrl5rZBvOb6xKwbSUZqYrVwKjCpJH) | 
 |:--:|:--:|:--:|  
@@ -140,7 +140,7 @@ Robots utilized for our experiments. Building instructions can be found [here](h
 <details>
   <summary>Click me</summary>
 
-Evaluation videos of the trained agents can be found [here](https://sites.google.com/view/bricksrl/main).
+Evaluation videos of the trained agents can be found [here](https://bricksrl.github.io/ProjectPage/).
 
 ### 2Wheeler Results:
 
@@ -159,7 +159,44 @@ Evaluation videos of the trained agents can be found [here](https://sites.google
 </details>
 
 
+### Offline RL 
+<details>
+  <summary>Click me</summary>
+With the use of precollected [offline datasets](https://huggingface.co/datasets/compsciencelab/BricksRL-Datasets) we can pretrain agents with offline RL to perform a task without the need of real world interaction. Such pretrained policies can be evaluated directly or used for later training to fine tuning the pretrained policy on the real robot. 
+
+#### Datasets
+The datasets can be downloaded from huggingface and contain expert and random transitions for the 2Wheeler (RunAway-v0 and Spinning-v0), Walker (Walker-v0) and RoboArm (RoboArm-v0) robots.
+
+   ```bash
+      git lfs install
+      git clone git@hf.co:datasets/compsciencelab/BricksRL-Datasets
+   ```
+
+The datasets consist of TensorDicts containing expert and random transitions, which can be directly loaded into the replay buffer. When initiating (pre-)training, simply provide the path to the desired TensorDict when prompted to load the replay buffer.
 
 ## High-Level Examples
 In the [example notebook](example_notebook.ipynb) we provide high-level training examples to train a **SAC agent** in the **RoboArmSim-v0** environment and a **TD3 agent** in the **WalkerSim-v0** enviornment. 
 
+
+#### Pretrain an Agent
+
+The execution of an experiment for offline training is similar to the online training except that you run the **pretrain.py** script: 
+
+   ```bash
+   python experiments/walker/pretrain.py
+   ```
+
+Trained policies can then be evaluated as before with:
+
+   ```bash
+   python experiments/walker/eval.py
+   ```
+
+Or run training for fine-tuning the policy on the real robot:
+
+   ```bash
+   python experiments/walker/train.py
+   ```
+
+
+</details>

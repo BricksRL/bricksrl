@@ -77,7 +77,10 @@ class RoboArmSimEnv_v0(BaseSimEnv):
         self.observation_spec.set(self.observation_key, observation_spec)
         self.observation_spec.set(self.goal_observation_key, observation_spec)
         super().__init__(
-            action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
+            action_dim=self.action_dim,
+            state_dim=self.state_dim,
+            verbose=verbose,
+            use_hub=False,
         )
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:

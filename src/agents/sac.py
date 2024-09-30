@@ -19,10 +19,8 @@ class SACAgent(BaseAgent):
             state_spec, action_spec, agent_config.name, device
         )
 
-        self.actor = get_stochastic_actor(
-            self.observation_keys, action_spec, agent_config
-        )
-        self.critic = get_critic(self.observation_keys, agent_config)
+        self.actor = get_stochastic_actor(state_spec, action_spec, agent_config)
+        self.critic = get_critic(state_spec, agent_config)
 
         self.actor.to(device)
         self.critic.to(device)
@@ -52,14 +50,13 @@ class SACAgent(BaseAgent):
 
         self.batch_size = agent_config.batch_size
         # Define Replay Buffer
+        self.buffer_batch_size = agent_config.batch_size
         self.replay_buffer = self.create_replay_buffer(
-            batch_size=self.batch_size,
             prb=agent_config.prb,
             buffer_size=agent_config.buffer_size,
-            device=device,
             buffer_scratch_dir="/tmp",
+            device=device,
         )
-
         # Define Optimizer
         critic_params = list(
             self.loss_module.qvalue_network_params.flatten_keys().values()
@@ -101,7 +98,8 @@ class SACAgent(BaseAgent):
     def load_replaybuffer(self, path):
         """load replay buffer"""
         try:
-            self.replay_buffer.load(path)
+            loaded_data = TensorDictBase.load_memmap(path)
+            self.replay_buffer.extend(loaded_data)
             if self.replay_buffer._batch_size != self.batch_size:
                 Warning(
                     "Batch size of the loaded replay buffer is different from the agent's config batch size! Rewriting the batch size to match the agent's config batch size."
@@ -136,10 +134,9 @@ class SACAgent(BaseAgent):
 
     def create_replay_buffer(
         self,
-        batch_size=256,
         prb=False,
         buffer_size=100000,
-        buffer_scratch_dir=None,
+        buffer_scratch_dir=".",
         device="cpu",
         prefetch=3,
     ):
@@ -163,9 +160,12 @@ class SACAgent(BaseAgent):
                     buffer_size,
                     scratch_dir=buffer_scratch_dir,
                 ),
-                batch_size=batch_size,
+                batch_size=self.batch_size,
             )
         replay_buffer.append_transform(lambda x: x.to(device))
+        # TODO: check if we have image in observation space if so add this transform
+        # replay_buffer.append_transform(ToTensorImage(from_int=True, shape_tolerant=True))
+
         return replay_buffer
 
     @torch.no_grad()

@@ -16,12 +16,15 @@ class BaseEnv(EnvBase):
     Args:
         action_dim (int): The dimensionality of the action space.
         state_dim (int): The dimensionality of the state space.
+        use_hub (bool): Whether to use the Pybricks hub for communication, if False, only the observation spec and action specs are created and can be used.
+        verbose (bool): Whether to print verbose output.
     """
 
     def __init__(
         self,
         action_dim: int,
         state_dim: int,
+        use_hub: bool = True,
         verbose: bool = False,
     ):
         self.verbose = verbose
@@ -36,11 +39,14 @@ class BaseEnv(EnvBase):
         # buffer state in case of missing data
         self.buffered_state = np.zeros(self.state_dim, dtype=np.float32)
 
-        self.hub = PybricksHub(
-            state_dim=state_dim, out_format_str=self.state_format_str
-        )
-        self.hub.connect()
-        print("Connected to hub.")
+        if use_hub:
+            self.hub = PybricksHub(
+                state_dim=state_dim, out_format_str=self.state_format_str
+            )
+            self.hub.connect()
+            print("Connected to hub.")
+        else:
+            self.hub = None
         super().__init__(batch_size=torch.Size([1]))
 
     def send_to_hub(self, action: np.array) -> None:
@@ -129,6 +135,8 @@ class BaseSimEnv(EnvBase):
     Args:
         action_dim (int): The dimensionality of the action space.
         state_dim (int): The dimensionality of the state space.
+        verbose (bool): Whether to print verbose output.
+        use_hub (bool): This argument is kept for compatibility but is not used in the simulation environment.
     """
 
     def __init__(
@@ -136,6 +144,7 @@ class BaseSimEnv(EnvBase):
         action_dim: int,
         state_dim: int,
         verbose: bool = False,
+        use_hub: bool = False,
     ):
         self.verbose = verbose
         self.action_dim = action_dim

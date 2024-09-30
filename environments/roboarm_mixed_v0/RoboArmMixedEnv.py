@@ -68,6 +68,7 @@ class RoboArmMixedEnv_v0(BaseEnv):
         max_episode_steps: int = 50,
         sleep_time: float = 0.0,
         verbose: bool = False,
+        pretrain: bool = False,
         reward_signal: str = "dense",
         camera_id: int = 0,
         goal_radius: float = 25,
@@ -131,7 +132,10 @@ class RoboArmMixedEnv_v0(BaseEnv):
         self.goal_positions = self.init_camera_position()
 
         super().__init__(
-            action_dim=self.action_dim, state_dim=self.state_dim, verbose=verbose
+            action_dim=self.action_dim,
+            state_dim=self.state_dim,
+            verbose=verbose,
+            use_hub=1 - pretrain,
         )
 
     def init_camera_position(

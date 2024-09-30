@@ -13,18 +13,17 @@ class BaseAgent:
     """Implements a base agent used to interact with the lego robots.
 
     Args:
-        state_space (gym.Space): The state space of the environment.
-        action_space (gym.Space): The action space of the environment.
-        device (torch.device): The device to use for computation.
-        observation_keys (Tuple[str]): The keys used to access the observation in the tensor dictionary.
+        state_spec (TensorSpec): The state specification of the environment.
+        action_spec (TensorSpec): The action specification of the environment.
+        agent_name (str): The name of the agent.
+        device (str): The device to use for computation.
 
     Attributes:
-        state_space (gym.Space): The state space of the environment.
-        action_space (gym.Space): The action space of the environment.
-        state_dim (int): The dimension of the state space.
-        action_dim (int): The dimension of the action space.
-        device (torch.device): The device to use for computation.
-        observation_keys (Tuple[str]): The keys used to access the observation in the tensor dictionary.
+        name (str): The name of the agent.
+        observation_spec (TensorSpec): The state specification of the environment.
+        action_spec (TensorSpec): The action specification of the environment.
+        device (str): The device to use for computation.
+        observation_keys (List[str]): The keys used to access the observation in the tensor dictionary.
     """
 
     def __init__(

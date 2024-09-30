@@ -6,7 +6,7 @@ import torch
 from environments import ALL_2WHEELER_ENVS, ALL_ROBOARM_ENVS, ALL_WALKER_ENVS
 from moviepy.editor import concatenate_videoclips, ImageClip
 from omegaconf import DictConfig
-from tensordict import TensorDictBase
+from tensordict import TensorDict, TensorDictBase
 from torchrl.envs.utils import step_mdp
 from tqdm import tqdm
 
@@ -49,7 +49,11 @@ def logout(agent):
     x = input("Do you want to save the replay buffer? (y/n)")
     if x == "y":
         save_name = input("Enter the name of the file to save: ")
-        agent.replay_buffer.dump(save_name)
+        # agent.replay_buffer.dump(save_name)
+        batched_data = agent.replay_buffer.storage._storage[
+            : agent.replay_buffer.__len__()
+        ]
+        batched_data.save(save_name, copy_existing=True)
 
 
 def login(agent):
@@ -82,7 +86,6 @@ def prefill_buffer(env, agent, num_episodes=10, stop_on_done=False):
         inpt = input("Press Enter to start prefilling episode: ")
         for e in tqdm(range(num_episodes), desc="Prefilling buffer"):
             print("Prefill episode: ", e)
-
             td = env.reset()
             done = False
             truncated = False

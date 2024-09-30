@@ -91,7 +91,6 @@ def run(cfg: DictConfig) -> None:
 
     except KeyboardInterrupt:
         print("Evaluation interrupted by user.")
-
     logout(agent)
     env.close()
 
