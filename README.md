@@ -201,3 +201,16 @@ Or run training for fine-tuning the policy on the real robot:
 
 ## High-Level Examples
 In the [example notebook](example_notebook.ipynb) we provide high-level training examples to train a **SAC agent** in the **RoboArmSim-v0** environment and a **TD3 agent** in the **WalkerSim-v0** enviornment. 
+
+
+## Citation
+If you use BricksRL in your work, please refer to this BibTeX entry to cite it:
+
+```
+@article{dittert2024bricksrl,
+  title={BricksRL: A Platform for Democratizing Robotics and Reinforcement Learning Research and Education with LEGO},
+  author={Sebastian Dittert and Vincent Moens and Gianni De Fabritiis},
+  journal={arXiv preprint arXiv:2406.17490},
+  year={2024}
+}
+```
