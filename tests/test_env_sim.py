@@ -1,8 +1,8 @@
 import pytest
 import torch
-from environments import make_env
+from bricksrl.environments import make_env
+from experiments.helper.agents import get_agent
 from hydra import compose, initialize
-from src.agents import get_agent
 
 from tests.test_agents import collection_round
 

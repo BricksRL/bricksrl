@@ -1,9 +1,9 @@
 import pytest
 import torch
-from environments.dummy.mixed_obs_dummy import MixedObsDummyEnv
-from environments.dummy.vec_obs_dummy import VecGoalObsDummyEnv, VecObsDummyEnv
+from bricksrl.environments.dummy.mixed_obs_dummy import MixedObsDummyEnv
+from bricksrl.environments.dummy.vec_obs_dummy import VecGoalObsDummyEnv, VecObsDummyEnv
+from experiments.helper.agents import get_agent
 from hydra import compose, initialize
-from src.agents import get_agent
 from torchrl.envs import Compose, ToTensorImage, TransformedEnv
 from torchrl.envs.utils import step_mdp
 
