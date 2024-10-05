@@ -43,7 +43,7 @@ For additional information and building instructions for the robots, view the pr
 4. **Install bricksrl and additional packages:**
    For regular users, install the package and all required dependencies by running:
    ```bash
-   pip install .
+   pip install -e .
     ```
 
    This will install the bricksrl package along with the dependencies listed in setup.py.
@@ -53,7 +53,7 @@ For additional information and building instructions for the robots, view the pr
    If you are a developer and need to install development tools (e.g., pytest, ufmt, pre-commit), use the following command to install them as extras:
 
    ```bash
-   pip install .[dev]
+   pip install -e .[dev]
    ```
    This will install the development dependencies defined in the setup.py file along with the package.
 
