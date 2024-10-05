@@ -9,14 +9,14 @@ from omegaconf import DictConfig, OmegaConf
 from torchrl.envs.utils import step_mdp
 from tqdm import tqdm
 
-# Add the project root to PYTHONPATH
+# Add the project root to PYTHONPATH for config
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from environments import make_env, VIDEO_LOGGING_ENVS
-from src.agents import get_agent
-from src.utils import (
+from bricksrl.environments import make_env, VIDEO_LOGGING_ENVS
+from experiments.helper.agents import get_agent
+from experiments.helper.utils import (
     create_video_from_images,
     login,
     logout,
