@@ -55,6 +55,8 @@ def env_maker(cfg, device="cpu", from_pixels=False):
 ## Custom Environment 
 A template to create your own custom environments can be found [here](./custom_env.py). With an environment created like this you can update the [TorchRL example](./torchrl_sac) to train your own TorchRL agent on your custom environment.
 
+> **Attention!** For each custom environment, you need a custom client script that must be loaded on the HUB!
+
 ## High Level Examples
 In the [example notebook](./example_notebook.ipynb) we provide high-level training examples to train a **SAC agent** in the **RoboArmSim-v0** environment and a **TD3 agent** in the **WalkerSim-v0** enviornment.
 The examples are based on the experiments for our paper. Stand alone examples similar to the [TorchRL sota-implementations](https://github.com/pytorch/rl/tree/main/sota-implementations) can be found [here](./torchrl_sac).
