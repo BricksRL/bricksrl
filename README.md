@@ -153,7 +153,19 @@ Or run training for fine-tuning the policy on the real robot:
 
 </details>
 
-## High-Level Examples
+## Examples
+
+### TorchRL and Custom Environment Examples
+
+Examples to use BricksRL environments with typical training scripts from [TorchRL's sota-implementations](https://github.com/pytorch/rl/tree/main/sota-implementations) can be found [here](examples/).
+
+
+We also provide a template to create your own [custom BricksRL enviornment](examples/custom_env.py) which subsequently can be used directly in the TorchRL examples.
+
+For more information see the examples [readme](examples/README.md).
+
+
+### High-Level Examples
 In the [example notebook](examples/example_notebook.ipynb) we provide high-level training examples to train a **SAC agent** in the **RoboArmSim-v0** environment and a **TD3 agent** in the **WalkerSim-v0** enviornment. 
 The examples are based on the experiments for our paper. Stand alone examples similar to the [TorchRL sota-implementations](https://github.com/pytorch/rl/tree/main/sota-implementations) can be found [here](examples/torchrl_sac).
 
