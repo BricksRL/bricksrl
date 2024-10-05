@@ -1,8 +1,8 @@
 import pytest
 import torch
-from environments import make_env
+from bricksrl.environments import make_env
+from experiments.helper.agents import get_agent
 from hydra import compose, initialize
-from src.agents import get_agent
 
 from tests.test_agents import collection_round
 
@@ -31,6 +31,5 @@ def test_sac_agent(agent, env, device):
     env, action_space, state_space = make_env(cfg)
     # Create agent
     agent, _ = get_agent(action_space, state_space, cfg)
-    print(agent)
     # Test data collection
     collection_round(env, agent, max_steps=10)

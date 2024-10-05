@@ -40,10 +40,24 @@ For additional information and building instructions for the robots, view the pr
    pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
     ```
-4. **Install additional packages:**
+4. **Install bricksrl and additional packages:**
+   For regular users, install the package and all required dependencies by running:
    ```bash
-   pip install -r requirements.txt
+   pip install -e .
     ```
+
+   This will install the bricksrl package along with the dependencies listed in setup.py.
+
+5. **(Optional) Install development tools:**
+
+   If you are a developer and need to install development tools (e.g., pytest, ufmt, pre-commit), use the following command to install them as extras:
+
+   ```bash
+   pip install -e .[dev]
+   ```
+   This will install the development dependencies defined in the setup.py file along with the package.
+
+
 </details>
 
 ## Usage

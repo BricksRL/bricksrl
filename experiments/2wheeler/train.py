@@ -9,14 +9,20 @@ from omegaconf import DictConfig, OmegaConf
 from torchrl.envs.utils import step_mdp
 from tqdm import tqdm
 
-# Add the project root to PYTHONPATH
+# Add the project root to PYTHONPATH for config
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from environments import make_env
-from src.agents import get_agent
-from src.utils import login, logout, prefill_buffer, setup_check, tensordict2dict
+from bricksrl.environments import make_env
+from experiments.helper.agents import get_agent
+from experiments.helper.utils import (
+    login,
+    logout,
+    prefill_buffer,
+    setup_check,
+    tensordict2dict,
+)
 
 
 @hydra.main(version_base=None, config_path=project_root + "/conf", config_name="config")
