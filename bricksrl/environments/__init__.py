@@ -29,6 +29,7 @@ ALL_ROBOARM_ENVS = [
 ALL_ENVS = ALL_2WHEELER_ENVS + ALL_WALKER_ENVS + ALL_ROBOARM_ENVS
 
 
+# TODO: maybe outsorce this to experiments/helper and not in bricksrl
 def make_env(config, pretrain=False):
     """
     Creates a new environment based on the provided configuration.
@@ -38,7 +39,7 @@ def make_env(config, pretrain=False):
         pretrain: A boolean indicating whether the environment is for pretraining.
 
     Returns:
-        A tuple containing the new environment, its action space, and its state space.
+        A tuple containing the new environment, its action spec, and its state spec.
     """
     env = make(name=config.env.name, env_conf=config.env, pretrain=pretrain)
     observation_keys = [key for key in env.observation_spec.keys()]
