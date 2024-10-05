@@ -31,6 +31,5 @@ def test_sac_agent(agent, env, device):
     env, action_space, state_space = make_env(cfg)
     # Create agent
     agent, _ = get_agent(action_space, state_space, cfg)
-    print(agent)
     # Test data collection
     collection_round(env, agent, max_steps=10)
