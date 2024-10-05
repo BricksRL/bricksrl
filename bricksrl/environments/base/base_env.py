@@ -128,7 +128,8 @@ class BaseEnv(EnvBase):
         raise NotImplementedError
 
     def _set_seed(self, seed: int):
-        return super()._set_seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
 
 
 class BaseSimEnv(EnvBase):
@@ -179,4 +180,11 @@ class BaseSimEnv(EnvBase):
         raise NotImplementedError
 
     def _set_seed(self, seed: int):
-        return super()._set_seed(seed)
+        """
+        Sets the seed for the environment's random number generator.
+
+        Args:
+            seed (int): The seed to set.
+        """
+        np.random.seed(seed)
+        torch.manual_seed(seed)
