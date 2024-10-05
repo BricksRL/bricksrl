@@ -135,3 +135,7 @@ wandb/
 outputs/
 # .pth files
 *.pth
+
+# dev tools
+pytest.ini
+.pre-commit-config.yaml
