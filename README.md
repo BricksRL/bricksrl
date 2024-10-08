@@ -7,7 +7,7 @@
 [![Discord](https://img.shields.io/badge/Join_our_Discord-7289da?logo=discord&logoColor=ffffff&labelColor=7289da)](https://discord.gg/qdTsFaVfZm)
 
 
-BricksRL allows the training of custom LEGO robots using deep reinforcement learning. By integrating [PyBricks](https://pybricks.com/) and [TorchRL](https://pytorch.org/rl/stable/index.html), it facilitates efficient real-world training via Bluetooth communication between LEGO hubs and a local computing device. Check out our [paper](https://arxiv.org/abs/2406.17490)!
+BricksRL allows the training of custom LEGO robots using deep reinforcement learning. By integrating [Pybricks](https://pybricks.com/) and [TorchRL](https://pytorch.org/rl/stable/index.html), it facilitates efficient real-world training via Bluetooth communication between LEGO hubs and a local computing device. Check out our [paper](https://arxiv.org/abs/2406.17490)!
 
 For additional information and building instructions for the robots, view the project page [BricksRL](https://bricksrl.github.io/ProjectPage/).
 
@@ -62,7 +62,7 @@ For additional information and building instructions for the robots, view the pr
 
 ## Usage
 ### Client 
-Update your client script on the [PyBricks Hub](https://beta.pybricks.com/) whenever you want to run a new environment with your robot.
+Update your client script on the [Pybricks Hub](https://beta.pybricks.com/) whenever you want to run a new environment with your robot.
 
 
 ### Config

@@ -12,7 +12,7 @@ from torchrl.envs import EnvBase
 class MixedObsDummyEnv(EnvBase):
     """
     MixedObsDummyEnv is a dummy environment for testing purposes.
-    It does not connec to PyBricks
+    It does not connec to Pybricks
 
     """
 

@@ -12,7 +12,7 @@ from torchrl.envs import EnvBase
 class VecObsDummyEnv(EnvBase):
     """
     VecObsDummyEnv is a dummy environment for testing purposes.
-    It does not connec to PyBricks
+    It does not connec to Pybricks
 
     """
 
@@ -94,7 +94,7 @@ class VecObsDummyEnv(EnvBase):
 class VecGoalObsDummyEnv(EnvBase):
     """
     VecGoalObsDummyEnv is a dummy environment for testing purposes.
-    It does not connec to PyBricks
+    It does not connec to Pybricks
 
     """
 
