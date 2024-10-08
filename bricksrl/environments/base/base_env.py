@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 import torch
-from bricksrl.PyBricks.PybricksHubClass import PybricksHub
+from bricksrl.Pybricks.PybricksHubClass import PybricksHub
 from tensordict import TensorDict, TensorDictBase
 from torchrl.envs import EnvBase
 
